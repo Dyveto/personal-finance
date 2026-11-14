@@ -98,40 +98,62 @@ Status: COMPLETED
 Responsibilities:
 
 - [x] Implement Supabase server client (src/lib/supabase/server.ts, client.ts).
-- [x] Implement Zod schemas (src/lib/validations/finance.ts).
-- [x] Implement Server Actions for Accounts & Transactions (account-actions.ts, transaction-actions.ts).
+- [x] Implement Next.js middleware with @supabase/ssr for session refresh and route protection (src/middleware.ts).
+- [x] Implement Zod schemas (src/lib/validations/finance.ts, auth.ts).
+- [x] Implement Server Actions for Accounts, Transactions & Auth (account-actions.ts, transaction-actions.ts, auth-actions.ts).
 - [x] Implement CRUD operations with user isolation.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
-- [x] Add Vitest tests for financial logic, validations and server actions.
+- [x] Add Vitest tests for financial logic, validations, server actions and auth (53 tests).
 
 Expected deliverables:
 
+- src/middleware.ts
 - src/lib/supabase/
 - src/lib/validations/
 - src/lib/finance/
 - src/features/*/actions/
+- src/app/(auth)/
 - tests/unit/
 
 Handoff:
 
 Files created:
+- src/middleware.ts
 - src/types/actions.ts
 - src/lib/supabase/server.ts
 - src/lib/supabase/client.ts
 - src/lib/finance/money.ts
 - src/lib/finance/calendar.ts
+- src/lib/finance/projections.ts
 - src/lib/validations/finance.ts
+- src/lib/validations/auth.ts
 - src/features/accounts/actions/account-actions.ts
 - src/features/transactions/actions/transaction-actions.ts
+- src/features/auth/actions/auth-actions.ts
+- src/app/(auth)/layout.tsx
+- src/app/(auth)/login/page.tsx
+- src/app/(auth)/signup/page.tsx
 - tests/unit/finance.test.ts
 - tests/unit/validations.test.ts
 - tests/unit/actions.test.ts
+- tests/unit/auth.test.ts
 
 Public contracts:
 - `actions.ts`:
   - `ActionResult<T> = { success: true, data: T } | { success: false, error: string, validationErrors?: Record<string, string[]> }`
+- `auth-actions.ts`:
+  - `signIn(rawInput: unknown): Promise<ActionResult<{ user: AuthUser }>>`
+  - `signUp(rawInput: unknown): Promise<ActionResult<{ user: AuthUser | null; requiresEmailConfirmation: boolean }>>`
+  - `signOut(): Promise<ActionResult<{ signedOut: true }>>`
+  - `getAuthUser(): Promise<ActionResult<AuthUser | null>>`
+- `validations/auth.ts`:
+  - `SignInSchema`, `SignUpSchema`, `SignInInput`, `SignUpInput`
+- `middleware.ts`:
+  - Enforces session refresh on every request using `@supabase/ssr`.
+  - Protects routes `["/", "/accounts", "/transactions", "/credit-cards"]`, redirecting to `/login?next=...` if not authenticated.
+  - Redirects authenticated users from `/login` or `/signup` to `/`.
 - `validations/finance.ts`:
   - `CreateAccountSchema`, `StandardAccountSchema`, `CreditCardAccountSchema`
   - `CreateTransactionSchema`, `CreateInstallmentPurchaseSchema`
@@ -164,15 +186,16 @@ Public contracts:
   - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-- `npm run test:run` -> PASS (47 unit tests passing)
+- `npm run test:run` -> PASS (53 unit tests passing)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
+- `npm run build` -> PASS (Optimized production build with middleware and auth routes)
 
 Errors:
 None.
 
 Next agent:
-BACKEND (projections.ts & installment schedules) -> FRONTEND.
+FRONTEND / QA.
 
 ---
 
@@ -413,6 +436,15 @@ Verification commands:
 Files added/fixed: src/app/(dashboard)/credit-cards/page.tsx, src/app/manifest.ts
 Verdict: APPROVED
 Release gate: UNBLOCKED FOR SPRINT 3 & COMPLETE SYSTEM RELEASE
+
+### 2026-11-14 - BACKEND AGENT (Auth Gateway & Route Protection)
+Task: Implemented Next.js edge middleware with @supabase/ssr session management and route protection, Zod auth schemas, Server Actions (signIn, signUp, signOut, getAuthUser), and responsive (auth) views.
+Files created/modified: src/middleware.ts, src/lib/validations/auth.ts, src/features/auth/actions/auth-actions.ts, src/app/(auth)/*, tests/unit/auth.test.ts, src/components/layout/Sidebar.tsx
+Contracts delivered: signIn, signUp, signOut, getAuthUser, SignInSchema, SignUpSchema, edge route protection middleware
+Tests executed: Vitest (53 tests passed), npx tsc --noEmit (0), npm run lint (0), npm run build (0, 10 routes generated including middleware)
+Known issues: None
+Next agent: QA / ALL AGENTS
+Handoff status: COMPLETED
 
 ---
 

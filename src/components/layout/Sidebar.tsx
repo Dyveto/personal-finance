@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
@@ -9,8 +9,10 @@ import {
   ArrowLeftRight,
   ShieldCheck,
   TrendingUp,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/features/auth/actions/auth-actions";
 
 interface NavItem {
   name: string;
@@ -48,6 +50,14 @@ interface SidebarProps {
 
 export function Sidebar({ className, onNavigate }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    if (onNavigate) onNavigate();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <aside
@@ -107,15 +117,25 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      {/* Bottom Status Card */}
-      <div className="p-4 border-t border-slate-800 m-3 rounded-xl bg-slate-800/50">
-        <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-1">
-          <ShieldCheck className="w-4 h-4" />
-          <span>RLS & Seguridad Activa</span>
+      {/* Bottom Status Card & Sign Out */}
+      <div className="p-4 border-t border-slate-800 m-3 rounded-xl bg-slate-800/50 space-y-3">
+        <div>
+          <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-1">
+            <ShieldCheck className="w-4 h-4" />
+            <span>RLS & Seguridad Activa</span>
+          </div>
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Datos aislados por usuario y cálculos con precisión decimal en COP.
+          </p>
         </div>
-        <p className="text-[11px] text-slate-400 leading-relaxed">
-          Datos aislados por usuario y cálculos con precisión decimal en COP.
-        </p>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 transition-colors"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Cerrar Sesión</span>
+        </button>
       </div>
     </aside>
   );
