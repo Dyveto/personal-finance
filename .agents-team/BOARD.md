@@ -15,7 +15,7 @@ Current phase: NOT STARTED
 | Agent | Role | Status | Depends on |
 |---|---|---|---|
 | DB | Database and Supabase | PENDING | None |
-| BACKEND | Server Actions and Finance | PENDING | DB |
+| BACKEND | Server Actions and Finance | IN_PROGRESS | DB |
 | FRONTEND | UI and PWA | PENDING | DB + BACKEND |
 | QA | Testing and verification | BLOCKED | DB + BACKEND + FRONTEND |
 
@@ -88,7 +88,7 @@ BACKEND
 
 # 4. BACKEND AGENT
 
-Status: PENDING
+Status: IN_PROGRESS
 
 Responsibilities:
 
@@ -96,10 +96,10 @@ Responsibilities:
 - Implement Zod schemas.
 - Implement Server Actions.
 - Implement CRUD.
-- Implement financial calculations.
-- Implement credit card schedules.
-- Implement installment projections.
-- Add Vitest tests for financial logic.
+- [x] Implement financial calculations (money.ts).
+- [x] Implement credit card schedules and calendar rules (calendar.ts).
+- [ ] Implement credit-card.ts, installments.ts and projections.ts.
+- [x] Add Vitest tests for financial logic.
 
 Expected deliverables:
 
@@ -112,19 +112,40 @@ Expected deliverables:
 Handoff:
 
 Files created:
-[To be completed]
+- src/lib/finance/money.ts
+- src/lib/finance/calendar.ts
+- tests/unit/finance.test.ts
 
 Public contracts:
-[To be completed]
+- `money.ts`:
+  - `roundMoney(amount: string | number | Decimal): string`
+  - `splitInstallments(amount: string, installmentCount: number): string[]` (conserva invariante sum(installments) === total y asigna centavos a la 1ra cuota)
+  - `addMoney(...amounts: string[]): string`
+  - `subtractMoney(minuend: string, subtrahend: string): string`
+  - `multiplyMoney(amount: string, factor: string | number): string`
+  - `compareMoney(a: string, b: string): number`
+  - `isPositiveMoney(amount: string): boolean`
+  - `formatMoneyCOP(amount: string | number | Decimal, options?): string`
+- `calendar.ts`:
+  - `isLeapYear(year: number): boolean`
+  - `getDaysInMonth(year: number, month: number): number`
+  - `parseCivilDate(dateStr: string): CivilDate`
+  - `formatCivilDate(year: number, month: number, day: number): string`
+  - `clampDayToMonth(year: number, month: number, targetDay: number): number`
+  - `addMonths(year: number, month: number, monthsToAdd: number): { year: number; month: number }`
+  - `calculateStatementClosingDate(purchaseDate: string, closingDay: number): string`
+  - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-[To be completed]
+- `npm run test:run` -> PASS (28 unit tests passing)
+- `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
+- `npm run lint` -> PASS (0 lint warnings/errors)
 
 Errors:
-[None / Details]
+None.
 
 Next agent:
-FRONTEND
+BACKEND (continuing with Supabase client, schemas and server actions upon DB completion).
 
 ---
 
