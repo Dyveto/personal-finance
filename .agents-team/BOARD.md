@@ -15,8 +15,8 @@ Current phase: NOT STARTED
 | Agent | Role | Status | Depends on |
 |---|---|---|---|
 | DB | Database and Supabase | PENDING | None |
-| BACKEND | Server Actions and Finance | IN_PROGRESS | DB |
-| FRONTEND | UI and PWA | PENDING | DB + BACKEND |
+| BACKEND | Server Actions and Finance | COMPLETED | DB |
+| FRONTEND | UI and PWA | IN_PROGRESS | DB + BACKEND |
 | QA | Testing and verification | BLOCKED | DB + BACKEND + FRONTEND |
 
 Allowed statuses:
@@ -173,20 +173,20 @@ BACKEND (projections.ts & installment schedules) -> FRONTEND.
 
 # 5. FRONTEND AGENT
 
-Status: PENDING
+Status: IN_PROGRESS
 
 Responsibilities:
 
-- Configure application layout.
-- Implement navigation.
-- Implement dashboard.
-- Implement accounts UI.
-- Implement credit cards UI.
-- Implement transactions UI.
-- Implement forms and validation feedback.
-- Implement charts.
-- Implement responsive layouts.
-- Configure PWA.
+- [x] Configure application root layout and responsive dashboard shell.
+- [x] Implement navigation (Sidebar & Header, mobile drawer, PWA-ready).
+- [x] Implement initial dashboard base page consuming Server Actions.
+- [ ] Implement accounts UI.
+- [ ] Implement credit cards UI.
+- [ ] Implement transactions UI.
+- [ ] Implement forms and validation feedback.
+- [ ] Implement charts.
+- [x] Implement responsive layouts.
+- [ ] Configure PWA manifest and service worker.
 
 Expected deliverables:
 
@@ -199,22 +199,32 @@ Expected deliverables:
 Handoff:
 
 Files created:
-[To be completed]
+- src/app/layout.tsx
+- src/app/(dashboard)/layout.tsx
+- src/app/(dashboard)/page.tsx
+- src/components/layout/Sidebar.tsx
+- src/components/layout/Header.tsx
+- tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
 
 Backend functions consumed:
-[To be completed]
+- `listAccounts()` de `@/features/accounts/actions/account-actions`
+- `listTransactions()` de `@/features/transactions/actions/transaction-actions`
+- `formatMoneyCOP()`, `addMoney()`, `roundMoney()` de `@/lib/finance/money`
 
 UI routes:
-[To be completed]
+- `/` (Dashboard view con métricas de disponible vs deuda, cuentas activas y transacciones recientes)
 
 Commands executed:
-[To be completed]
+- `npm run build` -> PASS (Optimized production build)
+- `npm run test:run` -> PASS (47 unit tests passing)
+- `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
+- `npm run lint` -> PASS (0 lint warnings/errors)
 
 Errors:
-[None / Details]
+None.
 
 Next agent:
-QA
+FRONTEND (continuing with Accounts, Cards and Transactions UI views) -> QA.
 
 ---
 
