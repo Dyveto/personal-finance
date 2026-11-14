@@ -182,8 +182,8 @@ Responsibilities:
 - [x] Implement initial dashboard base page consuming Server Actions.
 - [x] Implement accounts UI (list, KPIs, filter tabs, active accounts view).
 - [ ] Implement credit cards dedicated UI view.
-- [ ] Implement transactions UI.
-- [x] Implement forms and validation feedback (AccountForm with Shadcn/UI & React Hook Form).
+- [x] Implement transactions UI (history, search, filters by account and type).
+- [x] Implement forms and validation feedback (AccountForm, TransactionForm with installment split preview).
 - [ ] Implement charts with Recharts.
 - [x] Implement responsive layouts.
 - [ ] Configure PWA manifest and service worker.
@@ -203,25 +203,30 @@ Files created:
 - src/app/(dashboard)/layout.tsx
 - src/app/(dashboard)/page.tsx
 - src/app/(dashboard)/accounts/page.tsx
+- src/app/(dashboard)/transactions/page.tsx
 - src/components/layout/Sidebar.tsx
 - src/components/layout/Header.tsx
 - src/features/accounts/components/AccountForm.tsx
 - src/features/accounts/components/AccountsClientView.tsx
+- src/features/transactions/components/TransactionForm.tsx
+- src/features/transactions/components/TransactionsClientView.tsx
+- src/features/categories/actions/category-actions.ts
 - src/components/ui/{dialog,input,label,select,card}.tsx
 - tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
 
 Backend functions consumed:
-- `createAccount()` de `@/features/accounts/actions/account-actions`
-- `listAccounts()` de `@/features/accounts/actions/account-actions`
-- `listTransactions()` de `@/features/transactions/actions/transaction-actions`
-- `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
+- `createAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
+- `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
+- `listCategories()` de `@/features/categories/actions/category-actions`
+- `splitInstallments()`, `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
 
 UI routes:
 - `/` (Dashboard view con métricas de disponible vs deuda, cuentas activas y transacciones recientes)
 - `/accounts` (Gestión interactiva de cuentas y tarjetas con modal, validación Zod y KPIs en tiempo real)
+- `/transactions` (Historial completo de movimientos, filtros, y modal de transacciones con cálculo de cuotas)
 
 Commands executed:
-- `npm run build` -> PASS (Optimized production build con rutas `/` y `/accounts`)
+- `npm run build` -> PASS (Optimized production build con rutas `/`, `/accounts` y `/transactions`)
 - `npm run test:run` -> PASS (47 unit tests passing)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
@@ -230,7 +235,7 @@ Errors:
 None.
 
 Next agent:
-FRONTEND (continuing with Credit Cards & Transactions UI views) -> QA.
+FRONTEND (Credit cards dedicated view & Recharts dashboard charts) -> QA.
 
 ---
 
@@ -360,6 +365,15 @@ Contracts delivered: AccountForm, AccountsClientView, consuming createAccount & 
 Tests executed: Next build (/accounts route verified) + Vitest (47 tests passed)
 Known issues: None
 Next agent: FRONTEND (Credit cards & Transactions) / QA
+Handoff status: COMPLETED
+
+### 2026-11-14 - FRONTEND AGENT (Sprint 2 - Transactions & Deferred Purchases)
+Task: Implemented interactive TransactionForm with live installment calculator, category actions, and full transactions view (/transactions).
+Files modified: src/features/transactions/components/*, src/features/categories/actions/*, src/app/(dashboard)/transactions/page.tsx
+Contracts delivered: TransactionForm, TransactionsClientView, consuming createTransaction, createInstallmentPurchase, listTransactions, listCategories
+Tests executed: Next build (/transactions route verified) + Vitest (47 tests passed)
+Known issues: None
+Next agent: FRONTEND (Credit cards dedicated view & charts) / QA
 Handoff status: COMPLETED
 
 ---
