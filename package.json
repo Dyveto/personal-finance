@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "supabase:types": "supabase gen types typescript --remote > src/types/database.types.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.6",
