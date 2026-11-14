@@ -13,18 +13,35 @@ import {
 import { Button } from "@/components/ui/button";
 import { listAccounts } from "@/features/accounts/actions/account-actions";
 import { listTransactions } from "@/features/transactions/actions/transaction-actions";
+import { listCategories } from "@/features/categories/actions/category-actions";
 import { formatMoneyCOP, addMoney, roundMoney } from "@/lib/finance/money";
+import {
+  FinancialCharts,
+  type MonthlyFlowItem,
+  type CategoryExpenseItem,
+} from "@/features/dashboard/components/FinancialCharts";
+import { InstallmentProjectionsCard } from "@/features/dashboard/components/InstallmentProjectionsCard";
+import {
+  projectTransactionInstallments,
+  type ProjectedInstallment,
+} from "@/lib/finance/projections";
 
 export default async function DashboardPage() {
-  // Consumir Server Actions directamente desde el servidor
-  const [accountsResult, transactionsResult] = await Promise.all([
+  // Consumir Server Actions concurrentemente
+  const [accountsResult, transactionsResult, categoriesResult] = await Promise.all([
     listAccounts(),
-    listTransactions({ limit: 5 }),
+    listTransactions({ limit: 50 }),
+    listCategories(),
   ]);
 
   const accounts = accountsResult.success ? accountsResult.data : [];
   const transactions = transactionsResult.success ? transactionsResult.data : [];
+  const categories = categoriesResult.success ? categoriesResult.data : [];
   const authRequired = !accountsResult.success && accountsResult.error.includes("Unauthorized");
+
+  // Mapas auxiliares
+  const accountsMap = new Map(accounts.map((a) => [a.id, a]));
+  const categoriesMap = new Map(categories.map((c) => [c.id, c.name]));
 
   // Cálculos financieros distinguiendo dinero disponible vs deuda en tarjetas
   let availableMoney = "0.00";
@@ -43,6 +60,66 @@ export default async function DashboardPage() {
     }
   }
 
+  // 1. Datos para Gráfico de Flujo Mensual (Ingresos vs. Gastos)
+  const monthlyFlowMap = new Map<string, { income: number; expense: number }>();
+  for (const tx of transactions) {
+    const monthKey = tx.transaction_date.slice(0, 7); // YYYY-MM
+    const current = monthlyFlowMap.get(monthKey) || { income: 0, expense: 0 };
+    if (tx.transaction_type === "income") {
+      current.income += tx.amount;
+    } else {
+      current.expense += tx.amount;
+    }
+    monthlyFlowMap.set(monthKey, current);
+  }
+
+  const monthlyData: MonthlyFlowItem[] = Array.from(monthlyFlowMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([month, data]) => ({
+      month,
+      income: parseFloat(data.income.toFixed(2)),
+      expense: parseFloat(data.expense.toFixed(2)),
+    }));
+
+  // 2. Datos para Gráfico de Categorías de Gastos
+  const categoryExpenseMap = new Map<string, number>();
+  for (const tx of transactions) {
+    if (tx.transaction_type === "expense") {
+      const catName = categoriesMap.get(tx.category_id) || "Otros Gastos";
+      categoryExpenseMap.set(catName, (categoryExpenseMap.get(catName) || 0) + tx.amount);
+    }
+  }
+
+  const categoryData: CategoryExpenseItem[] = Array.from(categoryExpenseMap.entries())
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 6)
+    .map(([name, value]) => ({
+      name,
+      value: parseFloat(value.toFixed(2)),
+    }));
+
+  // 3. Proyección de Compras Diferidas en Tarjetas de Crédito
+  const allProjections: ProjectedInstallment[] = [];
+  for (const tx of transactions) {
+    if (tx.is_installment && tx.installment_count > 1) {
+      const card = accountsMap.get(tx.account_id);
+      if (
+        card &&
+        card.account_type === "credit_card" &&
+        card.closing_day &&
+        card.payment_due_day
+      ) {
+        const projected = projectTransactionInstallments(tx, {
+          name: card.name,
+          closing_day: card.closing_day,
+          payment_due_day: card.payment_due_day,
+        });
+        allProjections.push(...projected);
+      }
+    }
+  }
+
   return (
     <div className="space-y-8">
       {/* Welcome Banner & Actions */}
@@ -52,7 +129,7 @@ export default async function DashboardPage() {
             Resumen Financiero
           </h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Control de cuentas, tarjetas de crédito y transacciones en tiempo real.
+            Control de cuentas, tarjetas de crédito, gráficos interactivos y proyecciones.
           </p>
         </div>
         <div className="flex items-center gap-2.5">
@@ -79,7 +156,7 @@ export default async function DashboardPage() {
               Modo Invitado / Sesión requerida
             </p>
             <p className="text-amber-700 dark:text-amber-300 mt-0.5">
-              Inicia sesión con Supabase Auth para acceder a tus cuentas reales aisladas por RLS.
+              Inicia sesión con Supabase Auth para acceder a tus cuentas reales y proyecciones aisladas por RLS.
             </p>
           </div>
         </div>
@@ -148,7 +225,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Cuentas y Tarjetas Registradas */}
+      {/* Gráficos Financieros Interactivos (Recharts) */}
+      <FinancialCharts monthlyData={monthlyData} categoryData={categoryData} />
+
+      {/* Tarjeta de Proyección de Cuotas Diferidas */}
+      <InstallmentProjectionsCard projections={allProjections} />
+
+      {/* Cuentas y Transacciones Recientes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
@@ -269,7 +352,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {transactions.map((tx) => {
+                {transactions.slice(0, 5).map((tx) => {
                   const isIncome = tx.transaction_type === "income";
                   return (
                     <div key={tx.id} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">

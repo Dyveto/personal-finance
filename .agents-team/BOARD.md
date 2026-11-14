@@ -184,8 +184,10 @@ Responsibilities:
 - [ ] Implement credit cards dedicated UI view.
 - [x] Implement transactions UI (history, search, filters by account and type).
 - [x] Implement forms and validation feedback (AccountForm, TransactionForm with installment split preview).
-- [ ] Implement charts with Recharts.
+- [x] Implement charts with Recharts (FinancialCharts: monthly comparison & category breakdown).
+- [x] Implement credit card installment projections (InstallmentProjectionsCard & projections.ts).
 - [x] Implement responsive layouts.
+- [ ] Implement credit cards dedicated UI view.
 - [ ] Configure PWA manifest and service worker.
 
 Expected deliverables:
@@ -198,7 +200,7 @@ Expected deliverables:
 
 Handoff:
 
-Files created:
+Files created/modified:
 - src/app/layout.tsx
 - src/app/(dashboard)/layout.tsx
 - src/app/(dashboard)/page.tsx
@@ -210,6 +212,9 @@ Files created:
 - src/features/accounts/components/AccountsClientView.tsx
 - src/features/transactions/components/TransactionForm.tsx
 - src/features/transactions/components/TransactionsClientView.tsx
+- src/features/dashboard/components/FinancialCharts.tsx
+- src/features/dashboard/components/InstallmentProjectionsCard.tsx
+- src/lib/finance/projections.ts
 - src/features/categories/actions/category-actions.ts
 - src/components/ui/{dialog,input,label,select,card}.tsx
 - tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
@@ -219,15 +224,16 @@ Backend functions consumed:
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
 - `listCategories()` de `@/features/categories/actions/category-actions`
 - `splitInstallments()`, `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
+- `projectTransactionInstallments()` de `@/lib/finance/projections`
 
 UI routes:
-- `/` (Dashboard view con métricas de disponible vs deuda, cuentas activas y transacciones recientes)
+- `/` (Dashboard view con gráficos interactivos Recharts, proyección de cuotas mensuales, métricas y accesos rápidos)
 - `/accounts` (Gestión interactiva de cuentas y tarjetas con modal, validación Zod y KPIs en tiempo real)
 - `/transactions` (Historial completo de movimientos, filtros, y modal de transacciones con cálculo de cuotas)
 
 Commands executed:
 - `npm run build` -> PASS (Optimized production build con rutas `/`, `/accounts` y `/transactions`)
-- `npm run test:run` -> PASS (47 unit tests passing)
+- `npm run test:run` -> PASS (48 unit tests passing)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
 
@@ -235,7 +241,7 @@ Errors:
 None.
 
 Next agent:
-FRONTEND (Credit cards dedicated view & Recharts dashboard charts) -> QA.
+FRONTEND (Credit cards dedicated view) / QA.
 
 ---
 
@@ -374,6 +380,15 @@ Contracts delivered: TransactionForm, TransactionsClientView, consuming createTr
 Tests executed: Next build (/transactions route verified) + Vitest (47 tests passed)
 Known issues: None
 Next agent: FRONTEND (Credit cards dedicated view & charts) / QA
+Handoff status: COMPLETED
+
+### 2026-11-14 - FRONTEND AGENT (Sprint 3 - Financial Charts & Installment Projections)
+Task: Implemented interactive Recharts financial charts (monthly flow BarChart and category breakdown PieChart) and credit card installment projections engine.
+Files created/modified: src/features/dashboard/components/FinancialCharts.tsx, src/features/dashboard/components/InstallmentProjectionsCard.tsx, src/lib/finance/projections.ts, src/app/(dashboard)/page.tsx, tests/unit/finance.test.ts
+Contracts delivered: FinancialCharts, InstallmentProjectionsCard, projectTransactionInstallments
+Tests executed: Vitest (48 tests passed), npx tsc --noEmit (0), npm run lint (0), npm run build (0)
+Known issues: None
+Next agent: FRONTEND (Credit cards dedicated view) / QA
 Handoff status: COMPLETED
 
 ---

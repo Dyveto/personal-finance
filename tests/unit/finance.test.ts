@@ -16,6 +16,7 @@ import {
   parseCivilDate,
   clampDayToMonth,
 } from "@/lib/finance/calendar";
+import { projectTransactionInstallments } from "@/lib/finance/projections";
 
 describe("Financial Engine: money.ts", () => {
   describe("roundMoney", () => {
@@ -227,6 +228,52 @@ describe("Financial Engine: calendar.ts", () => {
     it("should throw for invalid days", () => {
       expect(() => calculatePaymentDueDate("2026-03-20", 0, 5)).toThrow();
       expect(() => calculatePaymentDueDate("2026-03-20", 20, 35)).toThrow();
+    });
+  });
+
+  describe("projectTransactionInstallments", () => {
+    it("should project 6 installments for 1,200,000 COP purchase correctly across billing cycles", () => {
+      const tx = {
+        id: "tx-123",
+        description: "Laptop gamer",
+        amount: "1200000.00",
+        transaction_date: "2026-11-10",
+        is_installment: true,
+        installment_count: 6,
+      };
+      const card = {
+        name: "Visa Platinum",
+        closing_day: 15,
+        payment_due_day: 5,
+      };
+
+      const projections = projectTransactionInstallments(tx, card);
+      expect(projections).toHaveLength(6);
+
+      // Verify months sequence
+      expect(projections.map((p) => p.statementMonth)).toEqual([
+        "2026-11",
+        "2026-12",
+        "2027-01",
+        "2027-02",
+        "2027-03",
+        "2027-04",
+      ]);
+
+      // All amounts 200,000.00
+      projections.forEach((p, idx) => {
+        expect(p.amount).toBe("200000.00");
+        expect(p.installmentNumber).toBe(idx + 1);
+        expect(p.totalInstallments).toBe(6);
+      });
+
+      // Verify payment due dates (5 <= 15 -> next month day 5)
+      expect(projections[0].paymentDueDate).toBe("2026-12-05");
+      expect(projections[1].paymentDueDate).toBe("2027-01-05");
+      expect(projections[2].paymentDueDate).toBe("2027-02-05");
+      expect(projections[3].paymentDueDate).toBe("2027-03-05");
+      expect(projections[4].paymentDueDate).toBe("2027-04-05");
+      expect(projections[5].paymentDueDate).toBe("2027-05-05");
     });
   });
 });
