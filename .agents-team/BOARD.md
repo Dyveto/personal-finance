@@ -92,14 +92,14 @@ Status: IN_PROGRESS
 
 Responsibilities:
 
-- Implement Supabase server clients.
-- Implement Zod schemas.
-- Implement Server Actions.
-- Implement CRUD.
+- [x] Implement Supabase server client (src/lib/supabase/server.ts, client.ts).
+- [x] Implement Zod schemas (src/lib/validations/finance.ts).
+- [x] Implement Server Actions for Accounts & Transactions (account-actions.ts, transaction-actions.ts).
+- [x] Implement CRUD operations with user isolation.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [ ] Implement credit-card.ts, installments.ts and projections.ts.
-- [x] Add Vitest tests for financial logic.
+- [x] Add Vitest tests for financial logic, validations and server actions.
 
 Expected deliverables:
 
@@ -112,14 +112,36 @@ Expected deliverables:
 Handoff:
 
 Files created:
+- src/types/actions.ts
+- src/lib/supabase/server.ts
+- src/lib/supabase/client.ts
 - src/lib/finance/money.ts
 - src/lib/finance/calendar.ts
+- src/lib/validations/finance.ts
+- src/features/accounts/actions/account-actions.ts
+- src/features/transactions/actions/transaction-actions.ts
 - tests/unit/finance.test.ts
+- tests/unit/validations.test.ts
+- tests/unit/actions.test.ts
 
 Public contracts:
+- `actions.ts`:
+  - `ActionResult<T> = { success: true, data: T } | { success: false, error: string, validationErrors?: Record<string, string[]> }`
+- `validations/finance.ts`:
+  - `CreateAccountSchema`, `StandardAccountSchema`, `CreditCardAccountSchema`
+  - `CreateTransactionSchema`, `CreateInstallmentPurchaseSchema`
+  - `CivilDateSchema`, `PositiveMoneySchema`, `NonNegativeMoneySchema`
+- `account-actions.ts`:
+  - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
+  - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`
+  - `createAccount(rawInput: unknown): Promise<ActionResult<AccountRow>>`
+- `transaction-actions.ts`:
+  - `listTransactions(filters?: ListTransactionsFilter): Promise<ActionResult<TransactionRow[]>>`
+  - `createTransaction(rawInput: unknown): Promise<ActionResult<TransactionRow>>`
+  - `createInstallmentPurchase(rawInput: unknown): Promise<ActionResult<{ transaction: TransactionRow, installments: string[] }>>`
 - `money.ts`:
   - `roundMoney(amount: string | number | Decimal): string`
-  - `splitInstallments(amount: string, installmentCount: number): string[]` (conserva invariante sum(installments) === total y asigna centavos a la 1ra cuota)
+  - `splitInstallments(amount: string, installmentCount: number): string[]` (invariante sum(installments) === total garantizado)
   - `addMoney(...amounts: string[]): string`
   - `subtractMoney(minuend: string, subtrahend: string): string`
   - `multiplyMoney(amount: string, factor: string | number): string`
@@ -137,7 +159,7 @@ Public contracts:
   - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-- `npm run test:run` -> PASS (28 unit tests passing)
+- `npm run test:run` -> PASS (47 unit tests passing)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
 
@@ -145,7 +167,7 @@ Errors:
 None.
 
 Next agent:
-BACKEND (continuing with Supabase client, schemas and server actions upon DB completion).
+BACKEND (projections.ts & installment schedules) -> FRONTEND.
 
 ---
 
