@@ -180,11 +180,11 @@ Responsibilities:
 - [x] Configure application root layout and responsive dashboard shell.
 - [x] Implement navigation (Sidebar & Header, mobile drawer, PWA-ready).
 - [x] Implement initial dashboard base page consuming Server Actions.
-- [ ] Implement accounts UI.
-- [ ] Implement credit cards UI.
+- [x] Implement accounts UI (list, KPIs, filter tabs, active accounts view).
+- [ ] Implement credit cards dedicated UI view.
 - [ ] Implement transactions UI.
-- [ ] Implement forms and validation feedback.
-- [ ] Implement charts.
+- [x] Implement forms and validation feedback (AccountForm with Shadcn/UI & React Hook Form).
+- [ ] Implement charts with Recharts.
 - [x] Implement responsive layouts.
 - [ ] Configure PWA manifest and service worker.
 
@@ -202,20 +202,26 @@ Files created:
 - src/app/layout.tsx
 - src/app/(dashboard)/layout.tsx
 - src/app/(dashboard)/page.tsx
+- src/app/(dashboard)/accounts/page.tsx
 - src/components/layout/Sidebar.tsx
 - src/components/layout/Header.tsx
+- src/features/accounts/components/AccountForm.tsx
+- src/features/accounts/components/AccountsClientView.tsx
+- src/components/ui/{dialog,input,label,select,card}.tsx
 - tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
 
 Backend functions consumed:
+- `createAccount()` de `@/features/accounts/actions/account-actions`
 - `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `listTransactions()` de `@/features/transactions/actions/transaction-actions`
-- `formatMoneyCOP()`, `addMoney()`, `roundMoney()` de `@/lib/finance/money`
+- `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
 
 UI routes:
 - `/` (Dashboard view con métricas de disponible vs deuda, cuentas activas y transacciones recientes)
+- `/accounts` (Gestión interactiva de cuentas y tarjetas con modal, validación Zod y KPIs en tiempo real)
 
 Commands executed:
-- `npm run build` -> PASS (Optimized production build)
+- `npm run build` -> PASS (Optimized production build con rutas `/` y `/accounts`)
 - `npm run test:run` -> PASS (47 unit tests passing)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
@@ -224,7 +230,7 @@ Errors:
 None.
 
 Next agent:
-FRONTEND (continuing with Accounts, Cards and Transactions UI views) -> QA.
+FRONTEND (continuing with Credit Cards & Transactions UI views) -> QA.
 
 ---
 
@@ -346,6 +352,15 @@ Task: Full comprehensive audit of Database, Backend, Financial Engine, Frontend 
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (0), npm run build (0)
 Verdict: APPROVED
 Release gate: UNBLOCKED FOR SPRINT 1 MILESTONE
+
+### 2026-11-14 - FRONTEND AGENT (Sprint 2 - Accounts Management)
+Task: Implemented interactive AccountForm with Shadcn/UI & React Hook Form, and complete Accounts management view (/accounts).
+Files modified: src/features/accounts/components/*, src/app/(dashboard)/accounts/page.tsx, src/components/ui/*
+Contracts delivered: AccountForm, AccountsClientView, consuming createAccount & listAccounts
+Tests executed: Next build (/accounts route verified) + Vitest (47 tests passed)
+Known issues: None
+Next agent: FRONTEND (Credit cards & Transactions) / QA
+Handoff status: COMPLETED
 
 ---
 
