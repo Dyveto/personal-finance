@@ -18,6 +18,9 @@ CREATE TABLE public.accounts (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
+  CONSTRAINT accounts_unique_owner_id
+    UNIQUE (user_id, id),
+
   CONSTRAINT accounts_credit_rules CHECK (
     (
       account_type = 'credit_card'

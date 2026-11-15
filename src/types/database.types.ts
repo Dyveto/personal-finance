@@ -158,14 +158,16 @@ export interface Database {
         }
         Relationships: [
           {
-            foreignKeyName: "transactions_account_owner_fkey"
+            foreignKeyName: "transactions_account_owner"
             columns: ["user_id", "account_id"]
+            isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["user_id", "id"]
           },
           {
-            foreignKeyName: "transactions_category_owner_fkey"
+            foreignKeyName: "transactions_category_owner"
             columns: ["user_id", "category_id"]
+            isOneToOne: false
             referencedRelation: "categories"
             referencedColumns: ["user_id", "id"]
           }
@@ -186,3 +188,15 @@ export interface Database {
     }
   }
 }
+
+export type AccountRow = Database["public"]["Tables"]["accounts"]["Row"];
+export type AccountInsert = Database["public"]["Tables"]["accounts"]["Insert"];
+export type AccountUpdate = Database["public"]["Tables"]["accounts"]["Update"];
+
+export type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
+export type CategoryInsert = Database["public"]["Tables"]["categories"]["Insert"];
+export type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"];
+
+export type TransactionRow = Database["public"]["Tables"]["transactions"]["Row"];
+export type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
+export type TransactionUpdate = Database["public"]["Tables"]["transactions"]["Update"];
