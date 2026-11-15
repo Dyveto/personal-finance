@@ -309,6 +309,7 @@ Responsibilities:
 - [x] Correct defects when safe.
 - [x] Re-run every relevant verification after changes.
 - [x] Author comprehensive system technical documentation (README.md).
+- [x] Configure CI/CD automated pipeline via GitHub Actions (.github/workflows/deploy.yml) with Netlify deployment.
 
 Verification checklist:
 
@@ -317,7 +318,7 @@ Verification checklist:
 [x] TypeScript passes (`strict: true`, no `any`, no `@ts-ignore`, 0 errors).
 [x] ESLint passes (0 errors, 0 warnings).
 [x] Production build passes (`next build` generates 10 routes including middleware & PWA manifest).
-[x] Vitest passes (53/53 tests passed across 5 test suites).
+[x] Vitest passes (57/57 tests passed across 5 test suites).
 [x] Installment rounding verified (sum invariant preserved, remainder cents to 1st installment).
 [x] Closing date tests pass (leap year, 30/31 days, purchase cutoff clamping).
 [x] Payment date tests pass (transitions, due > closing, due <= closing).
@@ -327,6 +328,7 @@ Verification checklist:
 [x] Dedicated `/credit-cards` view operational with KPI cards, credit limits, and installment projections.
 [x] Edge middleware route protection & Supabase Auth flow verified.
 [x] Comprehensive README.md created covering COP currency, America/Bogota timezone, multi-agent architecture, tech stack, and CLI instructions.
+[x] CI/CD Pipeline implemented (.github/workflows/deploy.yml) enforcing TypeScript, ESLint, Vitest, and Next.js build gates before automated Netlify deployment.
 
 QA REPORT:
 
@@ -494,6 +496,13 @@ Handoff status: COMPLETED
 Task: Configured netlify.toml at repository root with Next.js 14 App Router specifications (build command npm run build, publish .next, NODE_VERSION = 20, @netlify/plugin-nextjs). Authored comprehensive Netlify deployment instructions in README.md linking Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY).
 Files created/modified: netlify.toml, README.md, .agents-team/BOARD.md
 Verification commands: npm run build (0), npm run test:run (57/57 passed), npx tsc --noEmit (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-15 - QA VERIFIER / DEVOPS AGENT (CI/CD Pipeline & Automated Netlify Deploy)
+Task: Configured automated GitHub Actions workflow (.github/workflows/deploy.yml) triggered on push and pull_request to develop branch. Configured sequential quality assurance gates (npm ci, npx tsc --noEmit, npm run lint, npm run test:run, npm run build) blocking non-zero exit codes. Configured official Netlify action (netlify/actions/cli@master) using NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID secrets for production and preview deploys. Updated README.md with CI/CD architecture and required repository secrets.
+Files created/modified: .github/workflows/deploy.yml, README.md, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (57/57 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 

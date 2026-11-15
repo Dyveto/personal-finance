@@ -169,26 +169,40 @@ npx supabase db push
 
 ---
 
-## 🌐 Despliegue en Netlify
+## 🌐 Despliegue en Netlify y Pipeline de CI/CD
 
-El proyecto está preconfigurado para un despliegue continuo y sin fricción en **Netlify** mediante el archivo `netlify.toml`.
+El proyecto cuenta con un flujo completamente automatizado de **Integración y Despliegue Continuo (CI/CD)** mediante **GitHub Actions** (`.github/workflows/deploy.yml`) y configuración declarativa en `netlify.toml`.
 
-### Pasos Rápidos de Despliegue:
+### 🔄 Funcionamiento del Pipeline de GitHub Actions
 
-1. **Importar Proyecto**:
-   - Conecta tu repositorio de GitHub (`personal-finance`) en el panel de Netlify.
-2. **Detección Automática**:
-   - Netlify leerá la configuración de `netlify.toml` automáticamente:
-     - **Build command**: `npm run build`
-     - **Publish directory**: `.next`
-     - **Node version**: `20`
-3. **Vincular Variables de Entorno de Supabase**:
-   - Ve a **Site configuration** > **Environment variables** y añade las siguientes claves:
-     - `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto de Supabase (ej. `https://<tu-id>.supabase.co`).
-     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Llave pública anónima (`anon` / `public`).
-     - `SUPABASE_SERVICE_ROLE_KEY`: Llave de servicio privada (solo en contexto de servidor/funciones para Server Actions protegidas).
-4. **Desplegar**:
-   - Haz clic en **Deploy site**. Cada push a la rama principal o `develop` generará un despliegue optimizado con soporte completo para Server Components, Server Actions y middleware de autenticación.
+El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido a la rama `develop`, ejecutando de forma estricta los siguientes pasos secuenciales:
+
+1. **Checkout & Entorno**: Descarga el código fuente y configura Node.js `20.x` con caché de paquetes de NPM.
+2. **Instalación Limpia**: Ejecuta `npm ci` para replicar con exactitud el árbol de dependencias de `package-lock.json`.
+3. **Control de Calidad (QA Gates)**:
+   - `npx tsc --noEmit`: Validación estricta de tipos en TypeScript (`strict: true`).
+   - `npm run lint`: Análisis estático de código con ESLint.
+   - `npm run test:run`: Ejecución de la suite completa de 57 pruebas unitarias con Vitest.
+   - `npm run build`: Compilación y optimización de producción para Next.js 14 App Router.
+   > [!IMPORTANT]
+   > Si **cualquiera** de estos pasos falla o genera un error, el pipeline se detiene inmediatamente con código de salida diferente de `0`, bloqueando el despliegue a Netlify y protegiendo el entorno de producción.
+4. **Despliegue Automático**:
+   - **En `push` a `develop`**: Despliegue directo a producción (`--prod`).
+   - **En `pull_request` a `develop`**: Despliegue de vista previa (Deploy Preview) para auditoría antes de fusionar cambios.
+
+---
+
+### 🔑 Secretos de GitHub a Configurar
+
+Para habilitar la autenticación y el despliegue automático hacia Netlify desde GitHub Actions, debes configurar los siguientes secretos en tu repositorio de GitHub (**Settings** > **Secrets and variables** > **Actions** > **New repository secret**):
+
+| Secreto de GitHub | Origen / Dónde obtenerlo | Propósito |
+| :--- | :--- | :--- |
+| `NETLIFY_AUTH_TOKEN` | Netlify Dashboard: **User Settings** > **Applications** > **New access token** | Token de autenticación para Netlify CLI |
+| `NETLIFY_SITE_ID` | Netlify Dashboard: **Site configuration** > **General** > **Site details** > **API ID** | Identificador único del sitio en Netlify |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard: **Project Settings** > **API** > **Project URL** | URL base de la instancia de Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard: **Project Settings** > **API** > **anon public** | Llave pública para llamadas y cliente SSR |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard: **Project Settings** > **API** > **service_role secret** | Llave privada para Server Actions del backend |
 
 ---
 

@@ -1,0 +1,66 @@
+name: CI/CD Pipeline - Quality Assurance & Netlify Deployment
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa-and-deploy:
+    name: QA Gates & Netlify Deploy
+    runs-on: ubuntu-latest
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-service-role-key' }}
+
+    steps:
+      - name: 1. Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: 2. Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 3. Install Clean Dependencies
+        run: npm ci
+
+      - name: 4. QA Gate - TypeScript Static Type Check
+        run: npx tsc --noEmit
+
+      - name: 5. QA Gate - ESLint Code Style & Standards
+        run: npm run lint
+
+      - name: 6. QA Gate - Vitest Unit & Financial Logic Tests
+        run: npm run test:run
+
+      - name: 7. QA Gate - Production Optimized Build
+        run: npm run build
+
+      - name: 8. Deploy to Netlify Production (on Push to develop)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --prod --dir=.next
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: 9. Deploy to Netlify Preview (on Pull Request)
+        if: github.event_name == 'pull_request'
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --dir=.next
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
