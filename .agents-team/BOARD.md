@@ -506,6 +506,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-15 - QA VERIFIER / DEVOPS AGENT (Production Deployment Target Adjustment to 'main')
+Task: Updated .github/workflows/deploy.yml to enforce that production deployments to Netlify (--prod) trigger strictly upon push to the 'main' branch (`github.ref == 'refs/heads/main'`). Pushes to 'develop' and pull requests to 'main' or 'develop' execute all mandatory quality gates (tsc, lint, vitest, next build) and generate Netlify preview deploys. Documented 'main' as the official production release branch in README.md.
+Files modified: .github/workflows/deploy.yml, README.md, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (57/57 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

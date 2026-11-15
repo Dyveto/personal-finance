@@ -3,9 +3,11 @@ name: CI/CD Pipeline - Quality Assurance & Netlify Deployment
 on:
   push:
     branches:
+      - main
       - develop
   pull_request:
     branches:
+      - main
       - develop
 
 concurrency:
@@ -47,8 +49,8 @@ jobs:
       - name: 7. QA Gate - Production Optimized Build
         run: npm run build
 
-      - name: 8. Deploy to Netlify Production (on Push to develop)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+      - name: 8. Deploy to Netlify Production (Strictly on Push to main)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: netlify/actions/cli@master
         with:
           args: deploy --prod --dir=.next
@@ -56,8 +58,8 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
-      - name: 9. Deploy to Netlify Preview (on Pull Request)
-        if: github.event_name == 'pull_request'
+      - name: 9. Deploy to Netlify Preview (on Pull Request or develop push)
+        if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/develop')
         uses: netlify/actions/cli@master
         with:
           args: deploy --dir=.next

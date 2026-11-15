@@ -175,7 +175,7 @@ El proyecto cuenta con un flujo completamente automatizado de **Integración y D
 
 ### 🔄 Funcionamiento del Pipeline de GitHub Actions
 
-El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido a la rama `develop`, ejecutando de forma estricta los siguientes pasos secuenciales:
+El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido a las ramas `main` o `develop`, ejecutando de forma estricta los siguientes pasos secuenciales:
 
 1. **Checkout & Entorno**: Descarga el código fuente y configura Node.js `20.x` con caché de paquetes de NPM.
 2. **Instalación Limpia**: Ejecuta `npm ci` para replicar con exactitud el árbol de dependencias de `package-lock.json`.
@@ -186,9 +186,9 @@ El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido
    - `npm run build`: Compilación y optimización de producción para Next.js 14 App Router.
    > [!IMPORTANT]
    > Si **cualquiera** de estos pasos falla o genera un error, el pipeline se detiene inmediatamente con código de salida diferente de `0`, bloqueando el despliegue a Netlify y protegiendo el entorno de producción.
-4. **Despliegue Automático**:
-   - **En `push` a `develop`**: Despliegue directo a producción (`--prod`).
-   - **En `pull_request` a `develop`**: Despliegue de vista previa (Deploy Preview) para auditoría antes de fusionar cambios.
+4. **Despliegue Automático por Entornos**:
+   - **Rama de Producción Oficial (`main`)**: Cualquier `push` o merge directo hacia la rama `main` activa de forma estricta el despliegue a **producción** en Netlify (`--prod`).
+   - **Rama de Desarrollo y Previews (`develop` / Pull Requests)**: Los `pull_request` hacia `main` o `develop` y los `push` a `develop` generan despliegues de vista previa (**Deploy Previews**) para auditoría y validación previa antes de fusionar a producción.
 
 ---
 
