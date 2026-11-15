@@ -50,6 +50,15 @@ describe("Financial Engine: money.ts", () => {
       expect(sum).toBe("100000.00");
     });
 
+    it("should divide 30,800 COP (D1 expense) into 3 installments with exact penny conservation", () => {
+      const result = splitInstallments("30800", 3);
+      expect(result).toEqual(["10266.68", "10266.66", "10266.66"]);
+
+      // Invariante de suma exacta
+      const sum = result.reduce((acc, curr) => addMoney(acc, curr), "0.00");
+      expect(sum).toBe("30800.00");
+    });
+
     it("should divide evenly when divisible without remainder", () => {
       const result = splitInstallments("1200000", 6);
       expect(result).toEqual([

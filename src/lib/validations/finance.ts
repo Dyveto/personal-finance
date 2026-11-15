@@ -20,16 +20,79 @@ export const CivilDateSchema = z
   );
 
 /**
+ * Validador de día del mes (1 a 31). Acepta enteros o strings numéricos.
+ */
+export const DayOfMonthSchema = z
+  .union([
+    z.number().int("Day must be an integer"),
+    z.string().regex(/^\d+$/, "Day must be an integer").transform((s) => parseInt(s, 10)),
+  ])
+  .refine((val) => val >= 1 && val <= 31, {
+    message: "Day must be an integer between 1 and 31",
+  });
+
+/**
+ * Validador de número de cuotas (>= 1). Acepta enteros o strings numéricos.
+ */
+export const InstallmentCountSchema = z
+  .union([
+    z.number().int("Installment count must be an integer"),
+    z.string().regex(/^\d+$/, "Installment count must be an integer").transform((s) => parseInt(s, 10)),
+  ])
+  .refine((val) => val >= 1, {
+    message: "Installment count must be at least 1",
+  });
+
+/**
  * Validador de montos monetarios positivos con máximo 2 decimales.
+ * Soporta números y strings con formatos estándar o colombianos (ej: 30800, "30800", "30800.50", "30800,50", "$ 30800").
  */
 export const PositiveMoneySchema = z
   .union([
     z.number(),
-    z.string().regex(/^\d+(\.\d{1,2})?$/, "Amount must have at most 2 decimal places"),
+    z.string().trim(),
   ])
-  .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
-  .refine((val) => Number.isFinite(val) && val > 0, {
-    message: "Amount must be greater than zero",
+  .transform((val, ctx) => {
+    if (typeof val === "number") {
+      if (!Number.isFinite(val) || val <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Amount must be greater than zero",
+        });
+        return z.NEVER;
+      }
+      return parseFloat(val.toFixed(2));
+    }
+
+    let clean = val.replace(/[$ ]/g, "");
+    if (clean.includes(",") && clean.includes(".")) {
+      if (clean.lastIndexOf(",") > clean.lastIndexOf(".")) {
+        clean = clean.replace(/\./g, "").replace(",", ".");
+      } else {
+        clean = clean.replace(/,/g, "");
+      }
+    } else if (clean.includes(",")) {
+      clean = clean.replace(",", ".");
+    }
+
+    if (!/^\d+(\.\d{1,2})?$/.test(clean)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Amount must have at most 2 decimal places",
+      });
+      return z.NEVER;
+    }
+
+    const num = parseFloat(clean);
+    if (!Number.isFinite(num) || num <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Amount must be greater than zero",
+      });
+      return z.NEVER;
+    }
+
+    return num;
   });
 
 /**
@@ -38,11 +101,49 @@ export const PositiveMoneySchema = z
 export const NonNegativeMoneySchema = z
   .union([
     z.number(),
-    z.string().regex(/^\d+(\.\d{1,2})?$/, "Amount must have at most 2 decimal places"),
+    z.string().trim(),
   ])
-  .transform((val) => (typeof val === "string" ? parseFloat(val) : val))
-  .refine((val) => Number.isFinite(val) && val >= 0, {
-    message: "Initial balance cannot be negative",
+  .transform((val, ctx) => {
+    if (typeof val === "number") {
+      if (!Number.isFinite(val) || val < 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Initial balance cannot be negative",
+        });
+        return z.NEVER;
+      }
+      return parseFloat(val.toFixed(2));
+    }
+
+    let clean = val.replace(/[$ ]/g, "");
+    if (clean.includes(",") && clean.includes(".")) {
+      if (clean.lastIndexOf(",") > clean.lastIndexOf(".")) {
+        clean = clean.replace(/\./g, "").replace(",", ".");
+      } else {
+        clean = clean.replace(/,/g, "");
+      }
+    } else if (clean.includes(",")) {
+      clean = clean.replace(",", ".");
+    }
+
+    if (!/^\d+(\.\d{1,2})?$/.test(clean)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Initial balance must have at most 2 decimal places",
+      });
+      return z.NEVER;
+    }
+
+    const num = parseFloat(clean);
+    if (!Number.isFinite(num) || num < 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Initial balance cannot be negative",
+      });
+      return z.NEVER;
+    }
+
+    return num;
   })
   .default(0);
 
@@ -82,16 +183,8 @@ export const CreditCardAccountSchema = z.object({
   initial_balance: NonNegativeMoneySchema,
   color: z.string().trim().max(30).nullable().optional(),
   credit_limit: PositiveMoneySchema,
-  closing_day: z
-    .number({ message: "Closing day is required for credit cards" })
-    .int("Closing day must be an integer")
-    .min(1, "Closing day must be between 1 and 31")
-    .max(31, "Closing day must be between 1 and 31"),
-  payment_due_day: z
-    .number({ message: "Payment due day is required for credit cards" })
-    .int("Payment due day must be an integer")
-    .min(1, "Payment due day must be between 1 and 31")
-    .max(31, "Payment due day must be between 1 and 31"),
+  closing_day: DayOfMonthSchema,
+  payment_due_day: DayOfMonthSchema,
 });
 
 /**
@@ -122,11 +215,7 @@ export const CreateTransactionSchema = z
     }),
     transaction_date: CivilDateSchema,
     is_installment: z.boolean().default(false),
-    installment_count: z
-      .number()
-      .int("Installment count must be an integer")
-      .min(1, "Installment count must be at least 1")
-      .default(1),
+    installment_count: InstallmentCountSchema.default(1),
     notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
   })
   .superRefine((data, ctx) => {
@@ -160,10 +249,7 @@ export const CreateInstallmentPurchaseSchema = z.object({
     .max(255, "Description cannot exceed 255 characters"),
   amount: PositiveMoneySchema,
   transaction_date: CivilDateSchema,
-  installment_count: z
-    .number()
-    .int("Installment count must be an integer")
-    .min(1, "Installment count must be at least 1"),
+  installment_count: InstallmentCountSchema,
   notes: z.string().trim().max(1000).nullable().optional(),
 });
 

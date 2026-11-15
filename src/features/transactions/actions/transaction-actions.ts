@@ -182,7 +182,7 @@ export async function createTransaction(
       amount: parseFloat(amountStr),
       transaction_type: validated.transaction_type,
       transaction_date: validated.transaction_date,
-      is_installment: validated.is_installment,
+      is_installment: validated.installment_count > 1,
       installment_count: validated.installment_count,
       notes: validated.notes ?? null,
     };

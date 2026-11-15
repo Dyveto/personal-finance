@@ -67,6 +67,46 @@ describe("Validation Schemas: finance.ts", () => {
       expect(result.success).toBe(false);
     });
 
+    it("should accept valid Bancolombia credit card with closing_day and payment_due_day", () => {
+      const bancolombiaCard = {
+        name: "Mastercard Black Bancolombia",
+        account_type: "credit_card" as const,
+        institution: "Bancolombia",
+        credit_limit: 15000000,
+        closing_day: 15,
+        payment_due_day: 5,
+        initial_balance: 0,
+      };
+      const result = CreateAccountSchema.safeParse(bancolombiaCard);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.account_type).toBe("credit_card");
+        if (result.data.account_type === "credit_card") {
+          expect(result.data.closing_day).toBe(15);
+          expect(result.data.payment_due_day).toBe(5);
+          expect(result.data.credit_limit).toBe(15000000);
+        }
+      }
+    });
+
+    it("should accept string numeric closing_day and payment_due_day from forms", () => {
+      const formInput = {
+        name: "Visa Bancolombia",
+        account_type: "credit_card" as const,
+        institution: "Bancolombia",
+        credit_limit: "5000000",
+        closing_day: "20",
+        payment_due_day: "10",
+      };
+      const result = CreateAccountSchema.safeParse(formInput);
+      expect(result.success).toBe(true);
+      if (result.success && result.data.account_type === "credit_card") {
+        expect(result.data.closing_day).toBe(20);
+        expect(result.data.payment_due_day).toBe(10);
+        expect(result.data.credit_limit).toBe(5000000);
+      }
+    });
+
     it("should reject negative initial balance or credit limit <= 0", () => {
       const negativeBalance = {
         name: "Efectivo",
@@ -89,6 +129,44 @@ describe("Validation Schemas: finance.ts", () => {
   describe("CreateTransactionSchema", () => {
     const validAccountId = "11111111-1111-4111-a111-111111111111";
     const validCategoryId = "22222222-2222-4222-a222-222222222222";
+
+    it("should accept D1 expense of 30800 COP with various money formats", () => {
+      const d1Expense = {
+        account_id: validAccountId,
+        category_id: validCategoryId,
+        description: "Compra D1 víveres",
+        amount: 30800,
+        transaction_type: "expense" as const,
+        transaction_date: "2026-11-14",
+      };
+      const result = CreateTransactionSchema.safeParse(d1Expense);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.amount).toBe(30800);
+      }
+
+      // Con formato string con decimales
+      const d1String = {
+        ...d1Expense,
+        amount: "30800.00",
+      };
+      const resString = CreateTransactionSchema.safeParse(d1String);
+      expect(resString.success).toBe(true);
+      if (resString.success) {
+        expect(resString.data.amount).toBe(30800);
+      }
+
+      // Con formato con coma decimal
+      const d1Comma = {
+        ...d1Expense,
+        amount: "30800,50",
+      };
+      const resComma = CreateTransactionSchema.safeParse(d1Comma);
+      expect(resComma.success).toBe(true);
+      if (resComma.success) {
+        expect(resComma.data.amount).toBe(30800.5);
+      }
+    });
 
     it("should accept valid standard expense transaction", () => {
       const validExpense = {
