@@ -371,7 +371,7 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 
 | ID | Severity | File | Description | Assigned to | Status |
 |---|---|---|---|---|---|
-| - | - | - | No active bugs registered | - | RESOLVED |
+| BUG-001 | CRITICAL | src/components/layout/Sidebar.tsx, layout.tsx | `TypeError: Cannot read properties of null (reading 'useContext')` caused by client layout wrapping server children and unsafe pathname handling. Resolved by creating DashboardShell client wrapper, converting layout.tsx to Server Component, safeguarding pathname with fallback, and adding 'use client' to button, card, input. | FRONTEND | RESOLVED |
 
 Severity:
 
@@ -479,6 +479,13 @@ Handoff status: COMPLETED
 Task: Enhanced Zod schemas and Server Actions for frictionless transaction and account registration. Validated Bancolombia card setup (closing_day, payment_due_day 1..31), D1 expense tracking (30.800 COP in cash, debit or credit), resilient string/number money parsing, and verified splitInstallments distribution without database duplication.
 Files modified: src/lib/validations/finance.ts, src/features/transactions/actions/transaction-actions.ts, tests/unit/validations.test.ts, tests/unit/finance.test.ts, .agents-team/BOARD.md
 Verification commands: npm run test:run (57/57 passed), npx tsc --noEmit (0), npm run lint (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-15 - FRONTEND AGENT (Fix useContext Navigation & Server/Client Boundary)
+Task: Audited and resolved runtime TypeError: Cannot read properties of null (reading 'useContext') by decoupling DashboardShell (Client Component) from DashboardLayout (Server Component), adding 'use client' to UI primitives (button, card, input), and hardening pathname handling in Sidebar.
+Files modified: src/app/(dashboard)/layout.tsx, src/components/layout/DashboardShell.tsx, src/components/layout/Sidebar.tsx, src/components/ui/button.tsx, src/components/ui/card.tsx, src/components/ui/input.tsx, .agents-team/BOARD.md
+Verification commands: npm run build (0), npm run test:run (57/57 passed), npx tsc --noEmit (0), npm run lint (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 

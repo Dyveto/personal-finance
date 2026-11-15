@@ -53,11 +53,17 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   const router = useRouter();
 
   const handleSignOut = async () => {
-    await signOut();
-    if (onNavigate) onNavigate();
-    router.push("/login");
-    router.refresh();
+    try {
+      await signOut();
+      if (onNavigate) onNavigate();
+      router.push("/login");
+      router.refresh();
+    } catch (err) {
+      console.error("SignOut error:", err);
+    }
   };
+
+  const currentPath = pathname || "";
 
   return (
     <aside
@@ -89,8 +95,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
           const Icon = item.icon;
           const isActive =
             item.href === "/"
-              ? pathname === "/" || pathname === "/dashboard"
-              : pathname.startsWith(item.href);
+              ? currentPath === "/" || currentPath === "/dashboard"
+              : currentPath.startsWith(item.href);
 
           return (
             <Link
