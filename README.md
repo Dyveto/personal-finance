@@ -169,6 +169,29 @@ npx supabase db push
 
 ---
 
+## 🌐 Despliegue en Netlify
+
+El proyecto está preconfigurado para un despliegue continuo y sin fricción en **Netlify** mediante el archivo `netlify.toml`.
+
+### Pasos Rápidos de Despliegue:
+
+1. **Importar Proyecto**:
+   - Conecta tu repositorio de GitHub (`personal-finance`) en el panel de Netlify.
+2. **Detección Automática**:
+   - Netlify leerá la configuración de `netlify.toml` automáticamente:
+     - **Build command**: `npm run build`
+     - **Publish directory**: `.next`
+     - **Node version**: `20`
+3. **Vincular Variables de Entorno de Supabase**:
+   - Ve a **Site configuration** > **Environment variables** y añade las siguientes claves:
+     - `NEXT_PUBLIC_SUPABASE_URL`: URL del proyecto de Supabase (ej. `https://<tu-id>.supabase.co`).
+     - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Llave pública anónima (`anon` / `public`).
+     - `SUPABASE_SERVICE_ROLE_KEY`: Llave de servicio privada (solo en contexto de servidor/funciones para Server Actions protegidas).
+4. **Desplegar**:
+   - Haz clic en **Deploy site**. Cada push a la rama principal o `develop` generará un despliegue optimizado con soporte completo para Server Components, Server Actions y middleware de autenticación.
+
+---
+
 ## 🧪 Comandos y Scripts Disponibles
 
 El proyecto cuenta con un conjunto de comandos estrictos de calidad integrados:
@@ -178,7 +201,7 @@ El proyecto cuenta con un conjunto de comandos estrictos de calidad integrados:
 | `npm run dev` | Inicia el servidor de desarrollo en `http://localhost:3000` con hot-reloading |
 | `npm run build` | Genera la compilación optimizada para producción |
 | `npm run start` | Inicia el servidor optimizado de producción |
-| `npm run test:run` | Ejecuta la suite completa de 53 pruebas unitarias con Vitest (modo CI) |
+| `npm run test:run` | Ejecuta la suite completa de 57 pruebas unitarias con Vitest (modo CI) |
 | `npm run test` | Ejecuta Vitest en modo interactivo con recarga en caliente |
 | `npm run lint` | Ejecuta el análisis estático de código con ESLint |
 | `npx tsc --noEmit` | Verifica la integridad de tipos en TypeScript (`strict: true`) |

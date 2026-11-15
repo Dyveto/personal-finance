@@ -490,10 +490,10 @@ Verification commands: npm run build (0), npm run test:run (57/57 passed), npx t
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
-### 2026-11-15 - FRONTEND AGENT / TECHNICAL WRITER (Netlify Deployment Configuration)
-Task: Created netlify.toml at repository root configured for Next.js 14 App Router with @netlify/plugin-nextjs runtime plugin, NODE_VERSION = 20, and .next publish directory. Verified PWA manifest compatibility.
-Files created/modified: netlify.toml, public/manifest.json, .agents-team/BOARD.md
-Verification commands: npm run test:run (57/57 passed), npx tsc --noEmit (0)
+### 2026-11-15 - FRONTEND AGENT / TECHNICAL WRITER (Netlify Deployment Configuration & Guide)
+Task: Configured netlify.toml at repository root with Next.js 14 App Router specifications (build command npm run build, publish .next, NODE_VERSION = 20, @netlify/plugin-nextjs). Authored comprehensive Netlify deployment instructions in README.md linking Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY).
+Files created/modified: netlify.toml, README.md, .agents-team/BOARD.md
+Verification commands: npm run build (0), npm run test:run (57/57 passed), npx tsc --noEmit (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
