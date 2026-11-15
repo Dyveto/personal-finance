@@ -242,6 +242,7 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- netlify.toml
 - src/app/layout.tsx
 - src/app/manifest.ts
 - src/app/(dashboard)/layout.tsx
@@ -486,6 +487,13 @@ Handoff status: COMPLETED
 Task: Audited and resolved runtime TypeError: Cannot read properties of null (reading 'useContext') by decoupling DashboardShell (Client Component) from DashboardLayout (Server Component), adding 'use client' to UI primitives (button, card, input), and hardening pathname handling in Sidebar.
 Files modified: src/app/(dashboard)/layout.tsx, src/components/layout/DashboardShell.tsx, src/components/layout/Sidebar.tsx, src/components/ui/button.tsx, src/components/ui/card.tsx, src/components/ui/input.tsx, .agents-team/BOARD.md
 Verification commands: npm run build (0), npm run test:run (57/57 passed), npx tsc --noEmit (0), npm run lint (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-15 - FRONTEND AGENT / TECHNICAL WRITER (Netlify Deployment Configuration)
+Task: Created netlify.toml at repository root configured for Next.js 14 App Router with @netlify/plugin-nextjs runtime plugin, NODE_VERSION = 20, and .next publish directory. Verified PWA manifest compatibility.
+Files created/modified: netlify.toml, public/manifest.json, .agents-team/BOARD.md
+Verification commands: npm run test:run (57/57 passed), npx tsc --noEmit (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
