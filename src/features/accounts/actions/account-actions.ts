@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { CreateAccountSchema, type CreateAccountInput } from "@/lib/validations/finance";
+import {
+  CreateAccountSchema,
+  UpdateAccountSchema,
+  type CreateAccountInput,
+  type UpdateAccountInput,
+} from "@/lib/validations/finance";
 import type { Database } from "@/types/database.types";
 import type { ActionResult } from "@/types/actions";
 
@@ -147,6 +152,119 @@ export async function createAccount(
     return { success: true, data: createdAccount };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error while creating account";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Actualiza una cuenta bancaria, efectivo o tarjeta de crédito existente del usuario autenticado.
+ * Verifica rigurosamente la sesión del usuario y la titularidad de la cuenta.
+ *
+ * @param accountId UUID de la cuenta a modificar.
+ * @param rawInput Datos de la cuenta a validar mediante UpdateAccountSchema.
+ */
+export async function updateAccount(
+  accountId: string,
+  rawInput: unknown
+): Promise<ActionResult<AccountRow>> {
+  try {
+    if (
+      !accountId ||
+      typeof accountId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(accountId)
+    ) {
+      return { success: false, error: "Identificador de cuenta inválido" };
+    }
+
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const parseResult = UpdateAccountSchema.safeParse(rawInput);
+    if (!parseResult.success) {
+      const formattedErrors = parseResult.error.flatten().fieldErrors;
+      return {
+        success: false,
+        error: "Validation failed. Please verify the submitted data.",
+        validationErrors: formattedErrors,
+      };
+    }
+
+    const validatedData: UpdateAccountInput = parseResult.data;
+
+    const balance =
+      validatedData.current_balance ?? validatedData.balance ?? validatedData.initial_balance;
+
+    const updatePayload: Database["public"]["Tables"]["accounts"]["Update"] = {
+      name: validatedData.name,
+      account_type: validatedData.account_type,
+      institution: validatedData.institution ?? null,
+      currency: validatedData.currency ?? "COP",
+      color: validatedData.color ?? null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (balance !== undefined) {
+      updatePayload.current_balance = balance;
+    }
+
+    if (validatedData.is_active !== undefined) {
+      updatePayload.is_active = validatedData.is_active;
+    }
+
+    if (validatedData.account_type === "credit_card") {
+      if (validatedData.credit_limit !== undefined) {
+        updatePayload.credit_limit = validatedData.credit_limit;
+      }
+      if (validatedData.closing_day !== undefined) {
+        updatePayload.closing_day = validatedData.closing_day;
+      }
+      if (validatedData.payment_due_day !== undefined) {
+        updatePayload.payment_due_day = validatedData.payment_due_day;
+      }
+    } else {
+      updatePayload.credit_limit = null;
+      updatePayload.closing_day = null;
+      updatePayload.payment_due_day = null;
+    }
+
+    const { data: updatedAccount, error: updateError } = await supabase
+      .from("accounts")
+      .update(updatePayload)
+      .eq("id", accountId)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateError) {
+      if (updateError.message.includes("accounts_credit_rules")) {
+        return {
+          success: false,
+          error: "Los datos de la tarjeta no cumplen con las reglas financieras (cupo > 0 y días entre 1 y 31).",
+        };
+      }
+      return { success: false, error: `Failed to update account: ${updateError.message}` };
+    }
+
+    if (!updatedAccount) {
+      return { success: false, error: "Account not found or access denied" };
+    }
+
+    revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
+    revalidatePath("/transactions");
+    revalidatePath("/");
+
+    return { success: true, data: updatedAccount };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while updating account";
     return { success: false, error: message };
   }
 }

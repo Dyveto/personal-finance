@@ -18,7 +18,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-import { createAccount, listAccounts } from "@/features/accounts/actions/account-actions";
+import { createAccount, listAccounts, updateAccount } from "@/features/accounts/actions/account-actions";
 import { createTransaction, createInstallmentPurchase } from "@/features/transactions/actions/transaction-actions";
 
 describe("Server Actions: account-actions.ts", () => {
@@ -82,6 +82,90 @@ describe("Server Actions: account-actions.ts", () => {
     if (result.success) {
       expect(result.data.name).toBe("Billetera");
       expect(result.data.user_id).toBe("user-123");
+    }
+  });
+
+  it("should reject updateAccount if user is not authenticated", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+
+    const result = await updateAccount("11111111-1111-4111-a111-111111111111", {
+      name: "Cuenta Actualizada",
+      account_type: "bank",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Unauthorized");
+    }
+  });
+
+  it("should reject updateAccount with invalid accountId UUID", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    const result = await updateAccount("invalid-uuid", {
+      name: "Cuenta",
+      account_type: "cash",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("inválido");
+    }
+  });
+
+  it("should reject updateAccount when validation fails", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    const result = await updateAccount("11111111-1111-4111-a111-111111111111", {
+      name: "",
+      account_type: "invalid_type",
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Validation failed");
+    }
+  });
+
+  it("should update a credit card account successfully with closing and payment days", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    const mockSingle = vi.fn().mockResolvedValueOnce({
+      data: {
+        id: "11111111-1111-4111-a111-111111111111",
+        user_id: "user-123",
+        name: "Bancolombia Black Editada",
+        account_type: "credit_card",
+        credit_limit: 8000000,
+        closing_day: 15,
+        payment_due_day: 5,
+        current_balance: 120000,
+      },
+      error: null,
+    });
+
+    const mockSelect = vi.fn().mockReturnValue({ single: mockSingle });
+    const mockEqUser = vi.fn().mockReturnValue({ select: mockSelect });
+    const mockEqId = vi.fn().mockReturnValue({ eq: mockEqUser });
+    const mockUpdate = vi.fn().mockReturnValue({ eq: mockEqId });
+
+    mockFrom.mockReturnValueOnce({ update: mockUpdate });
+
+    const result = await updateAccount("11111111-1111-4111-a111-111111111111", {
+      name: "Bancolombia Black Editada",
+      account_type: "credit_card",
+      credit_limit: 8000000,
+      closing_day: 15,
+      payment_due_day: 5,
+      current_balance: 120000,
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.name).toBe("Bancolombia Black Editada");
+      expect(result.data.closing_day).toBe(15);
+      expect(result.data.payment_due_day).toBe(5);
+      expect(result.data.credit_limit).toBe(8000000);
     }
   });
 });

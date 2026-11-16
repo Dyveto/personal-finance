@@ -528,6 +528,13 @@ Verification commands: npx supabase migration list --remote (100% sync), npx tsc
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - BACKEND AGENT (Account & Credit Card Update Server Action & Validation)
+Task: Implemented server-side business logic and Zod validation schemas for account and credit card editing. Created `UpdateAccountSchema` in `src/lib/validations/account.ts` (and exported from `finance.ts`) validating name, account_type, balance, and credit card rules (closing_day 1..31, payment_due_day 1..31, credit_limit > 0). Implemented Server Action `updateAccount(accountId, rawInput)` enforcing authenticated user session via `supabase.auth.getUser()`, applying strict ownership filtering (`eq('id', accountId).eq('user_id', user.id)`), translating Supabase constraint errors, and revalidating routes. Added comprehensive unit tests in `actions.test.ts` (63/63 passing).
+Files created/modified: src/lib/validations/account.ts, src/lib/validations/finance.ts, src/features/accounts/actions/account-actions.ts, tests/unit/actions.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
