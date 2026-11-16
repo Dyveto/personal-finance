@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import {
   Wallet,
   CreditCard,
+  CreditCard as CardIcon,
   Building2,
   PlusCircle,
   Calendar,
-  CreditCard as CardIcon,
   ShieldAlert,
+  Pencil,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +33,8 @@ interface AccountsClientViewProps {
 export function AccountsClientView({ initialAccounts }: AccountsClientViewProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<AccountRow | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountRow[]>(initialAccounts);
   const [activeTab, setActiveTab] = useState<"all" | "standard" | "credit">("all");
 
@@ -62,6 +66,18 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
   const handleAccountCreated = (newAccount: AccountRow) => {
     setAccounts((prev) => [newAccount, ...prev]);
     setIsDialogOpen(false);
+    setSuccessNotice(`Cuenta "${newAccount.name}" registrada exitosamente.`);
+    setTimeout(() => setSuccessNotice(null), 5000);
+    router.refresh();
+  };
+
+  const handleAccountUpdated = (updatedAccount: AccountRow) => {
+    setAccounts((prev) =>
+      prev.map((acc) => (acc.id === updatedAccount.id ? updatedAccount : acc))
+    );
+    setEditingAccount(null);
+    setSuccessNotice(`Cuenta "${updatedAccount.name}" actualizada exitosamente.`);
+    setTimeout(() => setSuccessNotice(null), 5000);
     router.refresh();
   };
 
@@ -98,7 +114,48 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
             />
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Edición de Cuenta */}
+        <Dialog
+          open={!!editingAccount}
+          onOpenChange={(open) => {
+            if (!open) setEditingAccount(null);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Editar Cuenta o Tarjeta</DialogTitle>
+              <DialogDescription>
+                Modifica los detalles, saldo o configuración de corte y pago de tu cuenta.
+              </DialogDescription>
+            </DialogHeader>
+            {editingAccount && (
+              <AccountForm
+                account={editingAccount}
+                onSuccess={handleAccountUpdated}
+                onCancel={() => setEditingAccount(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
+
+      {/* Banner de Notificación de Éxito */}
+      {successNotice && (
+        <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <span>{successNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSuccessNotice(null)}
+            className="text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-semibold"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -299,11 +356,20 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                  <span>Moneda: {acc.currency}</span>
                   <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Activa</span>
                   </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingAccount(acc)}
+                    className="h-7 px-2.5 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span>Editar</span>
+                  </Button>
                 </div>
               </div>
             );

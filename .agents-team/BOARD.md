@@ -226,6 +226,7 @@ Responsibilities:
 - [x] Implement credit cards dedicated UI view (/credit-cards).
 - [x] Implement transactions UI (history, search, filters by account and type).
 - [x] Implement forms and validation feedback (AccountForm, TransactionForm with installment split preview).
+- [x] Implement account and credit card editing modal UI with react-hook-form, Zod and updateAccount Server Action.
 - [x] Implement charts with Recharts (FinancialCharts: monthly comparison & category breakdown).
 - [x] Implement credit card installment projections (InstallmentProjectionsCard & projections.ts).
 - [x] Implement responsive layouts.
@@ -264,7 +265,7 @@ Files created/modified:
 - tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
 
 Backend functions consumed:
-- `createAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
+- `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
 - `listCategories()` de `@/features/categories/actions/category-actions`
 - `splitInstallments()`, `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
@@ -539,6 +540,13 @@ Handoff status: COMPLETED
 ### 2026-11-16 - BACKEND AGENT (Fix BUG-003: Async Server Action getBaseUrl)
 Task: Resolved Next.js compile error 'Server actions must be async functions' by converting exported helper `getBaseUrl()` in `src/features/auth/actions/auth-actions.ts` to `async function getBaseUrl(): Promise<string>` to comply with Next.js 'use server' file rules. Updated calls in `signUp` to `await getBaseUrl()` and updated unit tests in `tests/unit/auth.test.ts`. Verified full production build compiles with exit code 0.
 Files modified: src/features/auth/actions/auth-actions.ts, tests/unit/auth.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - FRONTEND AGENT (Account & Credit Card Edit UI Modal & Form Integration)
+Task: Implemented interactive editing UI for accounts and credit cards in AccountsClientView and AccountForm. Adapted AccountForm to support both creation and edition modes with pre-filled default values, reactive form validation via Zod and react-hook-form, and integrated with `updateAccount` Server Action. Added an "Editar" button to each account card in AccountsClientView, integrated edit modal Dialog, optimistic/local state update, and alert notification banners.
+Files modified: src/features/accounts/components/AccountForm.tsx, src/features/accounts/components/AccountsClientView.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED

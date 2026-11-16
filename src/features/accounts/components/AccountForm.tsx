@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,7 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createAccount, type AccountRow } from "@/features/accounts/actions/account-actions";
+import {
+  createAccount,
+  updateAccount,
+  type AccountRow,
+} from "@/features/accounts/actions/account-actions";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 const AccountFormValidationSchema = z
@@ -74,32 +78,50 @@ const AccountFormValidationSchema = z
 type AccountFormValues = z.infer<typeof AccountFormValidationSchema>;
 
 interface AccountFormProps {
+  account?: AccountRow | null;
   onSuccess?: (account: AccountRow) => void;
   onCancel?: () => void;
 }
 
-export function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
+export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const isEditing = !!account;
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<AccountFormValues>({
     resolver: zodResolver(AccountFormValidationSchema),
     defaultValues: {
-      name: "",
-      account_type: "bank",
-      institution: "",
-      initial_balance: "0",
-      credit_limit: "",
-      closing_day: "15",
-      payment_due_day: "5",
-      color: "",
+      name: account?.name || "",
+      account_type: account?.account_type || "bank",
+      institution: account?.institution || "",
+      initial_balance: account ? String(account.current_balance ?? "0") : "0",
+      credit_limit: account?.credit_limit ? String(account.credit_limit) : "",
+      closing_day: account?.closing_day ? String(account.closing_day) : "15",
+      payment_due_day: account?.payment_due_day ? String(account.payment_due_day) : "5",
+      color: account?.color || "",
     },
   });
+
+  useEffect(() => {
+    if (account) {
+      reset({
+        name: account.name,
+        account_type: account.account_type,
+        institution: account.institution || "",
+        initial_balance: String(account.current_balance ?? "0"),
+        credit_limit: account.credit_limit ? String(account.credit_limit) : "",
+        closing_day: account.closing_day ? String(account.closing_day) : "15",
+        payment_due_day: account.payment_due_day ? String(account.payment_due_day) : "5",
+        color: account.color || "",
+      });
+    }
+  }, [account, reset]);
 
   const selectedType = watch("account_type");
 
@@ -107,44 +129,83 @@ export function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
     try {
       setServerError(null);
 
-      // Preparar payload para la Server Action
-      const payload =
-        values.account_type === "credit_card"
-          ? {
-              name: values.name,
-              account_type: "credit_card" as const,
-              institution: values.institution || null,
-              currency: "COP",
-              initial_balance: parseFloat(values.initial_balance || "0"),
-              credit_limit: parseFloat(values.credit_limit || "0"),
-              closing_day: parseInt(values.closing_day || "15", 10),
-              payment_due_day: parseInt(values.payment_due_day || "5", 10),
-              color: values.color || null,
-            }
-          : {
-              name: values.name,
-              account_type: values.account_type,
-              institution: values.institution || null,
-              currency: "COP",
-              initial_balance: parseFloat(values.initial_balance || "0"),
-              credit_limit: null,
-              closing_day: null,
-              payment_due_day: null,
-              color: values.color || null,
-            };
+      if (isEditing && account) {
+        // Modo Edición: consume updateAccount
+        const payload =
+          values.account_type === "credit_card"
+            ? {
+                name: values.name,
+                account_type: "credit_card" as const,
+                institution: values.institution || null,
+                currency: "COP",
+                current_balance: parseFloat(values.initial_balance || "0"),
+                credit_limit: parseFloat(values.credit_limit || "0"),
+                closing_day: parseInt(values.closing_day || "15", 10),
+                payment_due_day: parseInt(values.payment_due_day || "5", 10),
+                color: values.color || null,
+              }
+            : {
+                name: values.name,
+                account_type: values.account_type,
+                institution: values.institution || null,
+                currency: "COP",
+                current_balance: parseFloat(values.initial_balance || "0"),
+                credit_limit: null,
+                closing_day: null,
+                payment_due_day: null,
+                color: values.color || null,
+              };
 
-      const result = await createAccount(payload);
+        const result = await updateAccount(account.id, payload);
 
-      if (!result.success) {
-        setServerError(result.error);
-        return;
-      }
+        if (!result.success) {
+          setServerError(result.error);
+          return;
+        }
 
-      if (onSuccess) {
-        onSuccess(result.data);
+        if (onSuccess) {
+          onSuccess(result.data);
+        }
+      } else {
+        // Modo Creación: consume createAccount
+        const payload =
+          values.account_type === "credit_card"
+            ? {
+                name: values.name,
+                account_type: "credit_card" as const,
+                institution: values.institution || null,
+                currency: "COP",
+                initial_balance: parseFloat(values.initial_balance || "0"),
+                credit_limit: parseFloat(values.credit_limit || "0"),
+                closing_day: parseInt(values.closing_day || "15", 10),
+                payment_due_day: parseInt(values.payment_due_day || "5", 10),
+                color: values.color || null,
+              }
+            : {
+                name: values.name,
+                account_type: values.account_type,
+                institution: values.institution || null,
+                currency: "COP",
+                initial_balance: parseFloat(values.initial_balance || "0"),
+                credit_limit: null,
+                closing_day: null,
+                payment_due_day: null,
+                color: values.color || null,
+              };
+
+        const result = await createAccount(payload);
+
+        if (!result.success) {
+          setServerError(result.error);
+          return;
+        }
+
+        if (onSuccess) {
+          onSuccess(result.data);
+        }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error inesperado al crear la cuenta";
+      const msg = err instanceof Error ? err.message : "Error inesperado al guardar la cuenta";
       setServerError(msg);
     }
   };
@@ -210,7 +271,13 @@ export function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
       {/* Saldo / Deuda Inicial */}
       <div className="space-y-1.5">
         <Label htmlFor="initial_balance">
-          {selectedType === "credit_card" ? "Deuda Actual Inicial (COP)" : "Saldo Inicial (COP)"}
+          {selectedType === "credit_card"
+            ? isEditing
+              ? "Deuda Actual (COP)"
+              : "Deuda Actual Inicial (COP)"
+            : isEditing
+            ? "Saldo Disponible (COP)"
+            : "Saldo Inicial (COP)"}
         </Label>
         <Input
           id="initial_balance"
@@ -303,10 +370,10 @@ export function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Guardando...
+              {isEditing ? "Guardando cambios..." : "Creando cuenta..."}
             </>
           ) : (
-            "Crear Cuenta"
+            isEditing ? "Guardar Cambios" : "Crear Cuenta"
           )}
         </Button>
       </div>
