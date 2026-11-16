@@ -284,11 +284,17 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
           type="number"
           step="0.01"
           placeholder="0.00"
+          disabled={isEditing && selectedType === "credit_card"}
+          className={isEditing && selectedType === "credit_card" ? "bg-slate-100 dark:bg-slate-800 text-slate-500 cursor-not-allowed" : ""}
           {...register("initial_balance")}
         />
-        {errors.initial_balance && (
+        {isEditing && selectedType === "credit_card" ? (
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            El saldo adeudado de la tarjeta se calcula automáticamente a partir de compras y pagos de extractos.
+          </p>
+        ) : errors.initial_balance ? (
           <p className="text-xs text-rose-500">{errors.initial_balance.message}</p>
-        )}
+        ) : null}
       </div>
 
       {/* Campos condicionales para Tarjeta de Crédito */}

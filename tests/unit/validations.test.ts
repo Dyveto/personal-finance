@@ -3,6 +3,7 @@ import {
   CreateAccountSchema,
   CreateTransactionSchema,
   CreateInstallmentPurchaseSchema,
+  MarkExtractAsPaidSchema,
 } from "@/lib/validations/finance";
 
 describe("Validation Schemas: finance.ts", () => {
@@ -279,6 +280,68 @@ describe("Validation Schemas: finance.ts", () => {
         installment_count: 0,
       };
       expect(CreateInstallmentPurchaseSchema.safeParse(invalid).success).toBe(false);
+    });
+  });
+
+  describe("MarkExtractAsPaidSchema", () => {
+    const validCardId = "11111111-1111-4111-a111-111111111111";
+    const validBankId = "22222222-2222-4222-a222-222222222222";
+
+    it("should accept valid statement payment inputs with month format YYYY-MM", () => {
+      const input = {
+        statementMonth: "2026-04",
+        creditCardAccountId: validCardId,
+        paymentAccountId: validBankId,
+        amount: 450000,
+      };
+      const result = MarkExtractAsPaidSchema.safeParse(input);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.statementMonth).toBe("2026-04");
+        expect(result.data.amount).toBe(450000);
+      }
+    });
+
+    it("should accept statement payment without payment account and without explicit amount", () => {
+      const minimal = {
+        statementMonth: "2026-05",
+        creditCardAccountId: validCardId,
+      };
+      const result = MarkExtractAsPaidSchema.safeParse(minimal);
+      expect(result.success).toBe(true);
+    });
+
+    it("should reject invalid statementMonth formats", () => {
+      expect(
+        MarkExtractAsPaidSchema.safeParse({
+          statementMonth: "2026-4", // Must be 2 digits
+          creditCardAccountId: validCardId,
+        }).success
+      ).toBe(false);
+
+      expect(
+        MarkExtractAsPaidSchema.safeParse({
+          statementMonth: "April-2026",
+          creditCardAccountId: validCardId,
+        }).success
+      ).toBe(false);
+    });
+
+    it("should reject invalid UUIDs or negative amount", () => {
+      expect(
+        MarkExtractAsPaidSchema.safeParse({
+          statementMonth: "2026-04",
+          creditCardAccountId: "invalid-uuid",
+        }).success
+      ).toBe(false);
+
+      expect(
+        MarkExtractAsPaidSchema.safeParse({
+          statementMonth: "2026-04",
+          creditCardAccountId: validCardId,
+          amount: -100,
+        }).success
+      ).toBe(false);
     });
   });
 });

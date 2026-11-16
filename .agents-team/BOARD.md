@@ -561,6 +561,13 @@ Verification commands: npx supabase db push --remote --yes (0), npx supabase mig
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - BACKEND AGENT (Credit Card Statement Payment Logic & Balance Integrity)
+Task: Implemented business logic and Server Action `markExtractAsPaid` for credit card statement settlement. Added Zod validation schema `MarkExtractAsPaidSchema` validating statementMonth (YYYY-MM), account IDs, optional payment accounts and amounts. The action identifies active expenses and installment charges corresponding to the statement period, marks them as paid (`is_paid = true`, `paid_at = NOW()`), records or updates the statement in `public.credit_card_statements`, reduces outstanding credit card debt, and optionally debits the designated bank/cash account while registering the corresponding expense transaction. Safeguarded `updateAccount` to preserve credit card balance and prevent arbitrary manual balance modifications that corrupt cuota projections and transaction history. Added 9 new unit tests covering schema validation and statement actions (72/72 tests passing).
+Files created/modified: src/features/credit-cards/actions/statement-actions.ts, src/lib/validations/statement.ts, src/lib/validations/finance.ts, src/features/accounts/actions/account-actions.ts, src/features/accounts/components/AccountForm.tsx, tests/unit/actions.test.ts, tests/unit/validations.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (72/72 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

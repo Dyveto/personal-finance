@@ -20,10 +20,13 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import { createAccount, listAccounts, updateAccount } from "@/features/accounts/actions/account-actions";
 import { createTransaction, createInstallmentPurchase } from "@/features/transactions/actions/transaction-actions";
+import { markExtractAsPaid } from "@/features/credit-cards/actions/statement-actions";
 
 describe("Server Actions: account-actions.ts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetUser.mockReset();
+    mockFrom.mockReset();
   });
 
   it("should reject listAccounts if user is not authenticated", async () => {
@@ -100,8 +103,6 @@ describe("Server Actions: account-actions.ts", () => {
   });
 
   it("should reject updateAccount with invalid accountId UUID", async () => {
-    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
-
     const result = await updateAccount("invalid-uuid", {
       name: "Cuenta",
       account_type: "cash",
@@ -173,6 +174,8 @@ describe("Server Actions: account-actions.ts", () => {
 describe("Server Actions: transaction-actions.ts", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetUser.mockReset();
+    mockFrom.mockReset();
   });
 
   const validAccountId = "11111111-1111-4111-a111-111111111111";
@@ -334,6 +337,287 @@ describe("Server Actions: transaction-actions.ts", () => {
       expect(result.data.installments).toEqual(["33333.34", "33333.33", "33333.33"]);
       expect(result.data.transaction.is_installment).toBe(true);
       expect(result.data.transaction.installment_count).toBe(3);
+    }
+  });
+});
+
+describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetUser.mockReset();
+    mockFrom.mockReset();
+  });
+
+  const validCardId = "11111111-1111-4111-a111-111111111111";
+  const validBankId = "22222222-2222-4222-a222-222222222222";
+
+  it("should reject markExtractAsPaid if user is not authenticated", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+
+    const result = await markExtractAsPaid("2026-04", validCardId);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Unauthorized");
+    }
+  });
+
+  it("should reject markExtractAsPaid when validation fails", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    const result = await markExtractAsPaid("invalid-month", validCardId);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("Validation failed");
+    }
+  });
+
+  it("should reject if account is not a credit card", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    mockFrom.mockReturnValueOnce({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: { id: validCardId, account_type: "bank", is_active: true },
+              error: null,
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const result = await markExtractAsPaid("2026-04", validCardId);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toContain("not a credit card");
+    }
+  });
+
+  it("should successfully mark statement as paid, update transactions and reduce credit card debt", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    // 1. Mock credit card account query
+    const mockCard = {
+      id: validCardId,
+      user_id: "user-123",
+      name: "Visa Platinum",
+      account_type: "credit_card",
+      current_balance: 500000,
+      closing_day: 15,
+      payment_due_day: 5,
+      is_active: true,
+    };
+
+    const mockSelectCard = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValueOnce({ data: mockCard, error: null }),
+        }),
+      }),
+    });
+
+    // 2. Mock transactions query
+    const mockTx = [
+      {
+        id: "tx-1",
+        account_id: validCardId,
+        user_id: "user-123",
+        amount: 200000,
+        transaction_date: "2026-04-10",
+        is_installment: false,
+        installment_count: 1,
+        is_paid: false,
+      },
+    ];
+
+    const mockSelectTx = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ data: mockTx, error: null }),
+      }),
+    });
+
+    // 3. Mock transactions update (marking as paid)
+    const mockUpdateTx = vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ error: null }),
+      }),
+    });
+
+    // 4. Mock credit_card_statements upsert
+    const mockUpsertStmt = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValueOnce({
+          data: {
+            id: "stmt-1",
+            user_id: "user-123",
+            account_id: validCardId,
+            statement_month: "2026-04",
+            total_amount: 200000,
+            is_paid: true,
+          },
+          error: null,
+        }),
+      }),
+    });
+
+    // 5. Mock credit card balance update
+    const mockUpdateCardBal = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ error: null }),
+      }),
+    });
+
+    mockFrom
+      .mockReturnValueOnce({ select: mockSelectCard })
+      .mockReturnValueOnce({ select: mockSelectTx })
+      .mockReturnValueOnce({ update: mockUpdateTx })
+      .mockReturnValueOnce({ upsert: mockUpsertStmt })
+      .mockReturnValueOnce({ update: mockUpdateCardBal });
+
+    const result = await markExtractAsPaid("2026-04", validCardId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.amountPaid).toBe(200000);
+      expect(result.data.updatedTransactionsCount).toBe(1);
+      expect(result.data.statement.is_paid).toBe(true);
+    }
+  });
+
+  it("should debit payment account and insert outgoing transaction when paymentAccountId is provided", async () => {
+    mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+    const mockCard = {
+      id: validCardId,
+      user_id: "user-123",
+      name: "Mastercard Black",
+      account_type: "credit_card",
+      current_balance: 300000,
+      closing_day: 15,
+      payment_due_day: 5,
+      is_active: true,
+    };
+
+    const mockBank = {
+      id: validBankId,
+      user_id: "user-123",
+      name: "Bancolombia Ahorros",
+      account_type: "bank",
+      current_balance: 1000000,
+      is_active: true,
+    };
+
+    // 1. Mock credit card select
+    const mockSelectCard = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValueOnce({ data: mockCard, error: null }),
+        }),
+      }),
+    });
+
+    // 2. Mock payment bank account select
+    const mockSelectBank = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValueOnce({ data: mockBank, error: null }),
+        }),
+      }),
+    });
+
+    // 3. Mock transactions query on credit card
+    const mockSelectTx = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({
+          data: [
+            {
+              id: "tx-2",
+              account_id: validCardId,
+              user_id: "user-123",
+              amount: 150000,
+              transaction_date: "2026-04-10",
+              is_installment: false,
+              installment_count: 1,
+              is_paid: false,
+            },
+          ],
+          error: null,
+        }),
+      }),
+    });
+
+    // 4. Mock transactions update (marking as paid)
+    const mockUpdateTx = vi.fn().mockReturnValue({
+      in: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ error: null }),
+      }),
+    });
+
+    // 5. Mock credit_card_statements upsert
+    const mockUpsertStmt = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        single: vi.fn().mockResolvedValueOnce({
+          data: {
+            id: "stmt-2",
+            user_id: "user-123",
+            account_id: validCardId,
+            statement_month: "2026-04",
+            total_amount: 150000,
+            is_paid: true,
+          },
+          error: null,
+        }),
+      }),
+    });
+
+    // 6. Mock credit card debt update
+    const mockUpdateCardBal = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ error: null }),
+      }),
+    });
+
+    // 7. Mock payment account balance update
+    const mockUpdateBankBal = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ error: null }),
+      }),
+    });
+
+    // 8. Mock categories query for payment expense
+    const mockSelectCat = vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          limit: vi.fn().mockResolvedValueOnce({
+            data: [{ id: "cat-other", name: "Other expenses" }],
+            error: null,
+          }),
+        }),
+      }),
+    });
+
+    // 9. Mock insert outgoing payment transaction
+    const mockInsertTx = vi.fn().mockResolvedValueOnce({ error: null });
+
+    mockFrom
+      .mockReturnValueOnce({ select: mockSelectCard })
+      .mockReturnValueOnce({ select: mockSelectBank })
+      .mockReturnValueOnce({ select: mockSelectTx })
+      .mockReturnValueOnce({ update: mockUpdateTx })
+      .mockReturnValueOnce({ upsert: mockUpsertStmt })
+      .mockReturnValueOnce({ update: mockUpdateCardBal })
+      .mockReturnValueOnce({ update: mockUpdateBankBal })
+      .mockReturnValueOnce({ select: mockSelectCat })
+      .mockReturnValueOnce({ insert: mockInsertTx });
+
+    const result = await markExtractAsPaid("2026-04", validCardId, validBankId);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.amountPaid).toBe(150000);
+      expect(result.data.paymentAccountId).toBe(validBankId);
+      expect(result.data.statement.is_paid).toBe(true);
     }
   });
 });

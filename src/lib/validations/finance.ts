@@ -310,3 +310,22 @@ export const CreateInstallmentPurchaseSchema = z.object({
 });
 
 export type CreateInstallmentPurchaseInput = z.infer<typeof CreateInstallmentPurchaseSchema>;
+
+/**
+ * Esquema de validación para registrar el pago de un extracto de tarjeta de crédito.
+ */
+export const MarkExtractAsPaidSchema = z.object({
+  statementMonth: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, "El mes del extracto debe tener el formato YYYY-MM (ej. 2026-04)"),
+  creditCardAccountId: z.string().uuid("ID de tarjeta de crédito inválido"),
+  paymentAccountId: z.string().uuid("ID de cuenta de pago inválido").optional().nullable(),
+  amount: PositiveMoneySchema.optional(),
+  categoryId: z.string().uuid("ID de categoría inválido").optional().nullable(),
+  paymentDate: CivilDateSchema.optional(),
+  notes: z.string().trim().max(500).optional().nullable(),
+});
+
+export type MarkExtractAsPaidInput = z.infer<typeof MarkExtractAsPaidSchema>;
+
+

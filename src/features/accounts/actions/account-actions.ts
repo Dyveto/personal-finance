@@ -199,9 +199,6 @@ export async function updateAccount(
 
     const validatedData: UpdateAccountInput = parseResult.data;
 
-    const balance =
-      validatedData.current_balance ?? validatedData.balance ?? validatedData.initial_balance;
-
     const updatePayload: Database["public"]["Tables"]["accounts"]["Update"] = {
       name: validatedData.name,
       account_type: validatedData.account_type,
@@ -211,15 +208,15 @@ export async function updateAccount(
       updated_at: new Date().toISOString(),
     };
 
-    if (balance !== undefined) {
-      updatePayload.current_balance = balance;
-    }
-
     if (validatedData.is_active !== undefined) {
       updatePayload.is_active = validatedData.is_active;
     }
 
     if (validatedData.account_type === "credit_card") {
+      // Regla de integridad financiera:
+      // En tarjetas de crédito, la deuda (current_balance) se deriva estrictamente de los consumos
+      // activos no pagados y de los pagos de extractos registrados. Se omite la edición manual
+      // directa del saldo para evitar romper la proyección de cuotas e inconsistencias contables.
       if (validatedData.credit_limit !== undefined) {
         updatePayload.credit_limit = validatedData.credit_limit;
       }
@@ -230,6 +227,12 @@ export async function updateAccount(
         updatePayload.payment_due_day = validatedData.payment_due_day;
       }
     } else {
+      // Para cuentas estándar (efectivo y bancos), se permite ajustar el saldo disponible
+      const balance =
+        validatedData.current_balance ?? validatedData.balance ?? validatedData.initial_balance;
+      if (balance !== undefined) {
+        updatePayload.current_balance = balance;
+      }
       updatePayload.credit_limit = null;
       updatePayload.closing_day = null;
       updatePayload.payment_due_day = null;
