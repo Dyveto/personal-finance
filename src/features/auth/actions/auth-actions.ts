@@ -16,7 +16,7 @@ export interface AuthUser {
  * Prioriza NEXT_PUBLIC_SITE_URL, luego los encabezados HTTP (origin o x-forwarded-host),
  * y finalmente recurre a http://localhost:3000 como fallback de desarrollo.
  */
-export function getBaseUrl(): string {
+export async function getBaseUrl(): Promise<string> {
   const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (envSiteUrl && envSiteUrl.trim() !== "") {
     return envSiteUrl.trim().replace(/\/$/, "");
@@ -139,7 +139,7 @@ export async function signUp(
     const { email, password } = parseResult.data;
     const supabase = createClient();
 
-    const baseUrl = getBaseUrl();
+    const baseUrl = await getBaseUrl();
     const emailRedirectTo = `${baseUrl}/auth/callback`;
 
     const { data, error } = await supabase.auth.signUp({

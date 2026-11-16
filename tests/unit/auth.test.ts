@@ -94,14 +94,14 @@ describe("Authentication Validation Schemas: auth.ts", () => {
       process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
     });
 
-    it("should return NEXT_PUBLIC_SITE_URL without trailing slash when configured", () => {
+    it("should return NEXT_PUBLIC_SITE_URL without trailing slash when configured", async () => {
       process.env.NEXT_PUBLIC_SITE_URL = "https://interactive-finance-dashboard.netlify.app/";
-      expect(getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
+      expect(await getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
     });
 
-    it("should fallback to headers origin when NEXT_PUBLIC_SITE_URL is not set", () => {
+    it("should fallback to headers origin when NEXT_PUBLIC_SITE_URL is not set", async () => {
       delete process.env.NEXT_PUBLIC_SITE_URL;
-      expect(getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
+      expect(await getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
     });
   });
 });

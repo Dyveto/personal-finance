@@ -376,6 +376,7 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 |---|---|---|---|---|---|
 | BUG-001 | CRITICAL | src/components/layout/Sidebar.tsx, layout.tsx | `TypeError: Cannot read properties of null (reading 'useContext')` caused by client layout wrapping server children and unsafe pathname handling. Resolved by creating DashboardShell client wrapper, converting layout.tsx to Server Component, safeguarding pathname with fallback, and adding 'use client' to button, card, input. | FRONTEND | RESOLVED |
 | BUG-002 | CRITICAL | src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts | Enlace de verificación de correo redirigía a localhost:3000 en producción. Resuelto implementando getBaseUrl() dinámica (con prioridad en NEXT_PUBLIC_SITE_URL y fallback en headers origin/host), pasando emailRedirectTo en signUp, creando Route Handler /auth/callback para intercambio PKCE/OTP y documentando configuración de Supabase URL Configuration. | BACKEND | RESOLVED |
+| BUG-003 | HIGH | src/features/auth/actions/auth-actions.ts | Error de compilación Next.js: 'Server actions must be async functions' por exportación síncrona de getBaseUrl() en archivo con directiva 'use server'. Resuelto convirtiendo getBaseUrl() en función asíncrona Promise<string> y utilizando await en signUp() y suites de prueba. | BACKEND | RESOLVED |
 
 Severity:
 
@@ -532,6 +533,13 @@ Handoff status: COMPLETED
 Task: Implemented server-side business logic and Zod validation schemas for account and credit card editing. Created `UpdateAccountSchema` in `src/lib/validations/account.ts` (and exported from `finance.ts`) validating name, account_type, balance, and credit card rules (closing_day 1..31, payment_due_day 1..31, credit_limit > 0). Implemented Server Action `updateAccount(accountId, rawInput)` enforcing authenticated user session via `supabase.auth.getUser()`, applying strict ownership filtering (`eq('id', accountId).eq('user_id', user.id)`), translating Supabase constraint errors, and revalidating routes. Added comprehensive unit tests in `actions.test.ts` (63/63 passing).
 Files created/modified: src/lib/validations/account.ts, src/lib/validations/finance.ts, src/features/accounts/actions/account-actions.ts, tests/unit/actions.test.ts, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - BACKEND AGENT (Fix BUG-003: Async Server Action getBaseUrl)
+Task: Resolved Next.js compile error 'Server actions must be async functions' by converting exported helper `getBaseUrl()` in `src/features/auth/actions/auth-actions.ts` to `async function getBaseUrl(): Promise<string>` to comply with Next.js 'use server' file rules. Updated calls in `signUp` to `await getBaseUrl()` and updated unit tests in `tests/unit/auth.test.ts`. Verified full production build compiles with exit code 0.
+Files modified: src/features/auth/actions/auth-actions.ts, tests/unit/auth.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
