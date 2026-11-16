@@ -4,10 +4,41 @@ import { createClient } from "@/lib/supabase/server";
 import { SignInSchema, SignUpSchema } from "@/lib/validations/auth";
 import type { ActionResult } from "@/types/actions";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 
 export interface AuthUser {
   id: string;
   email?: string;
+}
+
+/**
+ * Determina la URL base para redirecciones de autenticación de forma dinámica.
+ * Prioriza NEXT_PUBLIC_SITE_URL, luego los encabezados HTTP (origin o x-forwarded-host),
+ * y finalmente recurre a http://localhost:3000 como fallback de desarrollo.
+ */
+export function getBaseUrl(): string {
+  const envSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envSiteUrl && envSiteUrl.trim() !== "") {
+    return envSiteUrl.trim().replace(/\/$/, "");
+  }
+
+  try {
+    const headersList = headers();
+    const origin = headersList.get("origin");
+    if (origin && origin.trim() !== "") {
+      return origin.trim().replace(/\/$/, "");
+    }
+
+    const host = headersList.get("x-forwarded-host") || headersList.get("host");
+    const proto = headersList.get("x-forwarded-proto") || "https";
+    if (host) {
+      return `${proto}://${host}`.replace(/\/$/, "");
+    }
+  } catch {
+    // Si se ejecuta fuera del ciclo de request (ej. pruebas unitarias)
+  }
+
+  return "http://localhost:3000";
 }
 
 /**
@@ -108,9 +139,15 @@ export async function signUp(
     const { email, password } = parseResult.data;
     const supabase = createClient();
 
+    const baseUrl = getBaseUrl();
+    const emailRedirectTo = `${baseUrl}/auth/callback`;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo,
+      },
     });
 
     if (error) {

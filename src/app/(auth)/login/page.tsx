@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { LogIn, Loader2, AlertCircle, Lock, Mail } from "lucide-react";
+import { LogIn, Loader2, AlertCircle, CheckCircle2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,8 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get("next") || "/";
+  const isVerified = searchParams.get("verified") === "true";
+  const authError = searchParams.get("error");
 
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -74,6 +76,20 @@ function LoginForm() {
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4 pt-2">
+          {isVerified && (
+            <div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+              <span>¡Correo electrónico confirmado exitosamente! Ya puedes iniciar sesión con tu cuenta.</span>
+            </div>
+          )}
+
+          {authError && (
+            <div className="p-3.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 flex items-start gap-2.5 text-xs text-amber-700 dark:text-amber-300">
+              <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+              <span>El enlace de verificación no es válido o ha expirado. Por favor intenta iniciar sesión.</span>
+            </div>
+          )}
+
           {formError && (
             <div className="p-3.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 flex items-start gap-2.5 text-xs text-rose-700 dark:text-rose-300">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />

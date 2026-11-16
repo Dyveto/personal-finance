@@ -375,6 +375,7 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 | ID | Severity | File | Description | Assigned to | Status |
 |---|---|---|---|---|---|
 | BUG-001 | CRITICAL | src/components/layout/Sidebar.tsx, layout.tsx | `TypeError: Cannot read properties of null (reading 'useContext')` caused by client layout wrapping server children and unsafe pathname handling. Resolved by creating DashboardShell client wrapper, converting layout.tsx to Server Component, safeguarding pathname with fallback, and adding 'use client' to button, card, input. | FRONTEND | RESOLVED |
+| BUG-002 | CRITICAL | src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts | Enlace de verificación de correo redirigía a localhost:3000 en producción. Resuelto implementando getBaseUrl() dinámica (con prioridad en NEXT_PUBLIC_SITE_URL y fallback en headers origin/host), pasando emailRedirectTo en signUp, creando Route Handler /auth/callback para intercambio PKCE/OTP y documentando configuración de Supabase URL Configuration. | BACKEND | RESOLVED |
 
 Severity:
 
@@ -510,6 +511,13 @@ Handoff status: COMPLETED
 Task: Updated .github/workflows/deploy.yml to enforce that production deployments to Netlify (--prod) trigger strictly upon push to the 'main' branch (`github.ref == 'refs/heads/main'`). Pushes to 'develop' and pull requests to 'main' or 'develop' execute all mandatory quality gates (tsc, lint, vitest, next build) and generate Netlify preview deploys. Documented 'main' as the official production release branch in README.md.
 Files modified: .github/workflows/deploy.yml, README.md, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (57/57 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - BACKEND AGENT (Dynamic Auth Email Redirection & Verification Callback)
+Task: Resolved registration verification link redirection bug. Added dynamic URL resolver `getBaseUrl()` prioritizing `NEXT_PUBLIC_SITE_URL` and falling back to request headers (`origin`, `x-forwarded-host`). Configured `options.emailRedirectTo` in `supabase.auth.signUp()`. Implemented Route Handler `src/app/auth/callback/route.ts` to exchange PKCE codes and OTP token hashes. Enhanced `LoginForm` with verified email notice. Updated `.env.example`, `.env.local`, `.github/workflows/deploy.yml`, and `README.md` with Supabase Site URL and Redirect URLs documentation.
+Files created/modified: src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts, src/app/(auth)/login/page.tsx, tests/unit/auth.test.ts, .env.example, .env.local, .github/workflows/deploy.yml, README.md, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (59/59 passed)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 

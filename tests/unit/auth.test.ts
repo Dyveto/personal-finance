@@ -1,5 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import { SignInSchema, SignUpSchema } from "@/lib/validations/auth";
+import { getBaseUrl } from "@/features/auth/actions/auth-actions";
+
+// Mock next/headers
+vi.mock("next/headers", () => ({
+  headers: vi.fn(() => ({
+    get: (name: string) => {
+      if (name === "origin") return "https://interactive-finance-dashboard.netlify.app";
+      return null;
+    },
+  })),
+  cookies: vi.fn(() => ({
+    getAll: () => [],
+    set: vi.fn(),
+  })),
+}));
+
+// Mock next/cache
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
 
 describe("Authentication Validation Schemas: auth.ts", () => {
   describe("SignInSchema", () => {
@@ -64,6 +84,24 @@ describe("Authentication Validation Schemas: auth.ts", () => {
           "Las contraseñas no coinciden"
         );
       }
+    });
+  });
+
+  describe("Dynamic Base URL: getBaseUrl()", () => {
+    const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+
+    afterEach(() => {
+      process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
+    });
+
+    it("should return NEXT_PUBLIC_SITE_URL without trailing slash when configured", () => {
+      process.env.NEXT_PUBLIC_SITE_URL = "https://interactive-finance-dashboard.netlify.app/";
+      expect(getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
+    });
+
+    it("should fallback to headers origin when NEXT_PUBLIC_SITE_URL is not set", () => {
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      expect(getBaseUrl()).toBe("https://interactive-finance-dashboard.netlify.app");
     });
   });
 });

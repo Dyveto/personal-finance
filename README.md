@@ -147,6 +147,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-publica
 SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-privada
 
+# URL de la aplicación (para redirección de correos de verificación y OAuth)
+# Local: http://localhost:3000 | Producción: https://interactive-finance-dashboard.netlify.app
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
 # URL de conexión a PostgreSQL (opcional para migraciones CLI)
 DATABASE_URL="postgresql://postgres:[TU-PASSWORD]@db.tu-proyecto.supabase.co:5432/postgres"
 
@@ -182,7 +186,7 @@ El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido
 3. **Control de Calidad (QA Gates)**:
    - `npx tsc --noEmit`: Validación estricta de tipos en TypeScript (`strict: true`).
    - `npm run lint`: Análisis estático de código con ESLint.
-   - `npm run test:run`: Ejecución de la suite completa de 57 pruebas unitarias con Vitest.
+   - `npm run test:run`: Ejecución de la suite completa de 59 pruebas unitarias con Vitest.
    - `npm run build`: Compilación y optimización de producción para Next.js 14 App Router.
    > [!IMPORTANT]
    > Si **cualquiera** de estos pasos falla o genera un error, el pipeline se detiene inmediatamente con código de salida diferente de `0`, bloqueando el despliegue a Netlify y protegiendo el entorno de producción.
@@ -192,17 +196,34 @@ El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido
 
 ---
 
-### 🔑 Secretos de GitHub a Configurar
+### 🔑 Variables de Entorno y Secretos Requeridos
 
-Para habilitar la autenticación y el despliegue automático hacia Netlify desde GitHub Actions, debes configurar los siguientes secretos en tu repositorio de GitHub (**Settings** > **Secrets and variables** > **Actions** > **New repository secret**):
+Tanto en **Netlify (Site configuration > Environment variables)** como en los **GitHub Secrets** del repositorio, se deben configurar las siguientes variables:
 
-| Secreto de GitHub | Origen / Dónde obtenerlo | Propósito |
+| Variable / Secreto | Entornos | Propósito / Valor recomendado |
 | :--- | :--- | :--- |
-| `NETLIFY_AUTH_TOKEN` | Netlify Dashboard: **User Settings** > **Applications** > **New access token** | Token de autenticación para Netlify CLI |
-| `NETLIFY_SITE_ID` | Netlify Dashboard: **Site configuration** > **General** > **Site details** > **API ID** | Identificador único del sitio en Netlify |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Dashboard: **Project Settings** > **API** > **Project URL** | URL base de la instancia de Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Dashboard: **Project Settings** > **API** > **anon public** | Llave pública para llamadas y cliente SSR |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard: **Project Settings** > **API** > **service_role secret** | Llave privada para Server Actions del backend |
+| `NEXT_PUBLIC_SITE_URL` | Local, Netlify, CI/CD | Local: `http://localhost:3000` <br> Producción: `https://interactive-finance-dashboard.netlify.app` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Local, Netlify, CI/CD | URL base de la instancia de Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Local, Netlify, CI/CD | Llave pública anónima (`anon` / `public`) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Local, Netlify, CI/CD | Llave privada para Server Actions del backend (no exponer al cliente) |
+| `NETLIFY_AUTH_TOKEN` | GitHub Secrets | Token de acceso personal generado en Netlify |
+| `NETLIFY_SITE_ID` | GitHub Secrets | API ID único del sitio en Netlify |
+
+### ⚙️ Configuración Obligatoria en el Dashboard de Supabase
+
+Para que los correos de verificación y recuperación de contraseña redirijan al dominio de producción y no a `localhost`:
+
+1. Ingresa a tu proyecto en **Supabase Dashboard** > **Authentication** > **URL Configuration**.
+2. **Site URL**: Configura la URL principal de producción:
+   `https://interactive-finance-dashboard.netlify.app`
+3. **Redirect URLs**: Añade las siguientes URLs permitidas:
+   - `https://interactive-finance-dashboard.netlify.app/**`
+   - `https://interactive-finance-dashboard.netlify.app/auth/callback`
+   - `http://localhost:3000/**`
+   - `http://localhost:3000/auth/callback`
+
+> [!NOTE]
+> Supabase valida estrictamente las redirecciones por seguridad. Si la URL enviada en `emailRedirectTo` no coincide con el `Site URL` o no está incluida en `Redirect URLs`, Supabase descartará la redirección y enviará al usuario al `Site URL` por defecto.
 
 ---
 
@@ -215,7 +236,7 @@ El proyecto cuenta con un conjunto de comandos estrictos de calidad integrados:
 | `npm run dev` | Inicia el servidor de desarrollo en `http://localhost:3000` con hot-reloading |
 | `npm run build` | Genera la compilación optimizada para producción |
 | `npm run start` | Inicia el servidor optimizado de producción |
-| `npm run test:run` | Ejecuta la suite completa de 57 pruebas unitarias con Vitest (modo CI) |
+| `npm run test:run` | Ejecuta la suite completa de 59 pruebas unitarias con Vitest (modo CI) |
 | `npm run test` | Ejecuta Vitest en modo interactivo con recarga en caliente |
 | `npm run lint` | Ejecuta el análisis estático de código con ESLint |
 | `npx tsc --noEmit` | Verifica la integridad de tipos en TypeScript (`strict: true`) |
