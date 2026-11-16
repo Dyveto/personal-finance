@@ -568,6 +568,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - FRONTEND AGENT (Credit Card Statement Payment UI, Modal & Instant KPI Updates)
+Task: Designed and implemented the complete interactive user interface for credit card statement settlement and status tracking. Created `PayStatementDialog` component with account selector (bank/cash accounts with live balances, or unlinked payment), prefilled statement amounts, civil payment date, and submission feedback. Enhanced `InstallmentProjectionsCard` to display monthly statement status (paid badges vs interactive "Marcar como Pagado" buttons) connected with `markExtractAsPaid`. Implemented `CreditCardsClientView` with optimistic state management that immediately recalculates and updates all dashboard KPIs (Total Credit Card Debt, Available Credit, Total Approved Limit, and Available Cash/Bank Money) without network latency upon statement settlement. Connected both `/credit-cards` and `/` (Main Dashboard) to display and manage paid statements.
+Files created/modified: src/features/credit-cards/components/PayStatementDialog.tsx, src/features/credit-cards/components/CreditCardsClientView.tsx, src/features/dashboard/components/InstallmentProjectionsCard.tsx, src/app/(dashboard)/credit-cards/page.tsx, src/app/(dashboard)/page.tsx, src/lib/finance/projections.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (72/72 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

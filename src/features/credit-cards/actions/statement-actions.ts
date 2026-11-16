@@ -363,6 +363,39 @@ export async function getStatementByMonth(
 }
 
 /**
+ * Lista todos los extractos registrados de todas las tarjetas del usuario autenticado.
+ */
+export async function listAllStatements(): Promise<ActionResult<CreditCardStatementRow[]>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const { data: statements, error } = await supabase
+      .from("credit_card_statements")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("statement_month", { ascending: false });
+
+    if (error) {
+      return { success: false, error: `Database error: ${error.message}` };
+    }
+
+    return { success: true, data: statements || [] };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while listing all statements";
+    return { success: false, error: message };
+  }
+}
+
+/**
  * Lista todos los extractos registrados de una tarjeta de crédito.
  */
 export async function listStatements(

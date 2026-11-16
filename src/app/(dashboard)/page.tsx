@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { listAccounts } from "@/features/accounts/actions/account-actions";
 import { listTransactions } from "@/features/transactions/actions/transaction-actions";
 import { listCategories } from "@/features/categories/actions/category-actions";
+import { listAllStatements } from "@/features/credit-cards/actions/statement-actions";
 import { formatMoneyCOP, addMoney, roundMoney } from "@/lib/finance/money";
 import {
   FinancialCharts,
@@ -28,15 +29,20 @@ import {
 
 export default async function DashboardPage() {
   // Consumir Server Actions concurrentemente
-  const [accountsResult, transactionsResult, categoriesResult] = await Promise.all([
+  const [accountsResult, transactionsResult, categoriesResult, statementsResult] = await Promise.all([
     listAccounts(),
     listTransactions({ limit: 50 }),
     listCategories(),
+    listAllStatements(),
   ]);
 
   const accounts = accountsResult.success ? accountsResult.data : [];
   const transactions = transactionsResult.success ? transactionsResult.data : [];
   const categories = categoriesResult.success ? categoriesResult.data : [];
+  const statements = statementsResult.success ? statementsResult.data : [];
+  const paymentAccounts = accounts.filter(
+    (a) => a.account_type === "cash" || a.account_type === "bank"
+  );
   const authRequired = !accountsResult.success && accountsResult.error.includes("Unauthorized");
 
   // Mapas auxiliares
@@ -111,6 +117,7 @@ export default async function DashboardPage() {
         card.payment_due_day
       ) {
         const projected = projectTransactionInstallments(tx, {
+          id: card.id,
           name: card.name,
           closing_day: card.closing_day,
           payment_due_day: card.payment_due_day,
@@ -228,8 +235,12 @@ export default async function DashboardPage() {
       {/* Gráficos Financieros Interactivos (Recharts) */}
       <FinancialCharts monthlyData={monthlyData} categoryData={categoryData} />
 
-      {/* Tarjeta de Proyección de Cuotas Diferidas */}
-      <InstallmentProjectionsCard projections={allProjections} />
+      {/* Tarjeta de Proyección de Cuotas Diferidas y Control de Extractos */}
+      <InstallmentProjectionsCard
+        projections={allProjections}
+        paymentAccounts={paymentAccounts}
+        statements={statements}
+      />
 
       {/* Cuentas y Transacciones Recientes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

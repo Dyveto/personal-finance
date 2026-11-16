@@ -10,6 +10,7 @@ import {
 
 export interface ProjectedInstallment {
   transactionId: string;
+  accountId?: string;
   description: string;
   accountName: string;
   installmentNumber: number;
@@ -37,6 +38,7 @@ export interface MonthlyProjectionSummary {
 export function projectTransactionInstallments(
   transaction: {
     id: string;
+    account_id?: string;
     description: string;
     amount: number | string;
     transaction_date: string;
@@ -44,6 +46,7 @@ export function projectTransactionInstallments(
     installment_count: number;
   },
   card: {
+    id?: string;
     name: string;
     closing_day: number;
     payment_due_day: number;
@@ -77,6 +80,7 @@ export function projectTransactionInstallments(
 
     projections.push({
       transactionId: transaction.id,
+      accountId: card.id || transaction.account_id,
       description: transaction.description,
       accountName: card.name,
       installmentNumber: i + 1,
