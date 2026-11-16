@@ -521,6 +521,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - DATABASE AGENT (Account & Credit Card UPDATE RLS & Schema Audit)
+Task: Audited public.accounts RLS policies and table constraints for complete account and credit card editing. Confirmed strict UPDATE policy (`accounts_update_own`) enforcing `user_id = auth.uid()` on USING and WITH CHECK clauses. Verified editable fields (name, account_type, closing_day, payment_due_day, credit_limit, current_balance, institution, color, is_active) and CHECK constraint `accounts_credit_rules` ensuring closing_day (1..31), payment_due_day (1..31), and credit_limit (> 0) bounds. Updated `src/types/database.types.ts` with `Tables<T>`, `TablesInsert<T>`, `TablesUpdate<T>`, and typed `AccountUpdate`.
+Files modified: src/types/database.types.ts, .agents-team/BOARD.md
+Verification commands: npx supabase migration list --remote (100% sync), npx tsc --noEmit (0), npm run lint (0), npm run test:run (59/59 passed)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
