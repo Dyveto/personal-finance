@@ -122,6 +122,8 @@ export interface Database {
           transaction_date: string
           is_installment: boolean
           installment_count: number
+          is_paid: boolean
+          paid_at: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -137,6 +139,8 @@ export interface Database {
           transaction_date: string
           is_installment?: boolean
           installment_count?: number
+          is_paid?: boolean
+          paid_at?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -152,6 +156,8 @@ export interface Database {
           transaction_date?: string
           is_installment?: boolean
           installment_count?: number
+          is_paid?: boolean
+          paid_at?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -173,9 +179,74 @@ export interface Database {
           }
         ]
       }
+      credit_card_statements: {
+        Row: {
+          id: string
+          user_id: string
+          account_id: string
+          statement_month: string
+          closing_date: string
+          due_date: string
+          total_amount: number
+          is_paid: boolean
+          paid_at: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          account_id: string
+          statement_month: string
+          closing_date: string
+          due_date: string
+          total_amount?: number
+          is_paid?: boolean
+          paid_at?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          account_id?: string
+          statement_month?: string
+          closing_date?: string
+          due_date?: string
+          total_amount?: number
+          is_paid?: boolean
+          paid_at?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statements_account_owner"
+            columns: ["user_id", "account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["user_id", "id"]
+          }
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      credit_card_balance_summary: {
+        Row: {
+          account_id: string | null
+          user_id: string | null
+          name: string | null
+          credit_limit: number | null
+          closing_day: number | null
+          payment_due_day: number | null
+          current_balance: number | null
+          unpaid_expenses_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
@@ -207,3 +278,9 @@ export type CategoryUpdate = Database["public"]["Tables"]["categories"]["Update"
 export type TransactionRow = Database["public"]["Tables"]["transactions"]["Row"];
 export type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
 export type TransactionUpdate = Database["public"]["Tables"]["transactions"]["Update"];
+
+export type CreditCardStatementRow = Database["public"]["Tables"]["credit_card_statements"]["Row"];
+export type CreditCardStatementInsert = Database["public"]["Tables"]["credit_card_statements"]["Insert"];
+export type CreditCardStatementUpdate = Database["public"]["Tables"]["credit_card_statements"]["Update"];
+
+export type CreditCardBalanceSummaryRow = Database["public"]["Views"]["credit_card_balance_summary"]["Row"];

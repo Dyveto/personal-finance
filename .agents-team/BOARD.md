@@ -60,6 +60,9 @@ Responsibilities:
 - [x] Verify user isolation and foreign-key user integrity.
 - [x] Generate and align src/types/database.types.ts with TypeScript strict types.
 - [x] Push migration to remote Supabase project (faqflrvvzfqbilwakapn) and verify status.
+- [x] Support marking statements/installments as paid (`is_paid`, `paid_at` in `transactions`).
+- [x] Create formal `credit_card_statements` table with RLS and owner integrity.
+- [x] Create `credit_card_balance_summary` view with `security_invoker = true` for balance consistency.
 
 Expected deliverables:
 
@@ -548,6 +551,13 @@ Handoff status: COMPLETED
 Task: Implemented interactive editing UI for accounts and credit cards in AccountsClientView and AccountForm. Adapted AccountForm to support both creation and edition modes with pre-filled default values, reactive form validation via Zod and react-hook-form, and integrated with `updateAccount` Server Action. Added an "Editar" button to each account card in AccountsClientView, integrated edit modal Dialog, optimistic/local state update, and alert notification banners.
 Files modified: src/features/accounts/components/AccountForm.tsx, src/features/accounts/components/AccountsClientView.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - DATABASE AGENT (Credit Card Statements, Paid Status & Balance Summary View)
+Task: Implemented schema evolution to support tracking paid credit card statements and transaction/installment settlement. Added `is_paid` (boolean NOT NULL DEFAULT FALSE) and `paid_at` (timestamptz) columns with index `transactions_account_paid_idx` to `public.transactions`. Created `public.credit_card_statements` table for formal monthly statement tracking (statement_month YYYY-MM, closing_date, due_date, total_amount, is_paid, paid_at, notes) with composite foreign key constraint `statements_account_owner`, unique constraint `statements_unique_account_month`, trigger `statements_updated_at`, and full RLS policies (`statements_select_own`, `statements_insert_own`, `statements_update_own`, `statements_delete_own`). Created view `public.credit_card_balance_summary` (`WITH (security_invoker = true)`) aggregating active unpaid expenses (`unpaid_expenses_total`) per credit card account. Migrations applied to remote Supabase project (faqflrvvzfqbilwakapn). Updated `src/types/database.types.ts` with typed rows, inserts, updates, and view interfaces.
+Files created/modified: supabase/migrations/20260331000000_credit_card_statements_and_paid_status.sql, database/migrations/20260331000000_credit_card_statements_and_paid_status.sql, src/types/database.types.ts, .agents-team/BOARD.md
+Verification commands: npx supabase db push --remote --yes (0), npx supabase migration list --remote (100% sync), npx tsc --noEmit (0), npm run lint (0), npm run test:run (63/63 passed)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
