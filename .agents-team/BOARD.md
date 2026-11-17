@@ -138,6 +138,8 @@ Responsibilities:
 - [x] Implement Zod schemas (src/lib/validations/finance.ts, auth.ts).
 - [x] Implement Server Actions for Accounts, Transactions & Auth (account-actions.ts, transaction-actions.ts, auth-actions.ts).
 - [x] Implement CRUD operations with user isolation.
+- [x] Implement Category CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`, `listCategories`) with Zod schemas and user session enforcement.
+- [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
@@ -192,8 +194,15 @@ Public contracts:
   - Redirects authenticated users from `/login` or `/signup` to `/`.
 - `validations/finance.ts`:
   - `CreateAccountSchema`, `StandardAccountSchema`, `CreditCardAccountSchema`
-  - `CreateTransactionSchema`, `CreateInstallmentPurchaseSchema`
+  - `CreateTransactionSchema` (permite category_id o new_category_name al vuelo)
+  - `CreateInstallmentPurchaseSchema` (permite category_id o new_category_name al vuelo)
+  - `CreateCategorySchema`, `UpdateCategorySchema`
   - `CivilDateSchema`, `PositiveMoneySchema`, `NonNegativeMoneySchema`
+- `category-actions.ts`:
+  - `listCategories(type?: "income" | "expense"): Promise<ActionResult<CategoryRow[]>>`
+  - `createCategory(rawInput: unknown): Promise<ActionResult<CategoryRow>>`
+  - `updateCategory(categoryId: string, rawInput: unknown): Promise<ActionResult<CategoryRow>>`
+  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>`
 - `account-actions.ts`:
   - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
   - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`

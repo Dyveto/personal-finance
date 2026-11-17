@@ -83,6 +83,96 @@ export async function listTransactions(
 }
 
 /**
+ * Resuelve el ID de una categoría para transacciones:
+ * 1. Si se proporciona newCategoryName, busca si ya existe una categoría con ese nombre para el usuario
+ *    (case-insensitive). Si no existe, la crea al vuelo.
+ * 2. Si se proporciona categoryId, verifica pertenencia y compatibilidad de tipo.
+ */
+async function resolveCategoryId(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  categoryId?: string | null,
+  newCategoryName?: string | null,
+  transactionType: "income" | "expense" = "expense"
+): Promise<{ success: true; categoryId: string } | { success: false; error: string }> {
+  // 1. Si se indicó un nombre de nueva categoría
+  if (newCategoryName && newCategoryName.trim()) {
+    const trimmedName = newCategoryName.trim();
+
+    // Buscar si ya existe una categoría con este nombre y tipo para este usuario
+    const { data: existing, error: searchError } = await supabase
+      .from("categories")
+      .select("id, category_type, is_active")
+      .eq("user_id", userId)
+      .ilike("name", trimmedName)
+      .eq("category_type", transactionType)
+      .maybeSingle();
+
+    if (searchError) {
+      return { success: false, error: `Error verificando categoría existente: ${searchError.message}` };
+    }
+
+    if (existing) {
+      if (!existing.is_active) {
+        await supabase
+          .from("categories")
+          .update({ is_active: true })
+          .eq("id", existing.id)
+          .eq("user_id", userId);
+      }
+      return { success: true, categoryId: existing.id };
+    }
+
+    // Crear la categoría al vuelo
+    const { data: created, error: insertError } = await supabase
+      .from("categories")
+      .insert({
+        user_id: userId,
+        name: trimmedName,
+        category_type: transactionType,
+        is_default: false,
+        is_active: true,
+      })
+      .select("id")
+      .single();
+
+    if (insertError || !created) {
+      return {
+        success: false,
+        error: `Error creando categoría personalizada: ${insertError?.message || "Error desconocido"}`,
+      };
+    }
+
+    return { success: true, categoryId: created.id };
+  }
+
+  // 2. Si se proporcionó un ID de categoría existente
+  if (categoryId) {
+    const { data: category, error: categoryError } = await supabase
+      .from("categories")
+      .select("id, category_type, is_active")
+      .eq("id", categoryId)
+      .eq("user_id", userId)
+      .single();
+
+    if (categoryError || !category) {
+      return { success: false, error: "The selected category does not exist or access is denied" };
+    }
+
+    if (category.category_type !== transactionType) {
+      return {
+        success: false,
+        error: `Category type '${category.category_type}' does not match transaction type '${transactionType}'`,
+      };
+    }
+
+    return { success: true, categoryId: category.id };
+  }
+
+  return { success: false, error: "Debes seleccionar una categoría o ingresar el nombre de una nueva" };
+}
+
+/**
  * Registra una transacción estándar (Ingreso o Gasto) verificando propiedad de cuenta y categoría,
  * y actualizando el balance correspondiente con precisión decimal exacta.
  *
@@ -138,24 +228,20 @@ export async function createTransaction(
       };
     }
 
-    // 2. Validar que la categoría pertenezca al usuario autenticado y coincida en tipo
-    const { data: category, error: categoryError } = await supabase
-      .from("categories")
-      .select("id, category_type")
-      .eq("id", validated.category_id)
-      .eq("user_id", user.id)
-      .single();
+    // 2. Validar y resolver la categoría (existente o creada al vuelo de forma transparente)
+    const categoryResolution = await resolveCategoryId(
+      supabase,
+      user.id,
+      validated.category_id,
+      validated.new_category_name,
+      validated.transaction_type
+    );
 
-    if (categoryError || !category) {
-      return { success: false, error: "The selected category does not exist or access is denied" };
+    if (!categoryResolution.success) {
+      return { success: false, error: categoryResolution.error };
     }
 
-    if (category.category_type !== validated.transaction_type) {
-      return {
-        success: false,
-        error: `Category type '${category.category_type}' does not match transaction type '${validated.transaction_type}'`,
-      };
-    }
+    const resolvedCategoryId = categoryResolution.categoryId;
 
     // 3. Calcular el nuevo balance utilizando aritmética decimal
     const currentBalanceStr = roundMoney(account.current_balance);
@@ -180,7 +266,7 @@ export async function createTransaction(
     const insertPayload: Database["public"]["Tables"]["transactions"]["Insert"] = {
       user_id: user.id,
       account_id: validated.account_id,
-      category_id: validated.category_id,
+      category_id: resolvedCategoryId,
       description: validated.description,
       amount: parseFloat(amountStr),
       transaction_type: validated.transaction_type,
@@ -281,21 +367,20 @@ export async function createInstallmentPurchase(
       return { success: false, error: "Credit card account is inactive" };
     }
 
-    // 2. Validar que la categoría pertenezca al usuario y sea de tipo gasto
-    const { data: category, error: categoryError } = await supabase
-      .from("categories")
-      .select("id, category_type")
-      .eq("id", validated.category_id)
-      .eq("user_id", user.id)
-      .single();
+    // 2. Validar y resolver categoría para compra diferida (tipo gasto)
+    const categoryResolution = await resolveCategoryId(
+      supabase,
+      user.id,
+      validated.category_id,
+      validated.new_category_name,
+      "expense"
+    );
 
-    if (categoryError || !category) {
-      return { success: false, error: "Category not found or access denied" };
+    if (!categoryResolution.success) {
+      return { success: false, error: categoryResolution.error };
     }
 
-    if (category.category_type !== "expense") {
-      return { success: false, error: "Installment purchases must be assigned to an expense category" };
-    }
+    const resolvedCategoryId = categoryResolution.categoryId;
 
     // 3. Calcular la división de cuotas con precisión decimal
     const amountStr = roundMoney(validated.amount);
@@ -310,7 +395,7 @@ export async function createInstallmentPurchase(
     const insertPayload: Database["public"]["Tables"]["transactions"]["Insert"] = {
       user_id: user.id,
       account_id: validated.account_id,
-      category_id: validated.category_id,
+      category_id: resolvedCategoryId,
       description: validated.description,
       amount: parseFloat(amountStr),
       transaction_type: "expense",
@@ -415,26 +500,22 @@ export async function updateTransaction(
     const targetType = validated.transaction_type ?? existingTx.transaction_type;
     const targetAccountId = validated.account_id ?? existingTx.account_id;
 
-    // 2. Si se actualiza la categoría, validar pertenencia y correspondencia con el tipo
-    const targetCategoryId = validated.category_id ?? existingTx.category_id;
-    if (validated.category_id || validated.transaction_type) {
-      const { data: category, error: catError } = await supabase
-        .from("categories")
-        .select("id, category_type")
-        .eq("id", targetCategoryId)
-        .eq("user_id", user.id)
-        .single();
+    // 2. Si se actualiza la categoría o se introduce una nueva categoría al vuelo
+    let resolvedCategoryId = existingTx.category_id;
+    if (validated.new_category_name || validated.category_id || validated.transaction_type) {
+      const categoryResolution = await resolveCategoryId(
+        supabase,
+        user.id,
+        validated.category_id ?? (validated.new_category_name ? null : existingTx.category_id),
+        validated.new_category_name,
+        targetType
+      );
 
-      if (catError || !category) {
-        return { success: false, error: "Category not found or access denied" };
+      if (!categoryResolution.success) {
+        return { success: false, error: categoryResolution.error };
       }
 
-      if (category.category_type !== targetType) {
-        return {
-          success: false,
-          error: `Category type '${category.category_type}' does not match transaction type '${targetType}'`,
-        };
-      }
+      resolvedCategoryId = categoryResolution.categoryId;
     }
 
     // 3. Si se transfiere a otra cuenta, validar la nueva cuenta
@@ -468,7 +549,9 @@ export async function updateTransaction(
     if (validated.amount !== undefined) updatePayload.amount = parseFloat(roundMoney(validated.amount));
     if (validated.transaction_type !== undefined) updatePayload.transaction_type = validated.transaction_type;
     if (validated.transaction_date !== undefined) updatePayload.transaction_date = validated.transaction_date;
-    if (validated.category_id !== undefined) updatePayload.category_id = validated.category_id;
+    if (validated.category_id !== undefined || validated.new_category_name !== undefined) {
+      updatePayload.category_id = resolvedCategoryId;
+    }
     if (validated.account_id !== undefined) updatePayload.account_id = validated.account_id;
     if (validated.notes !== undefined) updatePayload.notes = validated.notes;
     if (validated.is_paid !== undefined) updatePayload.is_paid = validated.is_paid;

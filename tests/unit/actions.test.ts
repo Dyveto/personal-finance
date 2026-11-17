@@ -25,6 +25,11 @@ import {
   deleteAccount,
 } from "@/features/accounts/actions/account-actions";
 import {
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from "@/features/categories/actions/category-actions";
+import {
   createTransaction,
   createInstallmentPurchase,
   updateTransaction,
@@ -944,6 +949,269 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       if (result.success) {
         expect(result.data.amount).toBe(35000);
         expect(updatedBalance).toBe(65000);
+      }
+    });
+  });
+
+  describe("Server Actions: category-actions.ts", () => {
+    const validUserId = "00000000-0000-4000-a000-000000000000";
+    const validCatId = "22222222-2222-4222-a222-222222222222";
+
+    it("should reject createCategory if unauthenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+
+      const result = await createCategory({
+        name: "Restaurantes",
+        category_type: "expense",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should successfully create a new custom category", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      // 1. Search for existing category (returns none)
+      const mockSelectSearch = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          ilike: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValueOnce({ data: null, error: null }),
+            }),
+          }),
+        }),
+      });
+
+      // 2. Insert new category
+      const mockInsert = vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValueOnce({
+            data: {
+              id: validCatId,
+              user_id: validUserId,
+              name: "Cine y Teatro",
+              category_type: "expense",
+              icon: "film",
+              color: "#EC4899",
+              is_default: false,
+              is_active: true,
+              created_at: "2026-11-14T00:00:00Z",
+              updated_at: "2026-11-14T00:00:00Z",
+            },
+            error: null,
+          }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectSearch })
+        .mockReturnValueOnce({ insert: mockInsert });
+
+      const result = await createCategory({
+        name: "Cine y Teatro",
+        category_type: "expense",
+        icon: "film",
+        color: "#EC4899",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.name).toBe("Cine y Teatro");
+        expect(result.data.category_type).toBe("expense");
+      }
+    });
+
+    it("should reject createCategory if name already exists and is active", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const mockSelectSearch = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          ilike: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValueOnce({
+                data: { id: validCatId, is_active: true },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelectSearch });
+
+      const result = await createCategory({
+        name: "Alimentación",
+        category_type: "expense",
+      });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Ya tienes una categoría registrada");
+      }
+    });
+
+    it("should update a category successfully", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      // 1. Existing category
+      const mockSelectExisting = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validCatId,
+                name: "Cine",
+                category_type: "expense",
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 2. Collision check
+      const mockSelectCollision = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          neq: vi.fn().mockReturnValue({
+            ilike: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                maybeSingle: vi.fn().mockResolvedValueOnce({ data: null, error: null }),
+              }),
+            }),
+          }),
+        }),
+      });
+
+      // 3. Update query
+      const mockUpdate = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValueOnce({
+                data: {
+                  id: validCatId,
+                  name: "Cine y Series",
+                  category_type: "expense",
+                  icon: "tv",
+                },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectExisting })
+        .mockReturnValueOnce({ select: mockSelectCollision })
+        .mockReturnValueOnce({ update: mockUpdate });
+
+      const result = await updateCategory(validCatId, {
+        name: "Cine y Series",
+        icon: "tv",
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.name).toBe("Cine y Series");
+      }
+    });
+
+    it("should safely delete a category with no transactions", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      // 1. Select existing
+      const mockSelectExisting = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: { id: validCatId, name: "Prueba" },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 2. Count referencing transactions (0)
+      const mockSelectTxCount = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({
+            count: 0,
+            error: null,
+          }),
+        }),
+      });
+
+      // 3. Delete
+      const mockDelete = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({ error: null }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectExisting })
+        .mockReturnValueOnce({ select: mockSelectTxCount })
+        .mockReturnValueOnce({ delete: mockDelete });
+
+      const result = await deleteCategory(validCatId);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.deleted).toBe(true);
+      }
+    });
+
+    it("should reject deleteCategory if category has transactions and forceArchive is false", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      // 1. Select existing
+      const mockSelectExisting = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: { id: validCatId, name: "Alimentación" },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 2. Count referencing transactions (5)
+      const mockSelectTxCount = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({
+            count: 5,
+            error: null,
+          }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectExisting })
+        .mockReturnValueOnce({ select: mockSelectTxCount });
+
+      const result = await deleteCategory(validCatId);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("No es posible eliminar la categoría");
       }
     });
   });

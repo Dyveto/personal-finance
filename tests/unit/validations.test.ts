@@ -3,6 +3,8 @@ import {
   CreateAccountSchema,
   CreateTransactionSchema,
   CreateInstallmentPurchaseSchema,
+  CreateCategorySchema,
+  UpdateCategorySchema,
   MarkExtractAsPaidSchema,
   UpdateTransactionSchema,
   UuidParamSchema,
@@ -387,6 +389,107 @@ describe("Validation Schemas: finance.ts", () => {
       if (result.success) {
         expect(result.data.is_paid).toBe(true);
       }
+    });
+  });
+
+  describe("CreateCategorySchema & UpdateCategorySchema", () => {
+    it("should accept valid income and expense category inputs", () => {
+      const validExpense = {
+        name: "Cine y Teatro",
+        category_type: "expense" as const,
+        icon: "film",
+        color: "#EC4899",
+      };
+      const expenseRes = CreateCategorySchema.safeParse(validExpense);
+      expect(expenseRes.success).toBe(true);
+      if (expenseRes.success) {
+        expect(expenseRes.data.name).toBe("Cine y Teatro");
+        expect(expenseRes.data.category_type).toBe("expense");
+        expect(expenseRes.data.is_active).toBe(true);
+      }
+
+      const validIncome = {
+        name: "Dividendos",
+        category_type: "income" as const,
+      };
+      const incomeRes = CreateCategorySchema.safeParse(validIncome);
+      expect(incomeRes.success).toBe(true);
+    });
+
+    it("should reject invalid category inputs", () => {
+      const emptyName = {
+        name: "   ",
+        category_type: "expense" as const,
+      };
+      expect(CreateCategorySchema.safeParse(emptyName).success).toBe(false);
+
+      const invalidType = {
+        name: "Test",
+        category_type: "investment",
+      };
+      expect(CreateCategorySchema.safeParse(invalidType).success).toBe(false);
+    });
+
+    it("should accept valid updates to category", () => {
+      const update = {
+        name: "Cine, Streaming y Teatro",
+        icon: "tv",
+        is_active: false,
+      };
+      const res = UpdateCategorySchema.safeParse(update);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.name).toBe("Cine, Streaming y Teatro");
+        expect(res.data.is_active).toBe(false);
+      }
+    });
+  });
+
+  describe("On-the-fly Category creation in transactions", () => {
+    const validAccountId = "11111111-1111-4111-a111-111111111111";
+
+    it("should accept transaction with new_category_name instead of category_id", () => {
+      const onTheFlyTx = {
+        account_id: validAccountId,
+        new_category_name: "Veterinaria y Mascotas",
+        description: "Vacunas perro",
+        amount: 85000,
+        transaction_type: "expense" as const,
+        transaction_date: "2026-11-14",
+      };
+      const res = CreateTransactionSchema.safeParse(onTheFlyTx);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.new_category_name).toBe("Veterinaria y Mascotas");
+      }
+    });
+
+    it("should accept installment purchase with new_category_name instead of category_id", () => {
+      const onTheFlyPurchase = {
+        account_id: validAccountId,
+        new_category_name: "Electrónica y Gadgets",
+        description: "Audífonos Sony",
+        amount: 350000,
+        transaction_date: "2026-11-14",
+        installment_count: 6,
+      };
+      const res = CreateInstallmentPurchaseSchema.safeParse(onTheFlyPurchase);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.new_category_name).toBe("Electrónica y Gadgets");
+      }
+    });
+
+    it("should reject transaction when neither category_id nor new_category_name is provided", () => {
+      const missingCatTx = {
+        account_id: validAccountId,
+        description: "Sin categoría",
+        amount: 15000,
+        transaction_type: "expense" as const,
+        transaction_date: "2026-11-14",
+      };
+      const res = CreateTransactionSchema.safeParse(missingCatTx);
+      expect(res.success).toBe(false);
     });
   });
 });

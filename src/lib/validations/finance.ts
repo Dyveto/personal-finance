@@ -254,12 +254,61 @@ export const UpdateAccountSchema = z.discriminatedUnion("account_type", [
 export type UpdateAccountInput = z.infer<typeof UpdateAccountSchema>;
 
 /**
+ * Esquema de validación para creación de categorías personalizadas.
+ */
+export const CreateCategorySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "El nombre de la categoría es obligatorio")
+    .max(100, "El nombre no puede exceder 100 caracteres"),
+  category_type: z.enum(["income", "expense"], {
+    message: "El tipo de categoría debe ser 'income' o 'expense'",
+  }),
+  icon: z.string().trim().max(50).nullable().optional(),
+  color: z.string().trim().max(50).nullable().optional(),
+  is_active: z.boolean().default(true),
+});
+
+export type CreateCategoryInput = z.infer<typeof CreateCategorySchema>;
+
+/**
+ * Esquema de validación para actualización y edición de categorías.
+ */
+export const UpdateCategorySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, "El nombre de la categoría no puede estar vacío")
+    .max(100, "El nombre no puede exceder 100 caracteres")
+    .optional(),
+  category_type: z
+    .enum(["income", "expense"], {
+      message: "El tipo de categoría debe ser 'income' o 'expense'",
+    })
+    .optional(),
+  icon: z.string().trim().max(50).nullable().optional(),
+  color: z.string().trim().max(50).nullable().optional(),
+  is_active: z.boolean().optional(),
+});
+
+export type UpdateCategoryInput = z.infer<typeof UpdateCategorySchema>;
+
+/**
  * Esquema para registro de Transacciones.
+ * Permite seleccionar una categoría existente vía category_id o registrar una nueva al vuelo con new_category_name.
  */
 export const CreateTransactionSchema = z
   .object({
     account_id: z.string().uuid("Invalid account UUID"),
-    category_id: z.string().uuid("Invalid category UUID"),
+    category_id: z.string().uuid("Invalid category UUID").nullable().optional(),
+    new_category_name: z
+      .string()
+      .trim()
+      .min(1, "El nombre de la categoría no puede estar vacío")
+      .max(100, "El nombre de la categoría no puede exceder 100 caracteres")
+      .nullable()
+      .optional(),
     description: z
       .string()
       .trim()
@@ -275,6 +324,15 @@ export const CreateTransactionSchema = z
     notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
   })
   .superRefine((data, ctx) => {
+    // Debe proveerse category_id o new_category_name
+    if (!data.category_id && !data.new_category_name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["category_id"],
+        message: "Debes seleccionar una categoría o ingresar el nombre de una nueva",
+      });
+    }
+
     // Si la transacción es de tipo ingreso, no puede tener cuotas
     if (data.transaction_type === "income" && data.installment_count > 1) {
       ctx.addIssue({
@@ -294,20 +352,38 @@ export type CreateTransactionInput = z.infer<typeof CreateTransactionSchema>;
 
 /**
  * Esquema especializado para compras a cuotas en tarjeta de crédito.
+ * Soporta asignación de category_id o creación al vuelo con new_category_name.
  */
-export const CreateInstallmentPurchaseSchema = z.object({
-  account_id: z.string().uuid("Invalid credit card account UUID"),
-  category_id: z.string().uuid("Invalid category UUID"),
-  description: z
-    .string()
-    .trim()
-    .min(1, "Purchase description is required")
-    .max(255, "Description cannot exceed 255 characters"),
-  amount: PositiveMoneySchema,
-  transaction_date: CivilDateSchema,
-  installment_count: InstallmentCountSchema,
-  notes: z.string().trim().max(1000).nullable().optional(),
-});
+export const CreateInstallmentPurchaseSchema = z
+  .object({
+    account_id: z.string().uuid("Invalid credit card account UUID"),
+    category_id: z.string().uuid("Invalid category UUID").nullable().optional(),
+    new_category_name: z
+      .string()
+      .trim()
+      .min(1, "El nombre de la categoría no puede estar vacío")
+      .max(100, "El nombre de la categoría no puede exceder 100 caracteres")
+      .nullable()
+      .optional(),
+    description: z
+      .string()
+      .trim()
+      .min(1, "Purchase description is required")
+      .max(255, "Description cannot exceed 255 characters"),
+    amount: PositiveMoneySchema,
+    transaction_date: CivilDateSchema,
+    installment_count: InstallmentCountSchema,
+    notes: z.string().trim().max(1000).nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (!data.category_id && !data.new_category_name) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["category_id"],
+        message: "Debes seleccionar una categoría o ingresar el nombre de una nueva",
+      });
+    }
+  });
 
 export type CreateInstallmentPurchaseInput = z.infer<typeof CreateInstallmentPurchaseSchema>;
 
@@ -334,7 +410,14 @@ export const UpdateTransactionSchema = z
       })
       .optional(),
     transaction_date: CivilDateSchema.optional(),
-    category_id: z.string().uuid("Invalid category UUID").optional(),
+    category_id: z.string().uuid("Invalid category UUID").nullable().optional(),
+    new_category_name: z
+      .string()
+      .trim()
+      .min(1)
+      .max(100)
+      .nullable()
+      .optional(),
     account_id: z.string().uuid("Invalid account UUID").optional(),
     installment_count: InstallmentCountSchema.optional(),
     notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
