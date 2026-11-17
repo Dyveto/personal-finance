@@ -252,6 +252,10 @@ Responsibilities:
 - [x] Implement cascading staggered micro-interactions (animate-stagger-1 through animate-stagger-5 with 100ms cascading delays) across Dashboard KPI cards, Recharts visualizations, and installment projections.
 - [x] Ensure strict absence of generic shadows, replacing them with crisp surface containers and subtle atmospheric glows.
 - [x] Implement Dark Mode / Light Mode switcher (ThemeToggle.tsx & switch.tsx) placed in the sidebar directly above the Sign Out button, with localStorage persistence and anti-FOUC inline script in root layout.
+- [x] Enrich Dashboard Financial Charts:
+  - PieChart category percentages: slice label percentages for slices >= 5%, custom legend displaying `Category · X.X% ($Amount COP)`, and floating tooltip showing exact COP amount and `% del total`.
+  - Reusable Time Range Filter Selector: Días (14 días), Semanas (8 semanas), Meses (6 meses), Años (3 años) y Personalizado (date inputs) con recálculo reactivo instantáneo en cliente para flujos y categorías.
+  - BarChart interactive tooltips: desglose visual prominente distinguiendo Ingresos (#10B981) vs Gastos (#F43F5E), junto con el Balance Neto del periodo.
 
 Expected deliverables:
 
@@ -270,6 +274,8 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
+- src/app/(dashboard)/page.tsx (Pase de transactions y categories con límite ampliado a 300)
 - src/components/ui/switch.tsx
 - src/components/layout/ThemeToggle.tsx
 - src/components/layout/Sidebar.tsx
@@ -277,7 +283,6 @@ Files created/modified:
 - src/components/layout/DashboardShell.tsx
 - src/app/layout.tsx
 - src/app/globals.css
-- src/app/(dashboard)/page.tsx
 
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)

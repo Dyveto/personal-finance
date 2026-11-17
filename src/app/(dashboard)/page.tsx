@@ -31,7 +31,7 @@ export default async function DashboardPage() {
   // Consumir Server Actions concurrentemente
   const [accountsResult, transactionsResult, categoriesResult, statementsResult] = await Promise.all([
     listAccounts(),
-    listTransactions({ limit: 50 }),
+    listTransactions({ limit: 300 }),
     listCategories(),
     listAllStatements(),
   ]);
@@ -234,7 +234,12 @@ export default async function DashboardPage() {
 
       {/* Gráficos Financieros Interactivos (Recharts) */}
       <div className="animate-stagger-4">
-        <FinancialCharts monthlyData={monthlyData} categoryData={categoryData} />
+        <FinancialCharts
+          monthlyData={monthlyData}
+          categoryData={categoryData}
+          transactions={transactions}
+          categories={categories}
+        />
       </div>
 
       {/* Tarjeta de Proyección de Cuotas Diferidas y Control de Extractos */}
