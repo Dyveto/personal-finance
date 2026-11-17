@@ -452,4 +452,34 @@ export const MarkExtractAsPaidSchema = z.object({
 
 export type MarkExtractAsPaidInput = z.infer<typeof MarkExtractAsPaidSchema>;
 
+/**
+ * Identificadores y orden predeterminado de los widgets del Dashboard.
+ */
+export const DEFAULT_DASHBOARD_WIDGET_ORDER = [
+  "kpi_summary",
+  "financial_charts",
+  "installment_projections",
+  "active_accounts",
+  "recent_transactions",
+] as const;
+
+export type DashboardWidgetId = (typeof DEFAULT_DASHBOARD_WIDGET_ORDER)[number];
+
+/**
+ * Esquema de validación para la configuración y persistencia del layout del Dashboard.
+ */
+export const DashboardLayoutSchema = z.object({
+  widget_order: z
+    .array(z.string().trim().min(1, "El ID del widget no puede estar vacío"))
+    .min(1, "widget_order debe contener al menos un widget"),
+  visible_widgets: z
+    .array(z.string().trim().min(1, "El ID del widget no puede estar vacío"))
+    .default([...DEFAULT_DASHBOARD_WIDGET_ORDER]),
+  collapsed_widgets: z
+    .array(z.string().trim().min(1, "El ID del widget no puede estar vacío"))
+    .default([]),
+});
+
+export type DashboardLayoutConfig = z.infer<typeof DashboardLayoutSchema>;
+
 

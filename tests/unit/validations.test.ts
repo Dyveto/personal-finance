@@ -8,6 +8,8 @@ import {
   MarkExtractAsPaidSchema,
   UpdateTransactionSchema,
   UuidParamSchema,
+  DashboardLayoutSchema,
+  DEFAULT_DASHBOARD_WIDGET_ORDER,
 } from "@/lib/validations/finance";
 
 describe("Validation Schemas: finance.ts", () => {
@@ -490,6 +492,53 @@ describe("Validation Schemas: finance.ts", () => {
       };
       const res = CreateTransactionSchema.safeParse(missingCatTx);
       expect(res.success).toBe(false);
+    });
+  });
+
+  describe("DashboardLayoutSchema", () => {
+    it("should accept a complete and valid dashboard layout configuration", () => {
+      const layout = {
+        widget_order: ["kpi_summary", "financial_charts", "recent_transactions"],
+        visible_widgets: ["kpi_summary", "financial_charts"],
+        collapsed_widgets: ["recent_transactions"],
+      };
+
+      const result = DashboardLayoutSchema.safeParse(layout);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.widget_order).toEqual([
+          "kpi_summary",
+          "financial_charts",
+          "recent_transactions",
+        ]);
+        expect(result.data.visible_widgets).toEqual(["kpi_summary", "financial_charts"]);
+        expect(result.data.collapsed_widgets).toEqual(["recent_transactions"]);
+      }
+    });
+
+    it("should apply default values when visible_widgets and collapsed_widgets are omitted", () => {
+      const layout = {
+        widget_order: ["kpi_summary", "financial_charts"],
+      };
+
+      const result = DashboardLayoutSchema.safeParse(layout);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.visible_widgets).toEqual([...DEFAULT_DASHBOARD_WIDGET_ORDER]);
+        expect(result.data.collapsed_widgets).toEqual([]);
+      }
+    });
+
+    it("should reject when widget_order is empty or not provided", () => {
+      expect(DashboardLayoutSchema.safeParse({ widget_order: [] }).success).toBe(false);
+      expect(DashboardLayoutSchema.safeParse({}).success).toBe(false);
+    });
+
+    it("should reject when widget IDs contain empty strings", () => {
+      const invalidLayout = {
+        widget_order: ["   "],
+      };
+      expect(DashboardLayoutSchema.safeParse(invalidLayout).success).toBe(false);
     });
   });
 });

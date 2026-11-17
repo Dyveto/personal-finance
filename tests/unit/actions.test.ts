@@ -36,6 +36,12 @@ import {
   deleteTransaction,
 } from "@/features/transactions/actions/transaction-actions";
 import { markExtractAsPaid } from "@/features/credit-cards/actions/statement-actions";
+import {
+  getDashboardLayout,
+  saveDashboardLayout,
+  resetDashboardLayout,
+  DEFAULT_DASHBOARD_LAYOUT,
+} from "@/features/dashboard/actions/dashboard-actions";
 
 describe("Server Actions: account-actions.ts", () => {
   beforeEach(() => {
@@ -1212,6 +1218,194 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error).toContain("No es posible eliminar la categoría");
+      }
+    });
+  });
+
+  describe("Server Actions: dashboard-actions.ts", () => {
+    const validUserId = "11111111-1111-4111-a111-111111111111";
+
+    it("should reject getDashboardLayout when user is not authenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("Unauthorized"),
+      });
+
+      const result = await getDashboardLayout();
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should return persisted dashboard layout when present in user_preferences", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const customLayout = {
+        widget_order: ["recent_transactions", "kpi_summary"],
+        visible_widgets: ["recent_transactions"],
+        collapsed_widgets: ["kpi_summary"],
+      };
+
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValueOnce({
+            data: { dashboard_layout: customLayout },
+            error: null,
+          }),
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelect });
+
+      const result = await getDashboardLayout();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.widget_order).toEqual(["recent_transactions", "kpi_summary"]);
+        expect(result.data.visible_widgets).toEqual(["recent_transactions"]);
+        expect(result.data.collapsed_widgets).toEqual(["kpi_summary"]);
+      }
+    });
+
+    it("should seed and return DEFAULT_DASHBOARD_LAYOUT when user has no preferences row", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValueOnce({
+            data: null,
+            error: null,
+          }),
+        }),
+      });
+
+      const mockUpsert = vi.fn().mockResolvedValueOnce({ error: null });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelect })
+        .mockReturnValueOnce({ upsert: mockUpsert });
+
+      const result = await getDashboardLayout();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual(DEFAULT_DASHBOARD_LAYOUT);
+      }
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: validUserId,
+          dashboard_layout: DEFAULT_DASHBOARD_LAYOUT,
+        }),
+        { onConflict: "user_id" }
+      );
+    });
+
+    it("should fallback to DEFAULT_DASHBOARD_LAYOUT if stored data is corrupted", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const corruptedLayout = {
+        widget_order: [], // invalid: requires min 1
+      };
+
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValueOnce({
+            data: { dashboard_layout: corruptedLayout },
+            error: null,
+          }),
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelect });
+
+      const result = await getDashboardLayout();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual(DEFAULT_DASHBOARD_LAYOUT);
+      }
+    });
+
+    it("should reject saveDashboardLayout when user is not authenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("Unauthorized"),
+      });
+
+      const result = await saveDashboardLayout({ widget_order: ["kpi_summary"] });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should reject saveDashboardLayout with invalid layout structure", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const invalidLayout = {
+        widget_order: [], // min 1 required
+      };
+
+      const result = await saveDashboardLayout(invalidLayout);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Configuración de layout de dashboard inválida");
+        expect(result.validationErrors).toBeDefined();
+      }
+    });
+
+    it("should save valid dashboard layout and upsert user_preferences with user_id", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const validLayout = {
+        widget_order: ["financial_charts", "kpi_summary"],
+        visible_widgets: ["financial_charts", "kpi_summary"],
+        collapsed_widgets: [],
+      };
+
+      const mockUpsert = vi.fn().mockResolvedValueOnce({ error: null });
+      mockFrom.mockReturnValueOnce({ upsert: mockUpsert });
+
+      const result = await saveDashboardLayout(validLayout);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.widget_order).toEqual(["financial_charts", "kpi_summary"]);
+      }
+      expect(mockUpsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user_id: validUserId,
+          dashboard_layout: validLayout,
+        }),
+        { onConflict: "user_id" }
+      );
+    });
+
+    it("should reset dashboard layout to defaults via resetDashboardLayout", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const mockUpsert = vi.fn().mockResolvedValueOnce({ error: null });
+      mockFrom.mockReturnValueOnce({ upsert: mockUpsert });
+
+      const result = await resetDashboardLayout();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data).toEqual(DEFAULT_DASHBOARD_LAYOUT);
       }
     });
   });
