@@ -482,4 +482,13 @@ export const DashboardLayoutSchema = z.object({
 
 export type DashboardLayoutConfig = z.infer<typeof DashboardLayoutSchema>;
 
+/**
+ * Configuración predeterminada del layout del Dashboard.
+ */
+export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig = {
+  widget_order: [...DEFAULT_DASHBOARD_WIDGET_ORDER],
+  visible_widgets: [...DEFAULT_DASHBOARD_WIDGET_ORDER],
+  collapsed_widgets: [],
+};
+
 

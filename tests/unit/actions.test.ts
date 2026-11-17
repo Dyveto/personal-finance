@@ -40,8 +40,8 @@ import {
   getDashboardLayout,
   saveDashboardLayout,
   resetDashboardLayout,
-  DEFAULT_DASHBOARD_LAYOUT,
 } from "@/features/dashboard/actions/dashboard-actions";
+import { DEFAULT_DASHBOARD_LAYOUT } from "@/lib/validations/finance";
 
 describe("Server Actions: account-actions.ts", () => {
   beforeEach(() => {

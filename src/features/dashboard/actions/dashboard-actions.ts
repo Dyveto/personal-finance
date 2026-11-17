@@ -7,17 +7,8 @@ import type { Json } from "@/types/database.types";
 import {
   DashboardLayoutSchema,
   type DashboardLayoutConfig,
-  DEFAULT_DASHBOARD_WIDGET_ORDER,
+  DEFAULT_DASHBOARD_LAYOUT,
 } from "@/lib/validations/finance";
-
-/**
- * Disposición por defecto de widgets en el Dashboard.
- */
-export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig = {
-  widget_order: [...DEFAULT_DASHBOARD_WIDGET_ORDER],
-  visible_widgets: [...DEFAULT_DASHBOARD_WIDGET_ORDER],
-  collapsed_widgets: [],
-};
 
 /**
  * Obtiene la configuración de diseño del Dashboard para el usuario autenticado.

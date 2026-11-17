@@ -312,6 +312,15 @@ Responsibilities:
   - Create and edit dialog with 20+ icons and atmospheric color chips selector.
   - Safe deletion / archiving flow preserving accounting integrity.
   - Integration with `Sidebar.tsx` navigation and `middleware.ts` route protection.
+- [x] Implement PlayStation 5 Welcome Hub inspired modular dashboard customization & reordering:
+  - Mode toggle: Header action and dynamic bottom-right floating pill (`Personalizar Dashboard` / `Salir de Edición`).
+  - Drag & drop reordering using native HTML5 drag events (`onDragStart`, `onDragOver`, `onDrop`) with visual elevation, drop indicator borders, and opacity states.
+  - Quick directional reorder buttons (`ChevronUp`, `ChevronDown`) with boundary protection.
+  - Section visibility toggle (`Eye`, `EyeOff` / switches) with clear indicator badges.
+  - Welcome Hub action banner with status (`X de Y visibles`), "Gestionar Secciones", "Restablecer", "Cancelar" and "Guardar Cambios".
+  - `WelcomeHubManagerModal`: modal dialog for bulk visibility toggle, reordering, and reset to defaults.
+  - Modular widget components (`DashboardKpiWidget`, `DashboardActiveAccounts`, `DashboardRecentTransactions`, `WidgetWrapper`).
+  - Persistence via `saveDashboardLayout()` Server Action with transition state, error handling, and visual feedback notification banner.
 
 Expected deliverables:
 
@@ -330,6 +339,15 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/dashboard/components/WelcomeHubDashboard.tsx (Dashboard interactivo tipo Welcome Hub con reordenamiento, visibilidad y persistencia)
+- src/features/dashboard/components/WelcomeHubBanner.tsx (Barra de control atmosférica para modo edición)
+- src/features/dashboard/components/WelcomeHubManagerModal.tsx (Modal de administración de visibilidad y orden de widgets)
+- src/features/dashboard/components/widgets/WidgetWrapper.tsx (Envoltorio modular con cabecera de edición, drag handle y controles)
+- src/features/dashboard/components/widgets/DashboardKpiWidget.tsx (Widget modular de métricas principales)
+- src/features/dashboard/components/widgets/DashboardActiveAccounts.tsx (Widget modular de cuentas activas)
+- src/features/dashboard/components/widgets/DashboardRecentTransactions.tsx (Widget modular de transacciones recientes)
+- src/app/(dashboard)/page.tsx (Integración de Server Actions con WelcomeHubDashboard)
+- tests/unit/dashboard-hub.test.ts (Pruebas unitarias de reordenamiento, drag & drop y visibilidad)
 - src/features/transactions/components/TransactionForm.tsx (Reorganización de cuenta y tipo; soporte de nueva categoría personalizada al vuelo)
 - src/app/(dashboard)/categories/page.tsx (Página protegida de administración de categorías)
 - src/features/categories/components/CategoriesClientView.tsx (Módulo interactivo completo de gestión de categorías)
@@ -337,7 +355,6 @@ Files created/modified:
 - src/middleware.ts (Protección de ruta para /categories)
 - src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
 - src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
-- src/app/(dashboard)/page.tsx (Pase de transactions y categories con límite ampliado a 300)
 - src/components/ui/switch.tsx
 - src/components/layout/ThemeToggle.tsx
 - src/components/layout/Header.tsx
@@ -348,10 +365,11 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (101/101 unit tests passing)
+- `npm run test:run` -> PASS (122/122 unit tests passing, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
+- `getDashboardLayout()`, `saveDashboardLayout()`, `resetDashboardLayout()` de `@/features/dashboard/actions/dashboard-actions`
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
 - `listCategories()` de `@/features/categories/actions/category-actions`
