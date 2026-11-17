@@ -69,6 +69,13 @@ Responsibilities:
 - [x] Implement database triggers `trg_transactions_sync_balance` and `trg_statements_sync_balance` to automatically recalculate balances upon transaction or statement insertion, update, or deletion.
 - [x] Implement covering composite indexes (`transactions_account_type_amount_idx`, `statements_account_paid_amount_idx`) for instant index-only balance recalculations.
 - [x] Update `src/types/database.types.ts` with `recalculate_account_balance` RPC function signature and extended summary view types.
+- [x] Implement category customization and RLS integrity (`20260331200000_category_customization_and_rls.sql`):
+  - Audit and ensure strict RLS (`user_id = (SELECT auth.uid())`) on `SELECT`, `INSERT`, `UPDATE`, and `DELETE` on `public.categories`, allowing full user editability/deletability of both custom and default categories.
+  - Verify independent per-user unique scoping (`categories_unique_name UNIQUE (user_id, name, category_type)`).
+  - Add `updated_at` column and `categories_updated_at` trigger for auditing modifications.
+  - Add `is_active` column for category archiving.
+  - Update `create_default_categories()` trigger with Spanish names, colors, and `ON CONFLICT (user_id, name, category_type) DO NOTHING`.
+  - Update `src/types/database.types.ts` with `is_active` and `updated_at` in `Row`, `Insert`, and `Update` for `categories`, exporting `CategoryRow`, `CategoryInsert`, and `CategoryUpdate`.
 
 Expected deliverables:
 
@@ -83,6 +90,12 @@ Handoff:
 Files created/updated:
 - supabase/migrations/20260330000000_initial_schema.sql
 - database/migrations/20260330000000_initial_schema.sql
+- supabase/migrations/20260331000000_credit_card_statements_and_paid_status.sql
+- database/migrations/20260331000000_credit_card_statements_and_paid_status.sql
+- supabase/migrations/20260331100000_safe_delete_and_balance_recalculation.sql
+- database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql
+- supabase/migrations/20260331200000_category_customization_and_rls.sql
+- database/migrations/20260331200000_category_customization_and_rls.sql
 - src/types/database.types.ts
 
 Public contracts:

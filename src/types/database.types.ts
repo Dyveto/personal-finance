@@ -79,7 +79,9 @@ export interface Database {
           icon: string | null
           color: string | null
           is_default: boolean
+          is_active: boolean
           created_at: string
+          updated_at: string
         }
         Insert: {
           id?: string
@@ -89,7 +91,9 @@ export interface Database {
           icon?: string | null
           color?: string | null
           is_default?: boolean
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
         Update: {
           id?: string
@@ -99,7 +103,9 @@ export interface Database {
           icon?: string | null
           color?: string | null
           is_default?: boolean
+          is_active?: boolean
           created_at?: string
+          updated_at?: string
         }
         Relationships: [
           {
