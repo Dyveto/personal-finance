@@ -76,6 +76,14 @@ Responsibilities:
   - Add `is_active` column for category archiving.
   - Update `create_default_categories()` trigger with Spanish names, colors, and `ON CONFLICT (user_id, name, category_type) DO NOTHING`.
   - Update `src/types/database.types.ts` with `is_active` and `updated_at` in `Row`, `Insert`, and `Update` for `categories`, exporting `CategoryRow`, `CategoryInsert`, and `CategoryUpdate`.
+- [x] Implement User Preferences and Dashboard Layout table (`20260331300000_user_preferences_and_dashboard_layout.sql`):
+  - Create `public.user_preferences` table with `user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE`.
+  - Store flexible JSONB `dashboard_layout` (widget_order, visible_widgets, collapsed_widgets).
+  - Add GIN index `user_preferences_dashboard_layout_idx` and user index `user_preferences_user_idx`.
+  - Configure `user_preferences_updated_at` trigger.
+  - Implement `create_default_user_preferences()` trigger on `auth.users` for automatic initialization.
+  - Enforce strict RLS (`user_id = (SELECT auth.uid())`) on `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
+  - Update `src/types/database.types.ts` with `user_preferences` table schema and helper types (`UserPreferenceRow`, `UserPreferenceInsert`, `UserPreferenceUpdate`, `DashboardLayoutPreference`).
 
 Expected deliverables:
 
@@ -96,6 +104,8 @@ Files created/updated:
 - database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql
 - supabase/migrations/20260331200000_category_customization_and_rls.sql
 - database/migrations/20260331200000_category_customization_and_rls.sql
+- supabase/migrations/20260331300000_user_preferences_and_dashboard_layout.sql
+- database/migrations/20260331300000_user_preferences_and_dashboard_layout.sql
 - src/types/database.types.ts
 
 Public contracts:

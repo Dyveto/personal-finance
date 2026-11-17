@@ -238,6 +238,44 @@ export interface Database {
           }
         ]
       }
+      user_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          dashboard_layout: Json
+          theme: 'light' | 'dark' | 'system'
+          currency: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          dashboard_layout?: Json
+          theme?: 'light' | 'dark' | 'system'
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          dashboard_layout?: Json
+          theme?: 'light' | 'dark' | 'system'
+          currency?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       credit_card_balance_summary: {
@@ -297,3 +335,13 @@ export type CreditCardStatementInsert = Database["public"]["Tables"]["credit_car
 export type CreditCardStatementUpdate = Database["public"]["Tables"]["credit_card_statements"]["Update"];
 
 export type CreditCardBalanceSummaryRow = Database["public"]["Views"]["credit_card_balance_summary"]["Row"];
+
+export type UserPreferenceRow = Database["public"]["Tables"]["user_preferences"]["Row"];
+export type UserPreferenceInsert = Database["public"]["Tables"]["user_preferences"]["Insert"];
+export type UserPreferenceUpdate = Database["public"]["Tables"]["user_preferences"]["Update"];
+
+export interface DashboardLayoutPreference {
+  widget_order: string[];
+  visible_widgets: string[];
+  collapsed_widgets?: string[];
+}
