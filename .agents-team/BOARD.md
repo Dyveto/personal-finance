@@ -283,6 +283,15 @@ Responsibilities:
   - Dynamic grouping by category: real-time computation of total expenses, total income, transaction counts, and percentages relative to filtered totals using strict decimal arithmetic (`addMoney`, `subtractMoney`, `roundMoney`).
   - Atmospheric UI cards with custom category icons, percentage badges, sleek progress bars, and instant category drill-down toggles.
   - Reactive top KPI cards updating immediately to reflect filtered income, expense, and net balance with active filter badges.
+- [x] Reorganize Transaction Form (`TransactionForm.tsx`):
+  - Prioritize Cuenta de Origen / Pago as first field, and Tipo de Movimiento (Gasto/Compra vs Ingreso) as second field.
+  - Support on-the-fly custom category entry (`+ Añadir categoría personalizada...` and toggle button) with automatic persistence.
+- [x] Implement Dedicated Categories Management Panel (`/categories`):
+  - View `src/app/(dashboard)/categories/page.tsx` and `CategoriesClientView.tsx`.
+  - KPI summary cards (Total Activas, Gastos, Ingresos, Archivadas), search and filter tabs.
+  - Create and edit dialog with 20+ icons and atmospheric color chips selector.
+  - Safe deletion / archiving flow preserving accounting integrity.
+  - Integration with `Sidebar.tsx` navigation and `middleware.ts` route protection.
 
 Expected deliverables:
 
@@ -301,12 +310,16 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/TransactionForm.tsx (Reorganización de cuenta y tipo; soporte de nueva categoría personalizada al vuelo)
+- src/app/(dashboard)/categories/page.tsx (Página protegida de administración de categorías)
+- src/features/categories/components/CategoriesClientView.tsx (Módulo interactivo completo de gestión de categorías)
+- src/components/layout/Sidebar.tsx (Enlace a Categorías en la barra lateral)
+- src/middleware.ts (Protección de ruta para /categories)
 - src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
 - src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
 - src/app/(dashboard)/page.tsx (Pase de transactions y categories con límite ampliado a 300)
 - src/components/ui/switch.tsx
 - src/components/layout/ThemeToggle.tsx
-- src/components/layout/Sidebar.tsx
 - src/components/layout/Header.tsx
 - src/components/layout/DashboardShell.tsx
 - src/app/layout.tsx
@@ -315,8 +328,8 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (89/89 unit tests passing)
-- `npm run build` -> PASS (Optimized production build, 11 static/dynamic routes + Edge Middleware)
+- `npm run test:run` -> PASS (101/101 unit tests passing)
+- `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
