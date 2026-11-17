@@ -589,6 +589,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - FRONTEND AGENT (Interactive Notification Bell Popover & Credit Card Due Alerts)
+Task: Upgraded the notification bell in the top dashboard navigation header (`Header.tsx`). Implemented `NotificationBell.tsx` with a floating popover menu styled with Shadcn/UI and Tailwind CSS. Connected the component with backend server action `getPaymentAlerts()` and civil date arithmetic utility `diffCivilDays`. The popover alerts users of upcoming or overdue credit card payment due dates (`payment_due_day`), displaying credit card names, outstanding debt amounts, days remaining, and priority badges (`overdue`, `due_today`, `upcoming`). Shows clean friendly empty state ("¡Estás al día!") when all cards are settled. Supported backdrop click dismissal, escape key closure, explicit "X" button, and a badge on the bell icon with the active alert count.
+Files created/modified: src/components/layout/NotificationBell.tsx, src/components/layout/Header.tsx, src/features/credit-cards/actions/statement-actions.ts, src/lib/finance/calendar.ts, tests/unit/finance.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (76/76 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

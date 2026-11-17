@@ -222,3 +222,22 @@ export function calculatePaymentDueDate(
   const finalDay = clampDayToMonth(dueYear, dueMonth, paymentDueDay);
   return formatCivilDate(dueYear, dueMonth, finalDay);
 }
+
+/**
+ * Calcula la diferencia exacta en días civiles entre dos fechas ISO "YYYY-MM-DD".
+ * Retorna un valor positivo si toDate es posterior a fromDate,
+ * 0 si son el mismo día, o un valor negativo si toDate es anterior.
+ *
+ * @param fromDate Fecha de origen "YYYY-MM-DD".
+ * @param toDate Fecha de destino "YYYY-MM-DD".
+ * @returns Número entero de días de diferencia (toDate - fromDate).
+ */
+export function diffCivilDays(fromDate: string, toDate: string): number {
+  const { year: y1, month: m1, day: d1 } = parseCivilDate(fromDate);
+  const { year: y2, month: m2, day: d2 } = parseCivilDate(toDate);
+  const utc1 = Date.UTC(y1, m1 - 1, d1);
+  const utc2 = Date.UTC(y2, m2 - 1, d2);
+  const MS_PER_DAY = 1000 * 60 * 60 * 24;
+  return Math.round((utc2 - utc1) / MS_PER_DAY);
+}
+

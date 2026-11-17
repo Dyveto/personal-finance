@@ -15,6 +15,7 @@ import {
   getDaysInMonth,
   parseCivilDate,
   clampDayToMonth,
+  diffCivilDays,
 } from "@/lib/finance/calendar";
 import { projectTransactionInstallments } from "@/lib/finance/projections";
 
@@ -237,6 +238,28 @@ describe("Financial Engine: calendar.ts", () => {
     it("should throw for invalid days", () => {
       expect(() => calculatePaymentDueDate("2026-03-20", 0, 5)).toThrow();
       expect(() => calculatePaymentDueDate("2026-03-20", 20, 35)).toThrow();
+    });
+  });
+
+  describe("diffCivilDays", () => {
+    it("should return 0 when comparing the same civil date", () => {
+      expect(diffCivilDays("2026-11-16", "2026-11-16")).toBe(0);
+    });
+
+    it("should return positive days remaining for future due dates", () => {
+      expect(diffCivilDays("2026-11-16", "2026-11-21")).toBe(5);
+      expect(diffCivilDays("2026-11-16", "2026-12-05")).toBe(19);
+    });
+
+    it("should return negative days for overdue dates", () => {
+      expect(diffCivilDays("2026-11-16", "2026-11-13")).toBe(-3);
+    });
+
+    it("should correctly handle month boundaries and leap years", () => {
+      // 2026-02-27 to 2026-03-02 in non-leap year (28 days in Feb) -> 3 days
+      expect(diffCivilDays("2026-02-27", "2026-03-02")).toBe(3);
+      // 2028-02-27 to 2028-03-02 in leap year (29 days in Feb) -> 4 days
+      expect(diffCivilDays("2028-02-27", "2028-03-02")).toBe(4);
     });
   });
 

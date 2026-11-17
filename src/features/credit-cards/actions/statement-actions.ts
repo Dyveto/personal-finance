@@ -13,6 +13,7 @@ import {
   parseCivilDate,
   formatCivilDate,
   clampDayToMonth,
+  diffCivilDays,
 } from "@/lib/finance/calendar";
 import { projectTransactionInstallments } from "@/lib/finance/projections";
 import type { Database, CreditCardStatementRow } from "@/types/database.types";
@@ -430,3 +431,112 @@ export async function listStatements(
     return { success: false, error: message };
   }
 }
+
+export interface PaymentAlert {
+  id: string;
+  cardId: string;
+  cardName: string;
+  amount: number;
+  dueDate: string; // YYYY-MM-DD
+  daysRemaining: number;
+  status: "overdue" | "due_today" | "upcoming";
+  statementMonth?: string;
+  isPaid: boolean;
+}
+
+/**
+ * Obtiene las alertas de fechas límite de pago y extractos pendientes para las tarjetas de crédito del usuario.
+ */
+export async function getPaymentAlerts(): Promise<ActionResult<PaymentAlert[]>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    // 1. Obtener tarjetas de crédito activas
+    const { data: cards, error: cardsError } = await supabase
+      .from("accounts")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("account_type", "credit_card")
+      .eq("is_active", true);
+
+    if (cardsError) {
+      return { success: false, error: `Database error while fetching cards: ${cardsError.message}` };
+    }
+
+    // 2. Obtener extractos registrados
+    const { data: statements } = await supabase
+      .from("credit_card_statements")
+      .select("*")
+      .eq("user_id", user.id);
+
+    const now = new Date();
+    const todayDate = formatCivilDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
+    const alerts: PaymentAlert[] = [];
+
+    for (const card of cards || []) {
+      const cardDebt = Number(card.current_balance) || 0;
+      const closingDay = card.closing_day || 15;
+      const paymentDueDay = card.payment_due_day || 5;
+
+      // Calcular ciclo actual y fecha límite de pago
+      const currentClosingDate = calculateStatementClosingDate(todayDate, closingDay);
+      const currentDueDate = calculatePaymentDueDate(currentClosingDate, closingDay, paymentDueDay);
+      const { year, month } = parseCivilDate(currentClosingDate);
+      const statementMonth = `${year}-${String(month).padStart(2, "0")}`;
+
+      // Verificar si el extracto ya está pagado
+      const isPaid = statements?.some(
+        (s) => s.account_id === card.id && s.statement_month === statementMonth && s.is_paid
+      );
+
+      // Si la tarjeta tiene deuda acumulada y no ha sido saldada
+      if (cardDebt > 0 && !isPaid) {
+        const daysRemaining = diffCivilDays(todayDate, currentDueDate);
+        let status: "overdue" | "due_today" | "upcoming" = "upcoming";
+
+        if (daysRemaining < 0) {
+          status = "overdue";
+        } else if (daysRemaining === 0) {
+          status = "due_today";
+        }
+
+        alerts.push({
+          id: `${card.id}_${statementMonth}`,
+          cardId: card.id,
+          cardName: card.name,
+          amount: cardDebt,
+          dueDate: currentDueDate,
+          daysRemaining,
+          status,
+          statementMonth,
+          isPaid: false,
+        });
+      }
+    }
+
+    // Ordenar: vencidos primero, luego los que vencen hoy, luego por días restantes ascendente
+    alerts.sort((a, b) => {
+      const priority = { overdue: 1, due_today: 2, upcoming: 3 };
+      if (priority[a.status] !== priority[b.status]) {
+        return priority[a.status] - priority[b.status];
+      }
+      return a.daysRemaining - b.daysRemaining;
+    });
+
+    return { success: true, data: alerts };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while fetching payment alerts";
+    return { success: false, error: message };
+  }
+}
+

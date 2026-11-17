@@ -1,7 +1,8 @@
 "use client";
 
-import { Menu, Bell, Wallet } from "lucide-react";
+import { Menu, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -40,14 +41,7 @@ export function Header({ onMenuToggle, title = "Dashboard Financiero" }: HeaderP
           <span>COP Activo</span>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          aria-label="Notificaciones"
-        >
-          <Bell className="w-4 h-4" />
-        </Button>
+        <NotificationBell />
       </div>
     </header>
   );
