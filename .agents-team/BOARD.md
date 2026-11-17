@@ -256,6 +256,11 @@ Responsibilities:
   - PieChart category percentages: slice label percentages for slices >= 5%, custom legend displaying `Category · X.X% ($Amount COP)`, and floating tooltip showing exact COP amount and `% del total`.
   - Reusable Time Range Filter Selector: Días (14 días), Semanas (8 semanas), Meses (6 meses), Años (3 años) y Personalizado (date inputs) con recálculo reactivo instantáneo en cliente para flujos y categorías.
   - BarChart interactive tooltips: desglose visual prominente distinguiendo Ingresos (#10B981) vs Gastos (#F43F5E), junto con el Balance Neto del periodo.
+- [x] Implement dynamic calculation and real-time category grouping in Transactions View (`TransactionsClientView.tsx`):
+  - Multicriteria filtering: search query, account, category, transaction type, date presets (este mes, últimos 30 días, este año) and custom date range (desde/hasta).
+  - Dynamic grouping by category: real-time computation of total expenses, total income, transaction counts, and percentages relative to filtered totals using strict decimal arithmetic (`addMoney`, `subtractMoney`, `roundMoney`).
+  - Atmospheric UI cards with custom category icons, percentage badges, sleek progress bars, and instant category drill-down toggles.
+  - Reactive top KPI cards updating immediately to reflect filtered income, expense, and net balance with active filter badges.
 
 Expected deliverables:
 
@@ -274,6 +279,7 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
 - src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
 - src/app/(dashboard)/page.tsx (Pase de transactions y categories con límite ampliado a 300)
 - src/components/ui/switch.tsx
