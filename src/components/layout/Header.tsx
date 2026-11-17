@@ -11,24 +11,24 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle, title = "Dashboard Financiero" }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 md:px-8 border-b border-white/[0.08] bg-[#0B0F19]/80 backdrop-blur-md transition-colors">
+    <header className="sticky top-0 z-20 flex items-center justify-between h-16 px-4 md:px-8 border-b border-slate-200 dark:border-white/[0.08] bg-white/80 dark:bg-[#0B0F19]/80 backdrop-blur-md transition-colors">
       <div className="flex items-center gap-3">
         {/* Mobile menu trigger */}
         <Button
           variant="outline"
           size="icon"
           onClick={onMenuToggle}
-          className="md:hidden text-[#F8FAFC] border-white/[0.08] bg-[#131B2E] hover:bg-[#1a233a] hover:text-white"
+          className="md:hidden text-slate-700 dark:text-[#F8FAFC] border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131B2E] hover:bg-slate-100 dark:hover:bg-[#1a233a]"
           aria-label="Abrir menú de navegación"
         >
           <Menu className="w-5 h-5" />
         </Button>
 
         <div>
-          <h1 className="text-base md:text-lg font-heading font-bold text-[#F8FAFC] leading-tight">
+          <h1 className="text-base md:text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC] leading-tight">
             {title}
           </h1>
-          <span className="text-[11px] text-[#94A3B8] hidden sm:block">
+          <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] hidden sm:block">
             Moneda: COP · Zona horaria: America/Bogota
           </span>
         </div>

@@ -3,9 +3,13 @@ import {
   CreateAccountSchema,
   CreateTransactionSchema,
   CreateInstallmentPurchaseSchema,
+  CreateCategorySchema,
+  UpdateCategorySchema,
   MarkExtractAsPaidSchema,
   UpdateTransactionSchema,
   UuidParamSchema,
+  DashboardLayoutSchema,
+  DEFAULT_DASHBOARD_WIDGET_ORDER,
 } from "@/lib/validations/finance";
 
 describe("Validation Schemas: finance.ts", () => {
@@ -387,6 +391,154 @@ describe("Validation Schemas: finance.ts", () => {
       if (result.success) {
         expect(result.data.is_paid).toBe(true);
       }
+    });
+  });
+
+  describe("CreateCategorySchema & UpdateCategorySchema", () => {
+    it("should accept valid income and expense category inputs", () => {
+      const validExpense = {
+        name: "Cine y Teatro",
+        category_type: "expense" as const,
+        icon: "film",
+        color: "#EC4899",
+      };
+      const expenseRes = CreateCategorySchema.safeParse(validExpense);
+      expect(expenseRes.success).toBe(true);
+      if (expenseRes.success) {
+        expect(expenseRes.data.name).toBe("Cine y Teatro");
+        expect(expenseRes.data.category_type).toBe("expense");
+        expect(expenseRes.data.is_active).toBe(true);
+      }
+
+      const validIncome = {
+        name: "Dividendos",
+        category_type: "income" as const,
+      };
+      const incomeRes = CreateCategorySchema.safeParse(validIncome);
+      expect(incomeRes.success).toBe(true);
+    });
+
+    it("should reject invalid category inputs", () => {
+      const emptyName = {
+        name: "   ",
+        category_type: "expense" as const,
+      };
+      expect(CreateCategorySchema.safeParse(emptyName).success).toBe(false);
+
+      const invalidType = {
+        name: "Test",
+        category_type: "investment",
+      };
+      expect(CreateCategorySchema.safeParse(invalidType).success).toBe(false);
+    });
+
+    it("should accept valid updates to category", () => {
+      const update = {
+        name: "Cine, Streaming y Teatro",
+        icon: "tv",
+        is_active: false,
+      };
+      const res = UpdateCategorySchema.safeParse(update);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.name).toBe("Cine, Streaming y Teatro");
+        expect(res.data.is_active).toBe(false);
+      }
+    });
+  });
+
+  describe("On-the-fly Category creation in transactions", () => {
+    const validAccountId = "11111111-1111-4111-a111-111111111111";
+
+    it("should accept transaction with new_category_name instead of category_id", () => {
+      const onTheFlyTx = {
+        account_id: validAccountId,
+        new_category_name: "Veterinaria y Mascotas",
+        description: "Vacunas perro",
+        amount: 85000,
+        transaction_type: "expense" as const,
+        transaction_date: "2026-11-14",
+      };
+      const res = CreateTransactionSchema.safeParse(onTheFlyTx);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.new_category_name).toBe("Veterinaria y Mascotas");
+      }
+    });
+
+    it("should accept installment purchase with new_category_name instead of category_id", () => {
+      const onTheFlyPurchase = {
+        account_id: validAccountId,
+        new_category_name: "Electrónica y Gadgets",
+        description: "Audífonos Sony",
+        amount: 350000,
+        transaction_date: "2026-11-14",
+        installment_count: 6,
+      };
+      const res = CreateInstallmentPurchaseSchema.safeParse(onTheFlyPurchase);
+      expect(res.success).toBe(true);
+      if (res.success) {
+        expect(res.data.new_category_name).toBe("Electrónica y Gadgets");
+      }
+    });
+
+    it("should reject transaction when neither category_id nor new_category_name is provided", () => {
+      const missingCatTx = {
+        account_id: validAccountId,
+        description: "Sin categoría",
+        amount: 15000,
+        transaction_type: "expense" as const,
+        transaction_date: "2026-11-14",
+      };
+      const res = CreateTransactionSchema.safeParse(missingCatTx);
+      expect(res.success).toBe(false);
+    });
+  });
+
+  describe("DashboardLayoutSchema", () => {
+    it("should accept a complete and valid dashboard layout configuration", () => {
+      const layout = {
+        widget_order: ["kpi_summary", "financial_charts", "recent_transactions"],
+        visible_widgets: ["kpi_summary", "financial_charts"],
+        collapsed_widgets: ["recent_transactions"],
+      };
+
+      const result = DashboardLayoutSchema.safeParse(layout);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.widget_order).toEqual([
+          "kpi_summary",
+          "financial_charts",
+          "recent_transactions",
+        ]);
+        expect(result.data.visible_widgets).toEqual(["kpi_summary", "financial_charts"]);
+        expect(result.data.collapsed_widgets).toEqual(["recent_transactions"]);
+      }
+    });
+
+    it("should apply default values when visible_widgets and collapsed_widgets are omitted", () => {
+      const layout = {
+        widget_order: ["kpi_summary", "financial_charts"],
+      };
+
+      const result = DashboardLayoutSchema.safeParse(layout);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.visible_widgets).toEqual([...DEFAULT_DASHBOARD_WIDGET_ORDER]);
+        expect(result.data.collapsed_widgets).toEqual([]);
+      }
+    });
+
+    it("should reject when widget_order is empty or not provided", () => {
+      expect(DashboardLayoutSchema.safeParse({ widget_order: [] }).success).toBe(false);
+      expect(DashboardLayoutSchema.safeParse({}).success).toBe(false);
+    });
+
+    it("should reject when widget IDs contain empty strings", () => {
+      const invalidLayout = {
+        widget_order: ["   "],
+      };
+      expect(DashboardLayoutSchema.safeParse(invalidLayout).success).toBe(false);
     });
   });
 });

@@ -14,6 +14,24 @@ import {
   Trash2,
   AlertCircle,
   CheckCircle2,
+  Filter,
+  Layers,
+  PieChart,
+  Tag,
+  RotateCcw,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Utensils,
+  Car,
+  Home,
+  Heart,
+  Film,
+  ShoppingBag,
+  BookOpen,
+  MoreHorizontal,
+  Laptop,
+  TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +59,53 @@ interface TransactionsClientViewProps {
   categories: CategoryRow[];
 }
 
+type DatePreset = "all" | "this_month" | "last_30_days" | "this_year" | "custom";
+
+function formatCivilDateISO(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Mapeo de icono de categoría con base en el nombre de icono registrado o tipo
+ */
+function renderCategoryIcon(iconName: string | null, type: "income" | "expense") {
+  switch (iconName) {
+    case "wallet":
+      return <Wallet className="w-4 h-4" />;
+    case "laptop":
+      return <Laptop className="w-4 h-4" />;
+    case "trending-up":
+      return <TrendingUp className="w-4 h-4" />;
+    case "plus-circle":
+      return <PlusCircle className="w-4 h-4" />;
+    case "utensils":
+      return <Utensils className="w-4 h-4" />;
+    case "car":
+      return <Car className="w-4 h-4" />;
+    case "home":
+      return <Home className="w-4 h-4" />;
+    case "heart":
+      return <Heart className="w-4 h-4" />;
+    case "film":
+      return <Film className="w-4 h-4" />;
+    case "shopping-bag":
+      return <ShoppingBag className="w-4 h-4" />;
+    case "book":
+      return <BookOpen className="w-4 h-4" />;
+    case "more-horizontal":
+      return <MoreHorizontal className="w-4 h-4" />;
+    default:
+      return type === "income" ? (
+        <ArrowDownRight className="w-4 h-4" />
+      ) : (
+        <Tag className="w-4 h-4" />
+      );
+  }
+}
+
 export function TransactionsClientView({
   initialTransactions,
   accounts,
@@ -53,9 +118,19 @@ export function TransactionsClientView({
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Estados de filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+
+  // Estados visuales de la sección de categorías
+  const [isCategorySummaryOpen, setIsCategorySummaryOpen] = useState(true);
+  const [categoryViewTab, setCategoryViewTab] = useState<"all" | "expense" | "income">("all");
 
   // Mapas auxiliares para búsqueda rápida de nombres de cuentas y categorías
   const accountsMap = useMemo(() => {
@@ -66,20 +141,52 @@ export function TransactionsClientView({
     return new Map(categories.map((c) => [c.id, c]));
   }, [categories]);
 
-  // Cálculos de métricas consolidadas
-  let totalIncome = "0.00";
-  let totalExpense = "0.00";
+  // Aplicación rápida de presets de fecha
+  const handleDatePresetChange = (preset: DatePreset) => {
+    setDatePreset(preset);
+    const now = new Date();
 
-  for (const tx of transactions) {
-    const amtStr = roundMoney(tx.amount);
-    if (tx.transaction_type === "income") {
-      totalIncome = addMoney(totalIncome, amtStr);
-    } else {
-      totalExpense = addMoney(totalExpense, amtStr);
+    if (preset === "all") {
+      setStartDate("");
+      setEndDate("");
+    } else if (preset === "this_month") {
+      const y = now.getFullYear();
+      const m = now.getMonth();
+      const s = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+      const lastDay = new Date(y, m + 1, 0).getDate();
+      const e = `${y}-${String(m + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+      setStartDate(s);
+      setEndDate(e);
+    } else if (preset === "last_30_days") {
+      const prior = new Date();
+      prior.setDate(now.getDate() - 30);
+      setStartDate(formatCivilDateISO(prior));
+      setEndDate(formatCivilDateISO(now));
+    } else if (preset === "this_year") {
+      const y = now.getFullYear();
+      setStartDate(`${y}-01-01`);
+      setEndDate(`${y}-12-31`);
     }
-  }
+  };
 
-  const netBalance = subtractMoney(totalIncome, totalExpense);
+  // Restablecer todos los filtros
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setTypeFilter("all");
+    setSelectedAccountFilter("all");
+    setSelectedCategoryFilter("all");
+    setDatePreset("all");
+    setStartDate("");
+    setEndDate("");
+  };
+
+  const isFilterActive =
+    searchTerm.trim() !== "" ||
+    typeFilter !== "all" ||
+    selectedAccountFilter !== "all" ||
+    selectedCategoryFilter !== "all" ||
+    startDate !== "" ||
+    endDate !== "";
 
   // Filtrado reactivo de transacciones
   const filteredTransactions = useMemo(() => {
@@ -94,19 +201,142 @@ export function TransactionsClientView({
         return false;
       }
 
-      // Filtro por término de búsqueda (descripción o notas)
+      // Filtro por categoría
+      if (selectedCategoryFilter !== "all" && tx.category_id !== selectedCategoryFilter) {
+        return false;
+      }
+
+      // Filtro por rango de fechas
+      if (startDate && tx.transaction_date < startDate) {
+        return false;
+      }
+      if (endDate && tx.transaction_date > endDate) {
+        return false;
+      }
+
+      // Filtro por término de búsqueda (descripción, notas, categoría o cuenta)
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         const descMatch = tx.description.toLowerCase().includes(term);
         const notesMatch = tx.notes ? tx.notes.toLowerCase().includes(term) : false;
         const catName = categoriesMap.get(tx.category_id)?.name.toLowerCase() || "";
         const catMatch = catName.includes(term);
-        return descMatch || notesMatch || catMatch;
+        const accName = accountsMap.get(tx.account_id)?.name.toLowerCase() || "";
+        const accMatch = accName.includes(term);
+        return descMatch || notesMatch || catMatch || accMatch;
       }
 
       return true;
     });
-  }, [transactions, typeFilter, selectedAccountFilter, searchTerm, categoriesMap]);
+  }, [
+    transactions,
+    typeFilter,
+    selectedAccountFilter,
+    selectedCategoryFilter,
+    startDate,
+    endDate,
+    searchTerm,
+    categoriesMap,
+    accountsMap,
+  ]);
+
+  // Cálculos de métricas globales (históricas sin filtros)
+  let overallIncome = "0.00";
+  let overallExpense = "0.00";
+  for (const tx of transactions) {
+    const amtStr = roundMoney(tx.amount);
+    if (tx.transaction_type === "income") {
+      overallIncome = addMoney(overallIncome, amtStr);
+    } else {
+      overallExpense = addMoney(overallExpense, amtStr);
+    }
+  }
+
+  // Cálculos dinámicos en tiempo real por categoría y métricas de transacciones filtradas
+  const {
+    filteredIncome,
+    filteredExpense,
+    filteredNet,
+    categorySummariesExpense,
+    categorySummariesIncome,
+  } = useMemo(() => {
+    let fIncome = "0.00";
+    let fExpense = "0.00";
+
+    interface CategoryAccumulator {
+      id: string;
+      name: string;
+      type: "income" | "expense";
+      icon: string | null;
+      totalAmount: string;
+      count: number;
+    }
+
+    const expenseMap = new Map<string, CategoryAccumulator>();
+    const incomeMap = new Map<string, CategoryAccumulator>();
+
+    for (const tx of filteredTransactions) {
+      const amtStr = roundMoney(tx.amount);
+      const cat = categoriesMap.get(tx.category_id);
+      const catId = tx.category_id || "uncategorized";
+      const catName = cat?.name || (tx.category_id ? "Categoría no encontrada" : "Sin categoría");
+      const catIcon = cat?.icon || null;
+
+      if (tx.transaction_type === "income") {
+        fIncome = addMoney(fIncome, amtStr);
+        const prev = incomeMap.get(catId) || {
+          id: catId,
+          name: catName,
+          type: "income",
+          icon: catIcon,
+          totalAmount: "0.00",
+          count: 0,
+        };
+        prev.totalAmount = addMoney(prev.totalAmount, amtStr);
+        prev.count += 1;
+        incomeMap.set(catId, prev);
+      } else {
+        fExpense = addMoney(fExpense, amtStr);
+        const prev = expenseMap.get(catId) || {
+          id: catId,
+          name: catName,
+          type: "expense",
+          icon: catIcon,
+          totalAmount: "0.00",
+          count: 0,
+        };
+        prev.totalAmount = addMoney(prev.totalAmount, amtStr);
+        prev.count += 1;
+        expenseMap.set(catId, prev);
+      }
+    }
+
+    const fNet = subtractMoney(fIncome, fExpense);
+    const fExpenseNum = parseFloat(fExpense);
+    const fIncomeNum = parseFloat(fIncome);
+
+    const expenseList = Array.from(expenseMap.values())
+      .map((item) => ({
+        ...item,
+        percentage: fExpenseNum > 0 ? (parseFloat(item.totalAmount) / fExpenseNum) * 100 : 0,
+      }))
+      .sort((a, b) => parseFloat(b.totalAmount) - parseFloat(a.totalAmount));
+
+    const incomeList = Array.from(incomeMap.values())
+      .map((item) => ({
+        ...item,
+        percentage: fIncomeNum > 0 ? (parseFloat(item.totalAmount) / fIncomeNum) * 100 : 0,
+      }))
+      .sort((a, b) => parseFloat(b.totalAmount) - parseFloat(a.totalAmount));
+
+    return {
+      filteredIncome: fIncome,
+      filteredExpense: fExpense,
+      filteredNet: fNet,
+      categorySummariesExpense: expenseList,
+      categorySummariesIncome: incomeList,
+    };
+  }, [filteredTransactions, categoriesMap]);
 
   const handleTransactionCreated = () => {
     setIsDialogOpen(false);
@@ -171,7 +401,7 @@ export function TransactionsClientView({
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-[#94A3B8] hover:text-[#F8FAFC] text-xs font-bold"
+            className="text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] text-xs font-bold"
           >
             ✕
           </button>
@@ -181,11 +411,11 @@ export function TransactionsClientView({
       {/* Header y Modal Trigger */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
             Transacciones y Movimientos
           </h2>
-          <p className="text-sm text-[#94A3B8] mt-1">
-            Registro de ingresos, gastos y compras diferidas a cuotas.
+          <p className="text-sm text-slate-500 dark:text-[#94A3B8] mt-1">
+            Registro de ingresos, gastos, compras diferidas a cuotas y desglose por categorías.
           </p>
         </div>
 
@@ -196,10 +426,10 @@ export function TransactionsClientView({
               <span>Nueva Transacción</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
             <DialogHeader>
-              <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Registrar Transacción</DialogTitle>
-              <DialogDescription className="text-xs text-[#94A3B8]">
+              <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">Registrar Transacción</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
                 Ingresa los detalles del movimiento. En tarjetas de crédito puedes diferir a cuotas.
               </DialogDescription>
             </DialogHeader>
@@ -213,74 +443,136 @@ export function TransactionsClientView({
         </Dialog>
       </div>
 
-      {/* KPI Cards de Resumen */}
+      {/* KPI Cards de Resumen Dinámico */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Total Ingresos</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
+                {isFilterActive ? "Ingresos (Filtrado)" : "Total Ingresos"}
+              </span>
+              {isFilterActive && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20">
+                  Filtro
+                </span>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
           <div className="text-xl md:text-2xl font-heading font-extrabold text-[#10B981] mt-3">
-            +{formatMoneyCOP(totalIncome)}
+            +{formatMoneyCOP(isFilterActive ? filteredIncome : overallIncome)}
           </div>
-          <p className="text-[11px] text-[#94A3B8] mt-0.5">Ingresos acumulados registrados</p>
+          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+            {isFilterActive
+              ? `${filteredTransactions.filter((t) => t.transaction_type === "income").length} movimientos filtrados`
+              : "Ingresos acumulados registrados"}
+          </p>
         </div>
 
         <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Total Gastos</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
+                {isFilterActive ? "Gastos (Filtrado)" : "Total Gastos"}
+              </span>
+              {isFilterActive && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/20">
+                  Filtro
+                </span>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
           <div className="text-xl md:text-2xl font-heading font-extrabold text-[#F43F5E] mt-3">
-            -{formatMoneyCOP(totalExpense)}
+            -{formatMoneyCOP(isFilterActive ? filteredExpense : overallExpense)}
           </div>
-          <p className="text-[11px] text-[#94A3B8] mt-0.5">Gastos y compras en tarjetas</p>
+          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+            {isFilterActive
+              ? `${filteredTransactions.filter((t) => t.transaction_type === "expense").length} movimientos filtrados`
+              : "Gastos y compras en tarjetas"}
+          </p>
         </div>
 
         <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Balance Neto</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
+                {isFilterActive ? "Balance (Filtrado)" : "Balance Neto"}
+              </span>
+              {isFilterActive && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                  Filtro
+                </span>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div
             className={`text-xl md:text-2xl font-heading font-extrabold mt-3 ${
-              parseFloat(netBalance) >= 0
-                ? "text-[#F8FAFC]"
+              parseFloat(isFilterActive ? filteredNet : subtractMoney(overallIncome, overallExpense)) >= 0
+                ? "text-slate-900 dark:text-[#F8FAFC]"
                 : "text-[#F43F5E]"
             }`}
           >
-            {formatMoneyCOP(netBalance)}
+            {formatMoneyCOP(isFilterActive ? filteredNet : subtractMoney(overallIncome, overallExpense))}
           </div>
-          <p className="text-[11px] text-[#94A3B8] mt-0.5">Ingresos menos gastos</p>
+          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+            {isFilterActive ? "Ingresos menos gastos del filtro" : "Ingresos menos gastos totales"}
+          </p>
         </div>
       </div>
 
-      {/* Barra de Filtros y Búsqueda */}
-      <div className="surface-card p-4 rounded-2xl space-y-3">
-        <div className="flex flex-col sm:flex-row items-center gap-3">
+      {/* Barra de Filtros Multicriterio */}
+      <div className="surface-card p-5 rounded-2xl space-y-4">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.06]">
+          <div className="flex items-center gap-2 text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+            <Filter className="w-4 h-4 text-[#8B5CF6]" />
+            <span>Filtros y Búsqueda Avanzada</span>
+            {isFilterActive && (
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25 font-bold">
+                Activos: {filteredTransactions.length} de {transactions.length}
+              </span>
+            )}
+          </div>
+
+          {isFilterActive && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-7 px-2.5 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-1.5"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Limpiar filtros</span>
+            </Button>
+          )}
+        </div>
+
+        {/* Fila 1: Búsqueda, Cuenta, Categoría y Selector de Fecha */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Búsqueda por texto */}
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#94A3B8]" />
             <Input
-              placeholder="Buscar por descripción o categoría..."
+              placeholder="Buscar descripción o notas..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl text-xs"
+              className="pl-9 w-full bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl text-xs h-10"
             />
           </div>
 
           {/* Filtro por Cuenta */}
-          <div className="w-full sm:w-60">
+          <div>
             <select
               value={selectedAccountFilter}
               onChange={(e) => setSelectedAccountFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-white/[0.1] bg-[#0B0F19] text-xs font-medium text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
             >
               <option value="all">Todas las cuentas</option>
               {accounts.map((a) => (
@@ -290,60 +582,452 @@ export function TransactionsClientView({
               ))}
             </select>
           </div>
+
+          {/* Filtro por Categoría */}
+          <div>
+            <select
+              value={selectedCategoryFilter}
+              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+            >
+              <option value="all">Todas las categorías</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.category_type === "income" ? "Ingreso" : "Gasto"})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Preset Temporal */}
+          <div>
+            <select
+              value={datePreset}
+              onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+            >
+              <option value="all">Cualquier fecha</option>
+              <option value="this_month">Este mes</option>
+              <option value="last_30_days">Últimos 30 días</option>
+              <option value="this_year">Este año</option>
+              <option value="custom">Rango personalizado</option>
+            </select>
+          </div>
         </div>
 
-        {/* Pestañas de Tipo */}
-        <div className="flex items-center gap-2 pt-1">
-          <Button
-            variant={typeFilter === "all" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setTypeFilter("all")}
-            className={typeFilter === "all" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
-          >
-            Todos ({transactions.length})
-          </Button>
-          <Button
-            variant={typeFilter === "income" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setTypeFilter("income")}
-            className={typeFilter === "income" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
-          >
-            Ingresos ({transactions.filter((t) => t.transaction_type === "income").length})
-          </Button>
-          <Button
-            variant={typeFilter === "expense" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setTypeFilter("expense")}
-            className={typeFilter === "expense" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
-          >
-            Gastos ({transactions.filter((t) => t.transaction_type === "expense").length})
-          </Button>
+        {/* Fila 2: Rango de Fechas Custom si se selecciona rango o preset */}
+        {(datePreset === "custom" || startDate || endDate) && (
+          <div className="p-3 rounded-xl bg-slate-100/60 dark:bg-[#0B0F19]/60 border border-slate-200 dark:border-white/[0.06] flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94A3B8]">
+              <Calendar className="w-3.5 h-3.5 text-[#8B5CF6]" />
+              <span className="font-semibold">Rango:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">Desde:</span>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setDatePreset("custom");
+                }}
+                className="h-8 w-36 bg-white dark:bg-[#131B2E] border-slate-200 dark:border-white/[0.1] text-xs text-slate-900 dark:text-[#F8FAFC] rounded-lg"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">Hasta:</span>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setDatePreset("custom");
+                }}
+                className="h-8 w-36 bg-white dark:bg-[#131B2E] border-slate-200 dark:border-white/[0.1] text-xs text-slate-900 dark:text-[#F8FAFC] rounded-lg"
+              />
+            </div>
+            {(startDate || endDate) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setDatePreset("all");
+                }}
+                className="h-7 px-2 text-[11px] text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC]"
+              >
+                Restablecer fechas
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Fila 3: Pestañas de Tipo */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <Button
+              variant={typeFilter === "all" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter("all")}
+              className={
+                typeFilter === "all"
+                  ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]"
+                  : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl text-xs"
+              }
+            >
+              Todos ({transactions.length})
+            </Button>
+            <Button
+              variant={typeFilter === "income" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter("income")}
+              className={
+                typeFilter === "income"
+                  ? "bg-[#10B981] text-white hover:bg-emerald-600 rounded-xl text-xs shadow-[0_0_12px_rgba(16,185,129,0.25)]"
+                  : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl text-xs"
+              }
+            >
+              Ingresos ({transactions.filter((t) => t.transaction_type === "income").length})
+            </Button>
+            <Button
+              variant={typeFilter === "expense" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter("expense")}
+              className={
+                typeFilter === "expense"
+                  ? "bg-[#F43F5E] text-white hover:bg-rose-600 rounded-xl text-xs shadow-[0_0_12px_rgba(244,63,94,0.25)]"
+                  : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl text-xs"
+              }
+            >
+              Gastos ({transactions.filter((t) => t.transaction_type === "expense").length})
+            </Button>
+          </div>
+
+          {/* Badge de Categoría activa si fue seleccionada */}
+          {selectedCategoryFilter !== "all" && (
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs text-[#8B5CF6] font-medium">
+              <Tag className="w-3.5 h-3.5" />
+              <span>Categoría: {categoriesMap.get(selectedCategoryFilter)?.name || "Seleccionada"}</span>
+              <button
+                onClick={() => setSelectedCategoryFilter("all")}
+                className="ml-1 hover:text-white font-bold"
+                title="Quitar filtro de categoría"
+              >
+                ✕
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Lista de Transacciones */}
+      {/* ------------------------------------------------------------------ */}
+      {/* SECCIÓN DINÁMICA: TOTALES AGRUPADOS POR CATEGORÍA EN TIEMPO REAL   */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="surface-card p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-4">
+        {/* Cabecera de la sección de categorías */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6] flex-shrink-0">
+              <PieChart className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+                  Totales por Categoría
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+                  Filtros Activos
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                Desglose en tiempo real sobre {filteredTransactions.length} movimiento(s) filtrado(s)
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Selector de vista interna de categorías */}
+            <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.08] text-xs">
+              <button
+                onClick={() => setCategoryViewTab("all")}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  categoryViewTab === "all"
+                    ? "bg-white dark:bg-[#131B2E] text-slate-900 dark:text-[#F8FAFC] shadow-sm"
+                    : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+                }`}
+              >
+                Ambos ({categorySummariesExpense.length + categorySummariesIncome.length})
+              </button>
+              <button
+                onClick={() => setCategoryViewTab("expense")}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  categoryViewTab === "expense"
+                    ? "bg-[#F43F5E]/15 text-[#F43F5E] shadow-sm"
+                    : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+                }`}
+              >
+                Gastos ({categorySummariesExpense.length})
+              </button>
+              <button
+                onClick={() => setCategoryViewTab("income")}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  categoryViewTab === "income"
+                    ? "bg-[#10B981]/15 text-[#10B981] shadow-sm"
+                    : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+                }`}
+              >
+                Ingresos ({categorySummariesIncome.length})
+              </button>
+            </div>
+
+            {/* Botón de Colapsar / Expandir */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCategorySummaryOpen((prev) => !prev)}
+              className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] rounded-lg"
+              title={isCategorySummaryOpen ? "Ocultar desglose" : "Mostrar desglose"}
+            >
+              {isCategorySummaryOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Contenido colapsable */}
+        {isCategorySummaryOpen && (
+          <div>
+            {categorySummariesExpense.length === 0 && categorySummariesIncome.length === 0 ? (
+              <div className="py-8 text-center">
+                <Layers className="w-8 h-8 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-700 dark:text-[#F8FAFC]">
+                  No se encontraron transacciones en las categorías para los filtros seleccionados
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+                  Modifica los criterios de búsqueda o registra nuevos movimientos.
+                </p>
+              </div>
+            ) : (
+              <div
+                className={`grid gap-6 ${
+                  categoryViewTab === "all"
+                    ? "grid-cols-1 lg:grid-cols-2"
+                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                }`}
+              >
+                {/* Panel de Gastos por Categoría */}
+                {(categoryViewTab === "all" || categoryViewTab === "expense") && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#F43F5E]" />
+                        <h4 className="text-xs font-heading font-bold uppercase tracking-wider text-slate-900 dark:text-[#F8FAFC]">
+                          Gastos por Categoría
+                        </h4>
+                      </div>
+                      <span className="text-xs font-heading font-bold text-[#F43F5E]">
+                        Total: -{formatMoneyCOP(filteredExpense)}
+                      </span>
+                    </div>
+
+                    {categorySummariesExpense.length === 0 ? (
+                      <p className="text-xs text-slate-500 dark:text-[#94A3B8] italic py-3 text-center bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200 dark:border-white/[0.04]">
+                        Sin gastos registrados en el filtro
+                      </p>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {categorySummariesExpense.map((item) => {
+                          const isSelected = selectedCategoryFilter === item.id;
+                          return (
+                            <div
+                              key={`expense-${item.id}`}
+                              onClick={() =>
+                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
+                              }
+                              className={`p-3 rounded-xl border transition-all cursor-pointer group ${
+                                isSelected
+                                  ? "bg-[#F43F5E]/10 border-[#F43F5E]/40 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                                  : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#F43F5E]/30 hover:bg-[#F43F5E]/5"
+                              }`}
+                              title={
+                                isSelected
+                                  ? "Haz clic para quitar filtro"
+                                  : "Haz clic para filtrar solo por esta categoría"
+                              }
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-7 h-7 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 text-[#F43F5E] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                                    {renderCategoryIcon(item.icon, "expense")}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#F43F5E] transition-colors">
+                                      {item.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
+                                      {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="text-right flex-shrink-0">
+                                  <span className="text-xs font-heading font-extrabold text-[#F43F5E] block">
+                                    -{formatMoneyCOP(item.totalAmount)}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-slate-500 dark:text-[#94A3B8] bg-slate-200/60 dark:bg-white/[0.06] px-1.5 py-0.5 rounded">
+                                    {item.percentage.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Barra de progreso de gastos */}
+                              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/[0.06] overflow-hidden mt-1">
+                                <div
+                                  className="h-full rounded-full bg-[#F43F5E] transition-all duration-500"
+                                  style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Panel de Ingresos por Categoría */}
+                {(categoryViewTab === "all" || categoryViewTab === "income") && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between pb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                        <h4 className="text-xs font-heading font-bold uppercase tracking-wider text-slate-900 dark:text-[#F8FAFC]">
+                          Ingresos por Categoría
+                        </h4>
+                      </div>
+                      <span className="text-xs font-heading font-bold text-[#10B981]">
+                        Total: +{formatMoneyCOP(filteredIncome)}
+                      </span>
+                    </div>
+
+                    {categorySummariesIncome.length === 0 ? (
+                      <p className="text-xs text-slate-500 dark:text-[#94A3B8] italic py-3 text-center bg-slate-50 dark:bg-white/[0.02] rounded-xl border border-slate-200 dark:border-white/[0.04]">
+                        Sin ingresos registrados en el filtro
+                      </p>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {categorySummariesIncome.map((item) => {
+                          const isSelected = selectedCategoryFilter === item.id;
+                          return (
+                            <div
+                              key={`income-${item.id}`}
+                              onClick={() =>
+                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
+                              }
+                              className={`p-3 rounded-xl border transition-all cursor-pointer group ${
+                                isSelected
+                                  ? "bg-[#10B981]/10 border-[#10B981]/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                                  : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#10B981]/30 hover:bg-[#10B981]/5"
+                              }`}
+                              title={
+                                isSelected
+                                  ? "Haz clic para quitar filtro"
+                                  : "Haz clic para filtrar solo por esta categoría"
+                              }
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  <div className="w-7 h-7 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 text-[#10B981] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                                    {renderCategoryIcon(item.icon, "income")}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#10B981] transition-colors">
+                                      {item.name}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
+                                      {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="text-right flex-shrink-0">
+                                  <span className="text-xs font-heading font-extrabold text-[#10B981] block">
+                                    +{formatMoneyCOP(item.totalAmount)}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-slate-500 dark:text-[#94A3B8] bg-slate-200/60 dark:bg-white/[0.06] px-1.5 py-0.5 rounded">
+                                    {item.percentage.toFixed(1)}%
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Barra de progreso de ingresos */}
+                              <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/[0.06] overflow-hidden mt-1">
+                                <div
+                                  className="h-full rounded-full bg-[#10B981] transition-all duration-500"
+                                  style={{ width: `${Math.min(item.percentage, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Lista de Transacciones Filtradas */}
       {filteredTransactions.length === 0 ? (
-        <div className="surface-card p-12 rounded-2xl border-dashed border-white/[0.1] text-center">
-          <Clock className="w-10 h-10 text-[#94A3B8]/40 mx-auto mb-3" />
-          <h3 className="text-base font-heading font-bold text-[#F8FAFC]">
+        <div className="surface-card p-12 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.1] text-center">
+          <Clock className="w-10 h-10 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-3" />
+          <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             No hay transacciones que coincidan con los filtros
           </h3>
-          <p className="text-xs text-[#94A3B8] mt-1">
-            Registra tu primer movimiento financiero o ajusta la búsqueda.
+          <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
+            Registra tu primer movimiento financiero o ajusta los criterios de búsqueda.
           </p>
-          <div className="mt-4">
+          <div className="mt-4 flex items-center justify-center gap-2">
+            {isFilterActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearFilters}
+                className="rounded-xl border-slate-200 dark:border-white/[0.1] text-xs"
+              >
+                Limpiar filtros
+              </Button>
+            )}
             <Button
               onClick={() => setIsDialogOpen(true)}
               size="sm"
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl text-xs"
             >
               Registrar Movimiento
             </Button>
           </div>
         </div>
       ) : (
-        <div className="surface-card rounded-2xl overflow-hidden">
-          <div className="divide-y divide-white/[0.06]">
+        <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
+          <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-[#94A3B8]">
+            <span className="font-semibold">
+              Mostrando {filteredTransactions.length} de {transactions.length} transacciones
+            </span>
+            {selectedCategoryFilter !== "all" && (
+              <span className="text-[#8B5CF6] font-bold">
+                Filtrado por: {categoriesMap.get(selectedCategoryFilter)?.name}
+              </span>
+            )}
+          </div>
+
+          <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
             {filteredTransactions.map((tx) => {
               const isIncome = tx.transaction_type === "income";
               const account = accountsMap.get(tx.account_id);
@@ -353,14 +1037,14 @@ export function TransactionsClientView({
               return (
                 <div
                   key={tx.id}
-                  className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-white/[0.03] transition-colors"
+                  className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isIncome
                           ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
-                          : "bg-white/[0.05] text-[#94A3B8] border border-white/[0.08]"
+                          : "bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-white/[0.08]"
                       }`}
                     >
                       {isIncome ? (
@@ -372,7 +1056,7 @@ export function TransactionsClientView({
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm sm:text-base font-heading font-bold text-[#F8FAFC] truncate">
+                        <h4 className="text-sm sm:text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate">
                           {tx.description}
                         </h4>
                         {tx.is_installment && tx.installment_count > 1 && (
@@ -382,14 +1066,14 @@ export function TransactionsClientView({
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-[#94A3B8] mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-[#94A3B8] mt-0.5">
                         <span>{tx.transaction_date}</span>
                         <span>•</span>
-                        <span className="text-[#F8FAFC] font-medium">
+                        <span className="text-slate-700 dark:text-[#F8FAFC] font-medium">
                           {category?.name || "Sin categoría"}
                         </span>
                         <span>•</span>
-                        <span className="flex items-center gap-1 text-[#94A3B8]">
+                        <span className="flex items-center gap-1 text-slate-500 dark:text-[#94A3B8]">
                           {isCredit ? <CreditCard className="w-3 h-3" /> : <Wallet className="w-3 h-3" />}
                           <span>{account?.name || "Cuenta desconocida"}</span>
                         </span>
@@ -403,27 +1087,27 @@ export function TransactionsClientView({
                         className={`text-base sm:text-lg font-heading font-extrabold tracking-tight ${
                           isIncome
                             ? "text-[#10B981]"
-                            : "text-[#F8FAFC]"
+                            : "text-slate-900 dark:text-[#F8FAFC]"
                         }`}
                       >
                         {isIncome ? "+" : "-"}
                         {formatMoneyCOP(tx.amount)}
                       </div>
                       {tx.is_installment && tx.installment_count > 1 && (
-                        <span className="text-[11px] text-[#94A3B8] block">
+                        <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] block">
                           Diferido mensual
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1 border-l border-white/[0.08] pl-2 sm:pl-3">
+                    <div className="flex items-center gap-1 border-l border-slate-200 dark:border-white/[0.08] pl-2 sm:pl-3">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditingTransaction(tx)}
                         title="Editar transacción"
-                        className="h-8 w-8 p-0 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-lg"
+                        className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-lg"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         <span className="sr-only">Editar</span>
@@ -434,7 +1118,7 @@ export function TransactionsClientView({
                         size="sm"
                         onClick={() => setDeletingTransaction(tx)}
                         title="Eliminar transacción"
-                        className="h-8 w-8 p-0 text-[#F43F5E] hover:text-rose-300 hover:bg-[#F43F5E]/10 rounded-lg"
+                        className="h-8 w-8 p-0 text-[#F43F5E] hover:text-rose-600 dark:hover:text-rose-300 hover:bg-[#F43F5E]/10 rounded-lg"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span className="sr-only">Eliminar</span>
@@ -453,10 +1137,10 @@ export function TransactionsClientView({
         open={Boolean(editingTransaction)}
         onOpenChange={(open) => !open && setEditingTransaction(null)}
       >
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
           <DialogHeader>
-            <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Editar Transacción</DialogTitle>
-            <DialogDescription className="text-xs text-[#94A3B8]">
+            <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">Editar Transacción</DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
               Modifica los detalles del movimiento. Los saldos de las cuentas se recalcularán automáticamente.
             </DialogDescription>
           </DialogHeader>

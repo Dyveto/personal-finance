@@ -44,7 +44,8 @@ export async function middleware(request: NextRequest) {
     pathname === "/" ||
     pathname.startsWith("/accounts") ||
     pathname.startsWith("/transactions") ||
-    pathname.startsWith("/credit-cards");
+    pathname.startsWith("/credit-cards") ||
+    pathname.startsWith("/categories");
 
   // Si el usuario ya está autenticado e intenta acceder a login o signup, redirigir al Dashboard
   if (isAuthRoute && user) {

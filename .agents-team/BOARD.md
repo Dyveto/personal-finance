@@ -42,6 +42,7 @@ Allowed statuses:
 8. If blocked, describe the exact dependency.
 9. If a contract changes, notify every dependent agent.
 10. QA must verify the final repository state, not only the agent's own changes.
+11. Branching Strategy: Todos los desarrollos activos, commits y pruebas se realizan estrictamente en la rama `develop`. La rama `main` está protegida contra push directo y solo recibe cambios promovidos mediante Pull Request (`develop` -> `main`).
 
 ---
 
@@ -68,6 +69,21 @@ Responsibilities:
 - [x] Implement database triggers `trg_transactions_sync_balance` and `trg_statements_sync_balance` to automatically recalculate balances upon transaction or statement insertion, update, or deletion.
 - [x] Implement covering composite indexes (`transactions_account_type_amount_idx`, `statements_account_paid_amount_idx`) for instant index-only balance recalculations.
 - [x] Update `src/types/database.types.ts` with `recalculate_account_balance` RPC function signature and extended summary view types.
+- [x] Implement category customization and RLS integrity (`20260331200000_category_customization_and_rls.sql`):
+  - Audit and ensure strict RLS (`user_id = (SELECT auth.uid())`) on `SELECT`, `INSERT`, `UPDATE`, and `DELETE` on `public.categories`, allowing full user editability/deletability of both custom and default categories.
+  - Verify independent per-user unique scoping (`categories_unique_name UNIQUE (user_id, name, category_type)`).
+  - Add `updated_at` column and `categories_updated_at` trigger for auditing modifications.
+  - Add `is_active` column for category archiving.
+  - Update `create_default_categories()` trigger with Spanish names, colors, and `ON CONFLICT (user_id, name, category_type) DO NOTHING`.
+  - Update `src/types/database.types.ts` with `is_active` and `updated_at` in `Row`, `Insert`, and `Update` for `categories`, exporting `CategoryRow`, `CategoryInsert`, and `CategoryUpdate`.
+- [x] Implement User Preferences and Dashboard Layout table (`20260331300000_user_preferences_and_dashboard_layout.sql`):
+  - Create `public.user_preferences` table with `user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE`.
+  - Store flexible JSONB `dashboard_layout` (widget_order, visible_widgets, collapsed_widgets).
+  - Add GIN index `user_preferences_dashboard_layout_idx` and user index `user_preferences_user_idx`.
+  - Configure `user_preferences_updated_at` trigger.
+  - Implement `create_default_user_preferences()` trigger on `auth.users` for automatic initialization.
+  - Enforce strict RLS (`user_id = (SELECT auth.uid())`) on `SELECT`, `INSERT`, `UPDATE`, `DELETE`.
+  - Update `src/types/database.types.ts` with `user_preferences` table schema and helper types (`UserPreferenceRow`, `UserPreferenceInsert`, `UserPreferenceUpdate`, `DashboardLayoutPreference`).
 
 Expected deliverables:
 
@@ -82,6 +98,14 @@ Handoff:
 Files created/updated:
 - supabase/migrations/20260330000000_initial_schema.sql
 - database/migrations/20260330000000_initial_schema.sql
+- supabase/migrations/20260331000000_credit_card_statements_and_paid_status.sql
+- database/migrations/20260331000000_credit_card_statements_and_paid_status.sql
+- supabase/migrations/20260331100000_safe_delete_and_balance_recalculation.sql
+- database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql
+- supabase/migrations/20260331200000_category_customization_and_rls.sql
+- database/migrations/20260331200000_category_customization_and_rls.sql
+- supabase/migrations/20260331300000_user_preferences_and_dashboard_layout.sql
+- database/migrations/20260331300000_user_preferences_and_dashboard_layout.sql
 - src/types/database.types.ts
 
 Public contracts:
@@ -124,6 +148,9 @@ Responsibilities:
 - [x] Implement Zod schemas (src/lib/validations/finance.ts, auth.ts).
 - [x] Implement Server Actions for Accounts, Transactions & Auth (account-actions.ts, transaction-actions.ts, auth-actions.ts).
 - [x] Implement CRUD operations with user isolation.
+- [x] Implement Category CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`, `listCategories`) with Zod schemas and user session enforcement.
+- [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
+- [x] Implement Dashboard layout persistence and user preferences Server Actions (`getDashboardLayout`, `saveDashboardLayout`, `resetDashboardLayout`) with Zod schemas and user session enforcement.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
@@ -153,6 +180,9 @@ Files created:
 - src/lib/validations/auth.ts
 - src/features/accounts/actions/account-actions.ts
 - src/features/transactions/actions/transaction-actions.ts
+- src/features/categories/actions/category-actions.ts
+- src/features/credit-cards/actions/statement-actions.ts
+- src/features/dashboard/actions/dashboard-actions.ts
 - src/features/auth/actions/auth-actions.ts
 - src/app/(auth)/layout.tsx
 - src/app/(auth)/login/page.tsx
@@ -178,8 +208,21 @@ Public contracts:
   - Redirects authenticated users from `/login` or `/signup` to `/`.
 - `validations/finance.ts`:
   - `CreateAccountSchema`, `StandardAccountSchema`, `CreditCardAccountSchema`
-  - `CreateTransactionSchema`, `CreateInstallmentPurchaseSchema`
+  - `CreateTransactionSchema` (permite category_id o new_category_name al vuelo)
+  - `CreateInstallmentPurchaseSchema` (permite category_id o new_category_name al vuelo)
+  - `CreateCategorySchema`, `UpdateCategorySchema`
+  - `DashboardLayoutSchema`, `DEFAULT_DASHBOARD_WIDGET_ORDER`, `DashboardLayoutConfig`, `DashboardWidgetId`
   - `CivilDateSchema`, `PositiveMoneySchema`, `NonNegativeMoneySchema`
+- `dashboard-actions.ts`:
+  - `getDashboardLayout(): Promise<ActionResult<DashboardLayoutConfig>>`
+  - `saveDashboardLayout(layoutConfig: unknown): Promise<ActionResult<DashboardLayoutConfig>>`
+  - `resetDashboardLayout(): Promise<ActionResult<DashboardLayoutConfig>>`
+  - `DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig`
+- `category-actions.ts`:
+  - `listCategories(type?: "income" | "expense"): Promise<ActionResult<CategoryRow[]>>`
+  - `createCategory(rawInput: unknown): Promise<ActionResult<CategoryRow>>`
+  - `updateCategory(categoryId: string, rawInput: unknown): Promise<ActionResult<CategoryRow>>`
+  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>`
 - `account-actions.ts`:
   - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
   - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`
@@ -212,10 +255,10 @@ Public contracts:
   - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-- `npm run test:run` -> PASS (57 unit tests passing)
+- `npm run test:run` -> PASS (113 unit tests passing, 100%)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run build` -> PASS (Optimized production build with middleware and auth routes)
+- `npm run build` -> PASS (Optimized production build with middleware, dynamic dashboard actions and auth routes)
 
 Errors:
 None.
@@ -250,13 +293,42 @@ Responsibilities:
 - [x] Apply unified dark atmospheric palette (#0B0F19 canvas with radial illumination, #131B2E surface containers with 1px border rgba(255,255,255,0.08), #8B5CF6 electric violet accent, #10B981 emerald income/success, #F43F5E crimson expense/debt, #F8FAFC primary text, #94A3B8 secondary text).
 - [x] Implement cascading staggered micro-interactions (animate-stagger-1 through animate-stagger-5 with 100ms cascading delays) across Dashboard KPI cards, Recharts visualizations, and installment projections.
 - [x] Ensure strict absence of generic shadows, replacing them with crisp surface containers and subtle atmospheric glows.
+- [x] Implement Dark Mode / Light Mode switcher (ThemeToggle.tsx & switch.tsx) placed in the sidebar directly above the Sign Out button, with localStorage persistence and anti-FOUC inline script in root layout.
+- [x] Enrich Dashboard Financial Charts:
+  - PieChart category percentages: slice label percentages for slices >= 5%, custom legend displaying `Category · X.X% ($Amount COP)`, and floating tooltip showing exact COP amount and `% del total`.
+  - Reusable Time Range Filter Selector: Días (14 días), Semanas (8 semanas), Meses (6 meses), Años (3 años) y Personalizado (date inputs) con recálculo reactivo instantáneo en cliente para flujos y categorías.
+  - BarChart interactive tooltips: desglose visual prominente distinguiendo Ingresos (#10B981) vs Gastos (#F43F5E), junto con el Balance Neto del periodo.
+- [x] Implement dynamic calculation and real-time category grouping in Transactions View (`TransactionsClientView.tsx`):
+  - Multicriteria filtering: search query, account, category, transaction type, date presets (este mes, últimos 30 días, este año) and custom date range (desde/hasta).
+  - Dynamic grouping by category: real-time computation of total expenses, total income, transaction counts, and percentages relative to filtered totals using strict decimal arithmetic (`addMoney`, `subtractMoney`, `roundMoney`).
+  - Atmospheric UI cards with custom category icons, percentage badges, sleek progress bars, and instant category drill-down toggles.
+  - Reactive top KPI cards updating immediately to reflect filtered income, expense, and net balance with active filter badges.
+- [x] Reorganize Transaction Form (`TransactionForm.tsx`):
+  - Prioritize Cuenta de Origen / Pago as first field, and Tipo de Movimiento (Gasto/Compra vs Ingreso) as second field.
+  - Support on-the-fly custom category entry (`+ Añadir categoría personalizada...` and toggle button) with automatic persistence.
+- [x] Implement Dedicated Categories Management Panel (`/categories`):
+  - View `src/app/(dashboard)/categories/page.tsx` and `CategoriesClientView.tsx`.
+  - KPI summary cards (Total Activas, Gastos, Ingresos, Archivadas), search and filter tabs.
+  - Create and edit dialog with 20+ icons and atmospheric color chips selector.
+  - Safe deletion / archiving flow preserving accounting integrity.
+  - Integration with `Sidebar.tsx` navigation and `middleware.ts` route protection.
+- [x] Implement PlayStation 5 Welcome Hub inspired modular dashboard customization & reordering:
+  - Mode toggle: Header action and dynamic bottom-right floating pill (`Personalizar Dashboard` / `Salir de Edición`).
+  - Drag & drop reordering using native HTML5 drag events (`onDragStart`, `onDragOver`, `onDrop`) with visual elevation, drop indicator borders, and opacity states.
+  - Quick directional reorder buttons (`ChevronUp`, `ChevronDown`) with boundary protection.
+  - Section visibility toggle (`Eye`, `EyeOff` / switches) with clear indicator badges.
+  - Welcome Hub action banner with status (`X de Y visibles`), "Gestionar Secciones", "Restablecer", "Cancelar" and "Guardar Cambios".
+  - `WelcomeHubManagerModal`: modal dialog for bulk visibility toggle, reordering, and reset to defaults.
+  - Modular widget components (`DashboardKpiWidget`, `DashboardActiveAccounts`, `DashboardRecentTransactions`, `WidgetWrapper`).
+  - Persistence via `saveDashboardLayout()` Server Action with transition state, error handling, and visual feedback notification banner.
 
 Expected deliverables:
 
 - DESIGN.md and .agents-team/DESIGN.md
 - tailwind.config.ts and src/app/globals.css (design tokens, Google Fonts import, radial lighting, surface-card, animation-delay helpers)
 - src/app/(dashboard)/page.tsx
-- src/components/layout/{Sidebar,Header,NotificationBell,DashboardShell}.tsx
+- src/components/layout/{Sidebar,Header,NotificationBell,DashboardShell,ThemeToggle}.tsx
+- src/components/ui/switch.tsx
 - src/features/dashboard/components/{FinancialCharts,InstallmentProjectionsCard}.tsx
 - src/features/credit-cards/components/{CreditCardsClientView,PayStatementDialog}.tsx
 - src/features/accounts/components/{AccountsClientView,AccountForm}.tsx
@@ -267,33 +339,37 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
-- DESIGN.md
-- .agents-team/DESIGN.md
-- tailwind.config.ts
-- src/app/globals.css
-- src/app/layout.tsx
-- src/app/(dashboard)/page.tsx
-- src/components/layout/DashboardShell.tsx
-- src/components/layout/Sidebar.tsx
+- src/features/dashboard/components/WelcomeHubDashboard.tsx (Dashboard interactivo tipo Welcome Hub con reordenamiento, visibilidad y persistencia)
+- src/features/dashboard/components/WelcomeHubBanner.tsx (Barra de control atmosférica para modo edición)
+- src/features/dashboard/components/WelcomeHubManagerModal.tsx (Modal de administración de visibilidad y orden de widgets)
+- src/features/dashboard/components/widgets/WidgetWrapper.tsx (Envoltorio modular con cabecera de edición, drag handle y controles)
+- src/features/dashboard/components/widgets/DashboardKpiWidget.tsx (Widget modular de métricas principales)
+- src/features/dashboard/components/widgets/DashboardActiveAccounts.tsx (Widget modular de cuentas activas)
+- src/features/dashboard/components/widgets/DashboardRecentTransactions.tsx (Widget modular de transacciones recientes)
+- src/app/(dashboard)/page.tsx (Integración de Server Actions con WelcomeHubDashboard)
+- tests/unit/dashboard-hub.test.ts (Pruebas unitarias de reordenamiento, drag & drop y visibilidad)
+- src/features/transactions/components/TransactionForm.tsx (Reorganización de cuenta y tipo; soporte de nueva categoría personalizada al vuelo)
+- src/app/(dashboard)/categories/page.tsx (Página protegida de administración de categorías)
+- src/features/categories/components/CategoriesClientView.tsx (Módulo interactivo completo de gestión de categorías)
+- src/components/layout/Sidebar.tsx (Enlace a Categorías en la barra lateral)
+- src/middleware.ts (Protección de ruta para /categories)
+- src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
+- src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
+- src/components/ui/switch.tsx
+- src/components/layout/ThemeToggle.tsx
 - src/components/layout/Header.tsx
-- src/components/layout/NotificationBell.tsx
-- src/features/dashboard/components/FinancialCharts.tsx
-- src/features/dashboard/components/InstallmentProjectionsCard.tsx
-- src/features/credit-cards/components/PayStatementDialog.tsx
-- src/features/credit-cards/components/CreditCardsClientView.tsx
-- src/features/accounts/components/AccountsClientView.tsx
-- src/features/accounts/components/AccountForm.tsx
-- src/features/transactions/components/TransactionsClientView.tsx
-- src/features/transactions/components/TransactionForm.tsx
-- src/components/shared/ConfirmDeleteDialog.tsx
+- src/components/layout/DashboardShell.tsx
+- src/app/layout.tsx
+- src/app/globals.css
 
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (89/89 unit tests passing)
-- `npm run build` -> PASS (Optimized production build, 11 static/dynamic routes + Edge Middleware)
+- `npm run test:run` -> PASS (122/122 unit tests passing, 100%)
+- `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
+- `getDashboardLayout()`, `saveDashboardLayout()`, `resetDashboardLayout()` de `@/features/dashboard/actions/dashboard-actions`
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
 - `listCategories()` de `@/features/categories/actions/category-actions`
