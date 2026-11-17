@@ -4,6 +4,8 @@ import {
   CreateTransactionSchema,
   CreateInstallmentPurchaseSchema,
   MarkExtractAsPaidSchema,
+  UpdateTransactionSchema,
+  UuidParamSchema,
 } from "@/lib/validations/finance";
 
 describe("Validation Schemas: finance.ts", () => {
@@ -342,6 +344,49 @@ describe("Validation Schemas: finance.ts", () => {
           amount: -100,
         }).success
       ).toBe(false);
+    });
+  });
+
+  describe("UpdateTransactionSchema & UuidParamSchema", () => {
+    const validUuid = "11111111-1111-4111-a111-111111111111";
+
+    it("should accept valid UUIDs and reject invalid ones", () => {
+      expect(UuidParamSchema.safeParse(validUuid).success).toBe(true);
+      expect(UuidParamSchema.safeParse("not-a-uuid").success).toBe(false);
+      expect(UuidParamSchema.safeParse("").success).toBe(false);
+    });
+
+    it("should accept partial updates for transactions", () => {
+      const partialUpdate = {
+        description: "Mercado D1 Actualizado",
+        amount: 85000,
+      };
+      const result = UpdateTransactionSchema.safeParse(partialUpdate);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.description).toBe("Mercado D1 Actualizado");
+        expect(result.data.amount).toBe(85000);
+      }
+    });
+
+    it("should reject income transactions with installment count > 1", () => {
+      const invalidIncome = {
+        transaction_type: "income" as const,
+        installment_count: 3,
+      };
+      const result = UpdateTransactionSchema.safeParse(invalidIncome);
+      expect(result.success).toBe(false);
+    });
+
+    it("should accept updating payment status (is_paid)", () => {
+      const statusUpdate = {
+        is_paid: true,
+      };
+      const result = UpdateTransactionSchema.safeParse(statusUpdate);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.is_paid).toBe(true);
+      }
     });
   });
 });

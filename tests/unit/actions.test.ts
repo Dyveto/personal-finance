@@ -18,8 +18,18 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-import { createAccount, listAccounts, updateAccount } from "@/features/accounts/actions/account-actions";
-import { createTransaction, createInstallmentPurchase } from "@/features/transactions/actions/transaction-actions";
+import {
+  createAccount,
+  listAccounts,
+  updateAccount,
+  deleteAccount,
+} from "@/features/accounts/actions/account-actions";
+import {
+  createTransaction,
+  createInstallmentPurchase,
+  updateTransaction,
+  deleteTransaction,
+} from "@/features/transactions/actions/transaction-actions";
 import { markExtractAsPaid } from "@/features/credit-cards/actions/statement-actions";
 
 describe("Server Actions: account-actions.ts", () => {
@@ -619,5 +629,322 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       expect(result.data.paymentAccountId).toBe(validBankId);
       expect(result.data.statement.is_paid).toBe(true);
     }
+  });
+
+  describe("deleteAccount", () => {
+    const validAccountId = "11111111-1111-4111-a111-111111111111";
+
+    it("should reject deleteAccount if user is not authenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+
+      const result = await deleteAccount(validAccountId);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should reject deleteAccount if accountId is not a valid UUID", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      const result = await deleteAccount("not-a-valid-uuid");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("UUID");
+      }
+    });
+
+    it("should reject deleteAccount if account is not found", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({ data: null, error: new Error("Not found") }),
+          }),
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelect });
+
+      const result = await deleteAccount(validAccountId);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("not found");
+      }
+    });
+
+    it("should delete account successfully when found and owned", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      const mockSelect = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: { id: validAccountId, name: "Billetera", account_type: "cash" },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      const mockDelete = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({ error: null }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelect })
+        .mockReturnValueOnce({ delete: mockDelete });
+
+      const result = await deleteAccount(validAccountId);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.id).toBe(validAccountId);
+      }
+    });
+  });
+
+  describe("deleteTransaction & updateTransaction", () => {
+    const validTxId = "22222222-2222-4222-a222-222222222222";
+    const validAccountId = "11111111-1111-4111-a111-111111111111";
+
+    it("should reject deleteTransaction if user is not authenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+
+      const result = await deleteTransaction(validTxId);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should reject deleteTransaction if transactionId is invalid UUID", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      const result = await deleteTransaction("bad-id");
+      expect(result.success).toBe(false);
+    });
+
+    it("should delete an expense transaction on a bank account and restore balance (+amount)", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      // 1. Fetch transaction (expense of 50,000)
+      const mockSelectTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validTxId,
+                account_id: validAccountId,
+                amount: 50000,
+                transaction_type: "expense",
+                is_paid: false,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 2. Fetch account (bank with 100,000 current_balance)
+      const mockSelectAcc = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validAccountId,
+                account_type: "bank",
+                current_balance: 100000,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 3. Delete transaction
+      const mockDeleteTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({ error: null }),
+        }),
+      });
+
+      // 4. Update account balance (restores 50,000 -> new balance 150,000)
+      let updatedBalance: number | undefined;
+      const mockUpdateAcc = vi.fn().mockImplementation((payload: { current_balance?: number }) => {
+        updatedBalance = payload.current_balance;
+        return {
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValueOnce({ error: null }),
+          }),
+        };
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectTx })
+        .mockReturnValueOnce({ select: mockSelectAcc })
+        .mockReturnValueOnce({ delete: mockDeleteTx })
+        .mockReturnValueOnce({ update: mockUpdateAcc });
+
+      const result = await deleteTransaction(validTxId);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.id).toBe(validTxId);
+        expect(result.data.accountId).toBe(validAccountId);
+        expect(updatedBalance).toBe(150000);
+      }
+    });
+
+    it("should delete an expense on credit card and reduce card debt (-amount)", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      const mockSelectTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validTxId,
+                account_id: validAccountId,
+                amount: 30000,
+                transaction_type: "expense",
+                is_paid: false,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      const mockSelectAcc = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validAccountId,
+                account_type: "credit_card",
+                current_balance: 100000,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      const mockDeleteTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({ error: null }),
+        }),
+      });
+
+      let updatedBalance: number | undefined;
+      const mockUpdateAcc = vi.fn().mockImplementation((payload: { current_balance?: number }) => {
+        updatedBalance = payload.current_balance;
+        return {
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValueOnce({ error: null }),
+          }),
+        };
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectTx })
+        .mockReturnValueOnce({ select: mockSelectAcc })
+        .mockReturnValueOnce({ delete: mockDeleteTx })
+        .mockReturnValueOnce({ update: mockUpdateAcc });
+
+      const result = await deleteTransaction(validTxId);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(updatedBalance).toBe(70000); // 100,000 - 30,000
+      }
+    });
+
+    it("should update transaction amount and recalculate bank balance accurately", async () => {
+      mockGetUser.mockResolvedValueOnce({ data: { user: { id: "user-123" } }, error: null });
+
+      // 1. Existing tx (expense 20,000)
+      const mockSelectTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validTxId,
+                account_id: validAccountId,
+                category_id: "cat-1",
+                amount: 20000,
+                transaction_type: "expense",
+                is_paid: false,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 2. Update tx (amount changed to 35,000)
+      const mockUpdateTx = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+              single: vi.fn().mockResolvedValueOnce({
+                data: {
+                  id: validTxId,
+                  account_id: validAccountId,
+                  amount: 35000,
+                  transaction_type: "expense",
+                  is_paid: false,
+                },
+                error: null,
+              }),
+            }),
+          }),
+        }),
+      });
+
+      // 3. Select account (bank with 80,000 current_balance)
+      const mockSelectAcc = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValueOnce({
+              data: {
+                id: validAccountId,
+                account_type: "bank",
+                current_balance: 80000,
+              },
+              error: null,
+            }),
+          }),
+        }),
+      });
+
+      // 4. Update account balance (80,000 + 20,000 - 35,000 = 65,000)
+      let updatedBalance: number | undefined;
+      const mockUpdateAcc = vi.fn().mockImplementation((payload: { current_balance?: number }) => {
+        updatedBalance = payload.current_balance;
+        return {
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValueOnce({ error: null }),
+          }),
+        };
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectTx })
+        .mockReturnValueOnce({ update: mockUpdateTx })
+        .mockReturnValueOnce({ select: mockSelectAcc })
+        .mockReturnValueOnce({ update: mockUpdateAcc });
+
+      const result = await updateTransaction(validTxId, {
+        amount: 35000,
+      });
+
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.amount).toBe(35000);
+        expect(updatedBalance).toBe(65000);
+      }
+    });
   });
 });

@@ -184,10 +184,14 @@ Public contracts:
   - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
   - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`
   - `createAccount(rawInput: unknown): Promise<ActionResult<AccountRow>>`
+  - `updateAccount(accountId: string, rawInput: unknown): Promise<ActionResult<AccountRow>>`
+  - `deleteAccount(accountId: string): Promise<ActionResult<{ id: string }>>`
 - `transaction-actions.ts`:
   - `listTransactions(filters?: ListTransactionsFilter): Promise<ActionResult<TransactionRow[]>>`
   - `createTransaction(rawInput: unknown): Promise<ActionResult<TransactionRow>>`
   - `createInstallmentPurchase(rawInput: unknown): Promise<ActionResult<{ transaction: TransactionRow, installments: string[] }>>`
+  - `updateTransaction(transactionId: string, rawInput: unknown): Promise<ActionResult<TransactionRow>>`
+  - `deleteTransaction(transactionId: string): Promise<ActionResult<{ id: string; accountId: string }>>`
 - `money.ts`:
   - `roundMoney(amount: string | number | Decimal): string`
   - `splitInstallments(amount: string, installmentCount: number): string[]` (invariante sum(installments) === total garantizado)
@@ -610,6 +614,17 @@ Task: Upgraded database referential integrity, automated balance recalculation t
 5. Migration & Types: Created migration `20260331100000_safe_delete_and_balance_recalculation.sql` in both `supabase/migrations/` and `database/migrations/`. Pushed to remote Supabase project (`faqflrvvzfqbilwakapn`) with status 100% verified. Updated `src/types/database.types.ts` with `recalculate_account_balance` RPC function definition and extended view row types.
 Files created/modified: supabase/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, src/types/database.types.ts, .agents-team/BOARD.md
 Verification commands: npx supabase db push --remote --yes (0), npx supabase migration list --remote (100% sync), npx tsc --noEmit (0), npm run lint (0), npm run test:run (76/76 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - BACKEND AGENT (Safe Deletion & Editing Server Actions with Precise Decimal Recalculation)
+Task: Implemented server-side mutations for safe deletion and general editing with exact financial recalculations:
+1. `deleteAccount(accountId: string)` in `account-actions.ts`: Authenticates user session, validates UUID format via `UuidParamSchema`, confirms account ownership (`user_id = user.id`), and executes atomic deletion leveraging `ON DELETE CASCADE` to safely clean up associated transactions and statements without orphaned rows. Revalidates all relevant Next.js routes.
+2. `deleteTransaction(transactionId: string)` in `transaction-actions.ts`: Authenticates user session, validates UUID, fetches existing transaction, deletes row with `user_id` isolation, and recalculates the affected account's balance with exact decimal arithmetic (`subtractMoney`/`addMoney`). On bank/cash accounts, deleting an income reduces balance and deleting an expense restores balance. On credit cards, deleting an unpaid expense reduces debt.
+3. `updateTransaction(transactionId: string, rawInput: unknown)` in `transaction-actions.ts`: Validates input with `UpdateTransactionSchema` preventing illegal states (e.g., installments on income, negative amounts, mismatched category types). Reverts the financial effect of the old transaction and applies the effect of the updated transaction (supporting reassignment across accounts). Revalidates cache across dashboard, transactions, accounts, and credit card routes.
+4. Added 13 new unit tests in `tests/unit/actions.test.ts` and `tests/unit/validations.test.ts` covering validation rules, ownership enforcement, UUID checking, decimal balance recalculations, and deletion flows. Total test suite increased to 89 passed tests.
+Files created/modified: src/features/accounts/actions/account-actions.ts, src/features/transactions/actions/transaction-actions.ts, src/lib/validations/finance.ts, tests/unit/actions.test.ts, tests/unit/validations.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 

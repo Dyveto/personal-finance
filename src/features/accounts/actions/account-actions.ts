@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   CreateAccountSchema,
   UpdateAccountSchema,
+  UuidParamSchema,
   type CreateAccountInput,
   type UpdateAccountInput,
 } from "@/lib/validations/finance";
@@ -268,6 +269,69 @@ export async function updateAccount(
     return { success: true, data: updatedAccount };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error while updating account";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Elimina una cuenta bancaria, efectivo o tarjeta de crédito del usuario autenticado.
+ * Gracias a la integridad referencial en cascada (ON DELETE CASCADE),
+ * las transacciones y extractos vinculados a esta cuenta se eliminan de forma segura y consistente.
+ *
+ * @param accountId UUID de la cuenta a eliminar.
+ */
+export async function deleteAccount(
+  accountId: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const uuidCheck = UuidParamSchema.safeParse(accountId);
+    if (!uuidCheck.success) {
+      return { success: false, error: "ID de cuenta inválido (formato UUID requerido)" };
+    }
+
+    // 1. Verificar existencia y pertenencia de la cuenta
+    const { data: account, error: fetchError } = await supabase
+      .from("accounts")
+      .select("id, name, account_type")
+      .eq("id", accountId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchError || !account) {
+      return { success: false, error: "Account not found or access denied" };
+    }
+
+    // 2. Eliminar la cuenta (PostgreSQL ejecutará cascada segura a transacciones y extractos)
+    const { error: deleteError } = await supabase
+      .from("accounts")
+      .delete()
+      .eq("id", accountId)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      return { success: false, error: `Failed to delete account: ${deleteError.message}` };
+    }
+
+    revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
+    revalidatePath("/transactions");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+
+    return { success: true, data: { id: accountId } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while deleting account";
     return { success: false, error: message };
   }
 }

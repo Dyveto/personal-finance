@@ -312,6 +312,47 @@ export const CreateInstallmentPurchaseSchema = z.object({
 export type CreateInstallmentPurchaseInput = z.infer<typeof CreateInstallmentPurchaseSchema>;
 
 /**
+ * Esquema de validación para parámetros de identificación UUID.
+ */
+export const UuidParamSchema = z.string().uuid("Formato de UUID inválido");
+
+/**
+ * Esquema para actualización y edición de transacciones existentes.
+ */
+export const UpdateTransactionSchema = z
+  .object({
+    description: z
+      .string()
+      .trim()
+      .min(1, "Description is required")
+      .max(255, "Description cannot exceed 255 characters")
+      .optional(),
+    amount: PositiveMoneySchema.optional(),
+    transaction_type: z
+      .enum(["income", "expense"], {
+        message: "Transaction type must be 'income' or 'expense'",
+      })
+      .optional(),
+    transaction_date: CivilDateSchema.optional(),
+    category_id: z.string().uuid("Invalid category UUID").optional(),
+    account_id: z.string().uuid("Invalid account UUID").optional(),
+    installment_count: InstallmentCountSchema.optional(),
+    notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
+    is_paid: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.transaction_type === "income" && data.installment_count && data.installment_count > 1) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["installment_count"],
+        message: "Income transactions cannot have installments",
+      });
+    }
+  });
+
+export type UpdateTransactionInput = z.infer<typeof UpdateTransactionSchema>;
+
+/**
  * Esquema de validación para registrar el pago de un extracto de tarjeta de crédito.
  */
 export const MarkExtractAsPaidSchema = z.object({

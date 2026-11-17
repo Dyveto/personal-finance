@@ -5,8 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import {
   CreateTransactionSchema,
   CreateInstallmentPurchaseSchema,
+  UpdateTransactionSchema,
+  UuidParamSchema,
   type CreateTransactionInput,
   type CreateInstallmentPurchaseInput,
+  type UpdateTransactionInput,
 } from "@/lib/validations/finance";
 import { addMoney, subtractMoney, splitInstallments, roundMoney } from "@/lib/finance/money";
 import type { Database } from "@/types/database.types";
@@ -354,6 +357,370 @@ export async function createInstallmentPurchase(
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error while creating installment purchase";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Actualiza una transacción existente recalculando con precisión decimal
+ * el balance de las cuentas afectadas (tanto cuenta origen como destino si fue reasignada).
+ *
+ * @param transactionId UUID de la transacción a actualizar.
+ * @param rawInput Campos parciales a actualizar validados por UpdateTransactionSchema.
+ */
+export async function updateTransaction(
+  transactionId: string,
+  rawInput: unknown
+): Promise<ActionResult<TransactionRow>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const uuidCheck = UuidParamSchema.safeParse(transactionId);
+    if (!uuidCheck.success) {
+      return { success: false, error: "ID de transacción inválido (formato UUID requerido)" };
+    }
+
+    const parseResult = UpdateTransactionSchema.safeParse(rawInput);
+    if (!parseResult.success) {
+      return {
+        success: false,
+        error: "Validation failed. Please verify transaction data.",
+        validationErrors: parseResult.error.flatten().fieldErrors,
+      };
+    }
+
+    const validated: UpdateTransactionInput = parseResult.data;
+
+    // 1. Obtener la transacción existente asegurando pertenencia al usuario
+    const { data: existingTx, error: fetchTxError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", transactionId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchTxError || !existingTx) {
+      return { success: false, error: "Transaction not found or access denied" };
+    }
+
+    const targetType = validated.transaction_type ?? existingTx.transaction_type;
+    const targetAccountId = validated.account_id ?? existingTx.account_id;
+
+    // 2. Si se actualiza la categoría, validar pertenencia y correspondencia con el tipo
+    const targetCategoryId = validated.category_id ?? existingTx.category_id;
+    if (validated.category_id || validated.transaction_type) {
+      const { data: category, error: catError } = await supabase
+        .from("categories")
+        .select("id, category_type")
+        .eq("id", targetCategoryId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (catError || !category) {
+        return { success: false, error: "Category not found or access denied" };
+      }
+
+      if (category.category_type !== targetType) {
+        return {
+          success: false,
+          error: `Category type '${category.category_type}' does not match transaction type '${targetType}'`,
+        };
+      }
+    }
+
+    // 3. Si se transfiere a otra cuenta, validar la nueva cuenta
+    if (targetAccountId !== existingTx.account_id) {
+      const { data: targetAccount, error: accError } = await supabase
+        .from("accounts")
+        .select("id, account_type, is_active")
+        .eq("id", targetAccountId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (accError || !targetAccount) {
+        return { success: false, error: "Target account not found or access denied" };
+      }
+
+      if (!targetAccount.is_active) {
+        return { success: false, error: "Target account is inactive" };
+      }
+
+      if (targetAccount.account_type === "credit_card" && targetType === "income") {
+        return { success: false, error: "Income transactions cannot be assigned to a credit card" };
+      }
+    }
+
+    // 4. Preparar payload de actualización
+    const updatePayload: Database["public"]["Tables"]["transactions"]["Update"] = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (validated.description !== undefined) updatePayload.description = validated.description;
+    if (validated.amount !== undefined) updatePayload.amount = parseFloat(roundMoney(validated.amount));
+    if (validated.transaction_type !== undefined) updatePayload.transaction_type = validated.transaction_type;
+    if (validated.transaction_date !== undefined) updatePayload.transaction_date = validated.transaction_date;
+    if (validated.category_id !== undefined) updatePayload.category_id = validated.category_id;
+    if (validated.account_id !== undefined) updatePayload.account_id = validated.account_id;
+    if (validated.notes !== undefined) updatePayload.notes = validated.notes;
+    if (validated.is_paid !== undefined) updatePayload.is_paid = validated.is_paid;
+    if (validated.installment_count !== undefined) {
+      updatePayload.installment_count = validated.installment_count;
+      updatePayload.is_installment = validated.installment_count > 1;
+    }
+
+    const { data: updatedTx, error: updateError } = await supabase
+      .from("transactions")
+      .update(updatePayload)
+      .eq("id", transactionId)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateError || !updatedTx) {
+      return { success: false, error: `Failed to update transaction: ${updateError?.message}` };
+    }
+
+    // 5. Ajustar balances de cuentas afectadas utilizando aritmética decimal
+    if (existingTx.account_id === targetAccountId) {
+      // Misma cuenta: revertir efecto anterior y aplicar efecto nuevo
+      const { data: account } = await supabase
+        .from("accounts")
+        .select("id, account_type, current_balance")
+        .eq("id", targetAccountId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (account) {
+        let currentBalStr = roundMoney(account.current_balance);
+        const oldAmountStr = roundMoney(existingTx.amount);
+        const newAmountStr = roundMoney(updatedTx.amount);
+
+        if (account.account_type === "credit_card") {
+          // Revertir efecto viejo (si era gasto no pagado)
+          if (existingTx.transaction_type === "expense" && !existingTx.is_paid) {
+            currentBalStr = subtractMoney(currentBalStr, oldAmountStr);
+          }
+          // Aplicar efecto nuevo (si es gasto no pagado)
+          if (updatedTx.transaction_type === "expense" && !updatedTx.is_paid) {
+            currentBalStr = addMoney(currentBalStr, newAmountStr);
+          }
+          if (parseFloat(currentBalStr) < 0) currentBalStr = "0.00";
+        } else {
+          // Revertir efecto viejo en cuenta bancaria/efectivo
+          currentBalStr =
+            existingTx.transaction_type === "income"
+              ? subtractMoney(currentBalStr, oldAmountStr)
+              : addMoney(currentBalStr, oldAmountStr);
+          // Aplicar efecto nuevo
+          currentBalStr =
+            updatedTx.transaction_type === "income"
+              ? addMoney(currentBalStr, newAmountStr)
+              : subtractMoney(currentBalStr, newAmountStr);
+        }
+
+        await supabase
+          .from("accounts")
+          .update({
+            current_balance: parseFloat(currentBalStr),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", account.id)
+          .eq("user_id", user.id);
+      }
+    } else {
+      // Revertir en cuenta original
+      const { data: oldAccount } = await supabase
+        .from("accounts")
+        .select("id, account_type, current_balance")
+        .eq("id", existingTx.account_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (oldAccount) {
+        let oldBalStr = roundMoney(oldAccount.current_balance);
+        const oldAmountStr = roundMoney(existingTx.amount);
+
+        if (oldAccount.account_type === "credit_card") {
+          if (existingTx.transaction_type === "expense" && !existingTx.is_paid) {
+            oldBalStr = subtractMoney(oldBalStr, oldAmountStr);
+            if (parseFloat(oldBalStr) < 0) oldBalStr = "0.00";
+          }
+        } else {
+          oldBalStr =
+            existingTx.transaction_type === "income"
+              ? subtractMoney(oldBalStr, oldAmountStr)
+              : addMoney(oldBalStr, oldAmountStr);
+        }
+
+        await supabase
+          .from("accounts")
+          .update({
+            current_balance: parseFloat(oldBalStr),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", oldAccount.id)
+          .eq("user_id", user.id);
+      }
+
+      // Aplicar en nueva cuenta
+      const { data: newAccount } = await supabase
+        .from("accounts")
+        .select("id, account_type, current_balance")
+        .eq("id", targetAccountId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (newAccount) {
+        let newBalStr = roundMoney(newAccount.current_balance);
+        const newAmountStr = roundMoney(updatedTx.amount);
+
+        if (newAccount.account_type === "credit_card") {
+          if (updatedTx.transaction_type === "expense" && !updatedTx.is_paid) {
+            newBalStr = addMoney(newBalStr, newAmountStr);
+          }
+        } else {
+          newBalStr =
+            updatedTx.transaction_type === "income"
+              ? addMoney(newBalStr, newAmountStr)
+              : subtractMoney(newBalStr, newAmountStr);
+        }
+
+        await supabase
+          .from("accounts")
+          .update({
+            current_balance: parseFloat(newBalStr),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", newAccount.id)
+          .eq("user_id", user.id);
+      }
+    }
+
+    revalidatePath("/transactions");
+    revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+
+    return { success: true, data: updatedTx };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while updating transaction";
+    return { success: false, error: message };
+  }
+}
+
+/**
+ * Elimina una transacción (gasto, ingreso o compra a cuotas) y recalcula
+ * con exactitud decimal el saldo de la cuenta afectada.
+ *
+ * @param transactionId UUID de la transacción a eliminar.
+ */
+export async function deleteTransaction(
+  transactionId: string
+): Promise<ActionResult<{ id: string; accountId: string }>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const uuidCheck = UuidParamSchema.safeParse(transactionId);
+    if (!uuidCheck.success) {
+      return { success: false, error: "ID de transacción inválido (formato UUID requerido)" };
+    }
+
+    // 1. Obtener los datos de la transacción antes de eliminarla
+    const { data: transaction, error: fetchTxError } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("id", transactionId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (fetchTxError || !transaction) {
+      return { success: false, error: "Transaction not found or access denied" };
+    }
+
+    // 2. Obtener la cuenta vinculada para actualizar su balance
+    const { data: account } = await supabase
+      .from("accounts")
+      .select("id, account_type, current_balance")
+      .eq("id", transaction.account_id)
+      .eq("user_id", user.id)
+      .single();
+
+    // 3. Eliminar la transacción
+    const { error: deleteError } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", transactionId)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      return { success: false, error: `Failed to delete transaction: ${deleteError.message}` };
+    }
+
+    // 4. Recalcular y actualizar balance de la cuenta afectada
+    if (account) {
+      const currentBalStr = roundMoney(account.current_balance);
+      const amountStr = roundMoney(transaction.amount);
+      let newBalanceStr: string;
+
+      if (account.account_type === "credit_card") {
+        // En tarjetas de crédito: eliminar un gasto no pagado reduce la deuda
+        if (transaction.transaction_type === "expense" && !transaction.is_paid) {
+          newBalanceStr = subtractMoney(currentBalStr, amountStr);
+          if (parseFloat(newBalanceStr) < 0) newBalanceStr = "0.00";
+        } else {
+          newBalanceStr = currentBalStr;
+        }
+      } else {
+        // En cuentas de efectivo/banco:
+        // Eliminar un ingreso reduce el saldo disponible.
+        // Eliminar un gasto restaura el dinero disponible.
+        newBalanceStr =
+          transaction.transaction_type === "income"
+            ? subtractMoney(currentBalStr, amountStr)
+            : addMoney(currentBalStr, amountStr);
+      }
+
+      await supabase
+        .from("accounts")
+        .update({
+          current_balance: parseFloat(newBalanceStr),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", account.id)
+        .eq("user_id", user.id);
+    }
+
+    revalidatePath("/transactions");
+    revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
+    revalidatePath("/dashboard");
+    revalidatePath("/");
+
+    return {
+      success: true,
+      data: { id: transactionId, accountId: transaction.account_id },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error while deleting transaction";
     return { success: false, error: message };
   }
 }
