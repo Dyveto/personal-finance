@@ -299,9 +299,9 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
 
       {/* Campos condicionales para Tarjeta de Crédito */}
       {selectedType === "credit_card" && (
-        <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-4">
+        <div className="pt-3 border-t border-white/[0.08] space-y-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-emerald-600 dark:text-emerald-400 uppercase">
+            <span className="text-xs font-semibold tracking-wider text-[#8B5CF6] uppercase">
               Configuración de Tarjeta
             </span>
           </div>
@@ -317,7 +317,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
               {...register("credit_limit")}
             />
             {errors.credit_limit && (
-              <p className="text-xs text-rose-500">{errors.credit_limit.message}</p>
+              <p className="text-xs text-[#F43F5E]">{errors.credit_limit.message}</p>
             )}
           </div>
 
@@ -334,7 +334,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 {...register("closing_day")}
               />
               {errors.closing_day && (
-                <p className="text-xs text-rose-500">{errors.closing_day.message}</p>
+                <p className="text-xs text-[#F43F5E]">{errors.closing_day.message}</p>
               )}
             </div>
 
@@ -349,7 +349,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 {...register("payment_due_day")}
               />
               {errors.payment_due_day && (
-                <p className="text-xs text-rose-500">{errors.payment_due_day.message}</p>
+                <p className="text-xs text-[#F43F5E]">{errors.payment_due_day.message}</p>
               )}
             </div>
           </div>
@@ -364,6 +364,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
             variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
+            className="border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
           >
             Cancelar
           </Button>
@@ -371,7 +372,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl transition-all"
         >
           {isSubmitting ? (
             <>

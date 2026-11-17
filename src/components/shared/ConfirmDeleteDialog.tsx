@@ -30,15 +30,15 @@ export function ConfirmDeleteDialog({
 }: ConfirmDeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(v) => !isDeleting && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
         <DialogHeader className="gap-2">
-          <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/25 text-[#F43F5E] flex items-center justify-center">
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
+          <DialogTitle className="text-lg font-heading font-bold text-[#F8FAFC]">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+          <DialogDescription className="text-xs text-[#94A3B8]">
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -50,7 +50,7 @@ export function ConfirmDeleteDialog({
             size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
-            className="text-xs"
+            className="text-xs border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
           >
             Cancelar
           </Button>
@@ -59,7 +59,7 @@ export function ConfirmDeleteDialog({
             size="sm"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="bg-rose-600 hover:bg-rose-700 text-white text-xs flex items-center gap-1.5"
+            className="bg-[#F43F5E] hover:bg-[#E11D48] text-white text-xs flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all"
           >
             {isDeleting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             <span>{isDeleting ? "Eliminando..." : "Sí, eliminar"}</span>

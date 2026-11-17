@@ -37,7 +37,7 @@ export function DashboardShell({
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-[#0B0F19] text-[#F8FAFC] overflow-hidden">
       {/* Sidebar fijo en escritorio */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar />
@@ -53,20 +53,20 @@ export function DashboardShell({
         >
           {/* Backdrop con desenfoque */}
           <div
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-[#0B0F19]/80 backdrop-blur-md transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
           {/* Contenido del drawer */}
-          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-slate-900 shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#131B2E] border-r border-white/[0.08] shadow-2xl z-10 animate-in slide-in-from-left duration-200">
             {/* Botón de cierre */}
             <div className="absolute top-3 right-3 z-20">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-slate-400 hover:text-white hover:bg-slate-800"
+                className="text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-xl"
                 aria-label="Cerrar menú móvil"
               >
                 <X className="w-5 h-5" />
@@ -79,7 +79,7 @@ export function DashboardShell({
       )}
 
       {/* Área principal de contenido */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#0B0F19]">
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">

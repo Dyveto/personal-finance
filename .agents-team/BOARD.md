@@ -246,38 +246,52 @@ Responsibilities:
 - [x] Implement credit card installment projections (InstallmentProjectionsCard & projections.ts).
 - [x] Implement responsive layouts.
 - [x] Configure PWA manifest (src/app/manifest.ts).
+- [x] Incorporate DESIGN.md specifications: High-end typography (Plus Jakarta Sans for display/headings, Outfit for body/data).
+- [x] Apply unified dark atmospheric palette (#0B0F19 canvas with radial illumination, #131B2E surface containers with 1px border rgba(255,255,255,0.08), #8B5CF6 electric violet accent, #10B981 emerald income/success, #F43F5E crimson expense/debt, #F8FAFC primary text, #94A3B8 secondary text).
+- [x] Implement cascading staggered micro-interactions (animate-stagger-1 through animate-stagger-5 with 100ms cascading delays) across Dashboard KPI cards, Recharts visualizations, and installment projections.
+- [x] Ensure strict absence of generic shadows, replacing them with crisp surface containers and subtle atmospheric glows.
 
 Expected deliverables:
 
-- src/app/
-- src/components/
-- src/features/
-- src/app/manifest.ts
+- DESIGN.md and .agents-team/DESIGN.md
+- tailwind.config.ts and src/app/globals.css (design tokens, Google Fonts import, radial lighting, surface-card, animation-delay helpers)
+- src/app/(dashboard)/page.tsx
+- src/components/layout/{Sidebar,Header,NotificationBell,DashboardShell}.tsx
+- src/features/dashboard/components/{FinancialCharts,InstallmentProjectionsCard}.tsx
+- src/features/credit-cards/components/{CreditCardsClientView,PayStatementDialog}.tsx
+- src/features/accounts/components/{AccountsClientView,AccountForm}.tsx
+- src/features/transactions/components/{TransactionsClientView,TransactionForm}.tsx
+- src/components/shared/ConfirmDeleteDialog.tsx
 - PWA configuration.
 
 Handoff:
 
 Files created/modified:
-- netlify.toml
+- DESIGN.md
+- .agents-team/DESIGN.md
+- tailwind.config.ts
+- src/app/globals.css
 - src/app/layout.tsx
-- src/app/manifest.ts
-- src/app/(dashboard)/layout.tsx
 - src/app/(dashboard)/page.tsx
-- src/app/(dashboard)/accounts/page.tsx
-- src/app/(dashboard)/credit-cards/page.tsx
-- src/app/(dashboard)/transactions/page.tsx
+- src/components/layout/DashboardShell.tsx
 - src/components/layout/Sidebar.tsx
 - src/components/layout/Header.tsx
-- src/features/accounts/components/AccountForm.tsx
-- src/features/accounts/components/AccountsClientView.tsx
-- src/features/transactions/components/TransactionForm.tsx
-- src/features/transactions/components/TransactionsClientView.tsx
+- src/components/layout/NotificationBell.tsx
 - src/features/dashboard/components/FinancialCharts.tsx
 - src/features/dashboard/components/InstallmentProjectionsCard.tsx
-- src/lib/finance/projections.ts
-- src/features/categories/actions/category-actions.ts
-- src/components/ui/{dialog,input,label,select,card,button}.tsx
-- tailwind.config.ts (actualizado con tokens completos de Shadcn/Tailwind)
+- src/features/credit-cards/components/PayStatementDialog.tsx
+- src/features/credit-cards/components/CreditCardsClientView.tsx
+- src/features/accounts/components/AccountsClientView.tsx
+- src/features/accounts/components/AccountForm.tsx
+- src/features/transactions/components/TransactionsClientView.tsx
+- src/features/transactions/components/TransactionForm.tsx
+- src/components/shared/ConfirmDeleteDialog.tsx
+
+Commands executed:
+- `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
+- `npm run lint` -> PASS (0 lint warnings/errors)
+- `npm run test:run` -> PASS (89/89 unit tests passing)
+- `npm run build` -> PASS (Optimized production build, 11 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
@@ -617,6 +631,35 @@ Task: Upgraded database referential integrity, automated balance recalculation t
 5. Migration & Types: Created migration `20260331100000_safe_delete_and_balance_recalculation.sql` in both `supabase/migrations/` and `database/migrations/`. Pushed to remote Supabase project (`faqflrvvzfqbilwakapn`) with status 100% verified. Updated `src/types/database.types.ts` with `recalculate_account_balance` RPC function definition and extended view row types.
 Files created/modified: supabase/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, src/types/database.types.ts, .agents-team/BOARD.md
 Verification commands: npx supabase db push --remote --yes (0), npx supabase migration list --remote (100% sync), npx tsc --noEmit (0), npm run lint (0), npm run test:run (76/76 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - BACKEND AGENT (Safe Deletion & Editing Server Actions with Precise Decimal Recalculation)
+Task: Implemented server-side mutations for safe deletion and general editing with exact financial recalculations:
+1. `deleteAccount(accountId: string)` in `account-actions.ts`: Authenticates user session, validates UUID format via `UuidParamSchema`, confirms account ownership (`user_id = user.id`), and executes atomic deletion leveraging `ON DELETE CASCADE` to safely clean up associated transactions and statements without orphaned rows. Revalidates all relevant Next.js routes.
+2. `deleteTransaction(transactionId: string)` in `transaction-actions.ts`: Authenticates user session, validates UUID, fetches existing transaction, deletes row with `user_id` isolation, and recalculates the affected account's balance with exact decimal arithmetic (`subtractMoney`/`addMoney`). On bank/cash accounts, deleting an income reduces balance and deleting an expense restores balance. On credit cards, deleting an unpaid expense reduces debt.
+3. `updateTransaction(transactionId: string, rawInput: unknown)` in `transaction-actions.ts`: Validates input with `UpdateTransactionSchema` preventing illegal states (e.g., installments on income, negative amounts, mismatched category types). Reverts the financial effect of the old transaction and applies the effect of the updated transaction (supporting reassignment across accounts). Revalidates cache across dashboard, transactions, accounts, and credit card routes.
+4. Added 13 new unit tests in `tests/unit/actions.test.ts` and `tests/unit/validations.test.ts` covering validation rules, ownership enforcement, UUID checking, decimal balance recalculations, and deletion flows. Total test suite increased to 89 passed tests.
+Files created/modified: src/features/accounts/actions/account-actions.ts, src/features/transactions/actions/transaction-actions.ts, src/lib/validations/finance.ts, tests/unit/actions.test.ts, tests/unit/validations.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - FRONTEND AGENT (Interactive Edit & Deletion UI with Live Recalculation & Confirmation Dialogs)
+Task: Implemented complete UI workflows for editing and deleting transactions, accounts, and credit cards with optimistic live recalculation:
+1. Reusable Confirmation Dialog (`ConfirmDeleteDialog.tsx`): Built accessible deletion modal styled with Shadcn/UI and Lucide icons. Includes alert badge, title, detailed warning explanation, "Cancelar" and destructive "Sí, eliminar" actions with loading spinner and disabled state prevention.
+2. Transactions UI (`TransactionsClientView.tsx` & `TransactionForm.tsx`):
+   - Added action buttons (Pencil for editing, Trash2 for deletion) in each transaction row.
+   - Enhanced `TransactionForm` to support editing mode (`initialData`), pre-populating fields and executing `updateTransaction`.
+   - Connected deletion to `ConfirmDeleteDialog` and `deleteTransaction`. Optimistically removes items from local state (`setTransactions`), recalculates totals and net balance in real-time, and shows feedback banner with `router.refresh()` in background.
+3. Accounts UI (`AccountsClientView.tsx`):
+   - Added "Eliminar" button alongside "Editar" in each account card.
+   - Connected deletion with `ConfirmDeleteDialog` and `deleteAccount`, updating local account state and KPI cards immediately.
+4. Credit Cards UI (`CreditCardsClientView.tsx`):
+   - Added quick actions (Pencil & Trash2) in each credit card card header.
+   - Connected with `AccountForm` editing modal and `ConfirmDeleteDialog`, recalculating total credit limit, debt, and available credit instantly.
+Files created/modified: src/components/shared/ConfirmDeleteDialog.tsx, src/features/transactions/components/TransactionForm.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/accounts/components/AccountsClientView.tsx, src/features/credit-cards/components/CreditCardsClientView.tsx, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 

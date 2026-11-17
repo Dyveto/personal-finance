@@ -156,21 +156,21 @@ export function CreditCardsClientView({
       {/* Encabezado y Acciones */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
             Tarjetas de Crédito
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Control de cupos, fechas de corte, días de pago, extractos y compras diferidas a cuotas.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/accounts">
-            <Button variant="outline" className="text-xs">
+            <Button variant="outline" className="text-xs border-white/[0.08] bg-[#131B2E] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl">
               Gestionar Cuentas
             </Button>
           </Link>
           <Link href="/transactions">
-            <Button className="text-xs bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1.5">
+            <Button className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Compra</span>
             </Button>
@@ -180,14 +180,14 @@ export function CreditCardsClientView({
 
       {/* Banner de éxito al pagar un extracto o modificar tarjeta */}
       {successNotice && (
-        <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
+        <div className="p-4 rounded-xl border border-[#10B981]/25 bg-[#10B981]/10 text-[#10B981] text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
           <div className="flex items-center gap-2.5">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] flex-shrink-0" />
             <span>{successNotice}</span>
           </div>
           <button
             onClick={() => setSuccessNotice(null)}
-            className="text-xs font-semibold underline text-emerald-700 dark:text-emerald-300 ml-4 hover:opacity-80"
+            className="text-xs font-semibold underline text-[#10B981] ml-4 hover:opacity-80"
           >
             Cerrar
           </button>
@@ -196,14 +196,14 @@ export function CreditCardsClientView({
 
       {/* Banner de error */}
       {errorNotice && (
-        <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
+        <div className="p-4 rounded-xl border border-[#F43F5E]/30 bg-[#F43F5E]/10 text-[#F43F5E] text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
           <div className="flex items-center gap-2.5">
-            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-[#F43F5E] flex-shrink-0" />
             <span>{errorNotice}</span>
           </div>
           <button
             onClick={() => setErrorNotice(null)}
-            className="text-xs font-semibold underline text-rose-700 dark:text-rose-300 ml-4 hover:opacity-80"
+            className="text-xs font-semibold underline text-[#F43F5E] ml-4 hover:opacity-80"
           >
             Cerrar
           </button>
@@ -212,65 +212,65 @@ export function CreditCardsClientView({
 
       {/* KPIs del Dashboard de Crédito */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="surface-card p-6 rounded-2xl">
+          <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
             Deuda Total Tarjetas
           </p>
-          <p className="text-2xl md:text-3xl font-extrabold text-rose-600 dark:text-rose-400 mt-2">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-[#F43F5E] mt-2">
             {formatMoneyCOP(totalDebt)}
           </p>
-          <p className="text-xs text-slate-400 mt-1">Saldo utilizado acumulado</p>
+          <p className="text-xs text-[#94A3B8] mt-1">Saldo utilizado acumulado</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="surface-card p-6 rounded-2xl">
+          <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
             Cupo Disponible Total
           </p>
-          <p className="text-2xl md:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-[#10B981] mt-2">
             {formatMoneyCOP(availableCredit)}
           </p>
-          <p className="text-xs text-slate-400 mt-1">Límite restante para compras</p>
+          <p className="text-xs text-[#94A3B8] mt-1">Límite restante para compras</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="surface-card p-6 rounded-2xl">
+          <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
             Cupo Global Aprobado
           </p>
-          <p className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-2">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-[#F8FAFC] mt-2">
             {formatMoneyCOP(totalLimit)}
           </p>
-          <p className="text-xs text-slate-400 mt-1">Suma de cupos autorizados</p>
+          <p className="text-xs text-[#94A3B8] mt-1">Suma de cupos autorizados</p>
         </div>
 
-        <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+        <div className="surface-card p-6 rounded-2xl">
+          <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider">
             Dinero Disponible
           </p>
-          <p className="text-2xl md:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400 mt-2">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-[#8B5CF6] mt-2">
             {formatMoneyCOP(totalAvailableMoney)}
           </p>
-          <p className="text-xs text-slate-400 mt-1">Saldo en cuentas y efectivo</p>
+          <p className="text-xs text-[#94A3B8] mt-1">Saldo en cuentas y efectivo</p>
         </div>
       </div>
 
       {/* Listado de Tarjetas Activas */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+        <h3 className="text-lg font-heading font-bold text-[#F8FAFC] flex items-center gap-2">
+          <CreditCard className="w-5 h-5 text-[#8B5CF6]" />
           <span>Tus Tarjetas de Crédito</span>
         </h3>
 
         {creditCards.length === 0 ? (
-          <div className="p-8 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 text-center bg-white dark:bg-slate-900">
-            <CreditCard className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
-            <h4 className="text-base font-semibold text-slate-700 dark:text-slate-300">
+          <div className="surface-card p-8 rounded-2xl border-dashed border-white/[0.1] text-center">
+            <CreditCard className="w-12 h-12 text-[#94A3B8]/40 mx-auto mb-3" />
+            <h4 className="text-base font-heading font-semibold text-[#F8FAFC]">
               No tienes tarjetas de crédito registradas
             </h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+            <p className="text-xs text-[#94A3B8] mt-1 max-w-sm mx-auto">
               Registra una tarjeta de crédito en la sección de Cuentas para monitorear cortes, pagos y compras en cuotas.
             </p>
             <Link href="/accounts" className="inline-block mt-4">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl">
                 Crear Tarjeta de Crédito
               </Button>
             </Link>
@@ -289,11 +289,11 @@ export function CreditCardsClientView({
               return (
                 <div
                   key={card.id}
-                  className="p-6 rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-lg border border-slate-700 relative overflow-hidden flex flex-col justify-between min-h-[220px]"
+                  className="surface-card p-6 rounded-2xl text-[#F8FAFC] relative overflow-hidden flex flex-col justify-between min-h-[220px]"
                 >
                   <div className="relative z-10">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                      <span className="text-xs font-semibold uppercase tracking-widest text-[#94A3B8]">
                         {card.currency}
                       </span>
                       <div className="flex items-center gap-1">
@@ -303,7 +303,7 @@ export function CreditCardsClientView({
                           size="sm"
                           onClick={() => setEditingCard(card)}
                           title="Editar tarjeta"
-                          className="h-7 w-7 p-0 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg"
+                          className="h-7 w-7 p-0 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-lg"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                           <span className="sr-only">Editar</span>
@@ -314,37 +314,37 @@ export function CreditCardsClientView({
                           size="sm"
                           onClick={() => setDeletingCard(card)}
                           title="Eliminar tarjeta"
-                          className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg"
+                          className="h-7 w-7 p-0 text-[#F43F5E] hover:text-rose-300 hover:bg-[#F43F5E]/10 rounded-lg"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span className="sr-only">Eliminar</span>
                         </Button>
-                        <CreditCard className="w-5 h-5 text-blue-400 ml-1" />
+                        <CreditCard className="w-5 h-5 text-[#8B5CF6] ml-1" />
                       </div>
                     </div>
 
-                    <h4 className="text-lg font-bold mt-3 tracking-wide">{card.name}</h4>
-                    <p className="text-2xl font-extrabold mt-1 text-white">
+                    <h4 className="text-lg font-heading font-bold mt-3 tracking-wide text-[#F8FAFC]">{card.name}</h4>
+                    <p className="text-2xl font-heading font-extrabold mt-1 text-[#F8FAFC]">
                       {formatMoneyCOP(debt)}
                     </p>
-                    <p className="text-[11px] text-slate-400">Saldo actual adeudado</p>
+                    <p className="text-[11px] text-[#94A3B8]">Saldo actual adeudado</p>
                   </div>
 
-                  <div className="relative z-10 pt-4 mt-4 border-t border-slate-700/60 text-xs text-slate-300 space-y-2">
+                  <div className="relative z-10 pt-4 mt-4 border-t border-white/[0.08] text-xs text-[#94A3B8] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
                       <span>Cupo: {formatMoneyCOP(limit)}</span>
                       <span>Disp: {formatMoneyCOP(available)}</span>
                     </div>
 
                     {/* Barra de progreso de cupo */}
-                    <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-white/[0.08] rounded-full h-1.5 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-500 ${
                           usagePercent > 80
-                            ? "bg-rose-500"
+                            ? "bg-[#F43F5E]"
                             : usagePercent > 50
                             ? "bg-amber-400"
-                            : "bg-emerald-400"
+                            : "bg-[#10B981]"
                         }`}
                         style={{ width: `${usagePercent}%` }}
                       />
@@ -378,10 +378,10 @@ export function CreditCardsClientView({
         open={Boolean(editingCard)}
         onOpenChange={(open) => !open && setEditingCard(null)}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
           <DialogHeader>
-            <DialogTitle>Editar Tarjeta de Crédito</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Editar Tarjeta de Crédito</DialogTitle>
+            <DialogDescription className="text-xs text-[#94A3B8]">
               Modifica el cupo, fecha de corte o fecha límite de pago de tu tarjeta.
             </DialogDescription>
           </DialogHeader>

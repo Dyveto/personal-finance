@@ -118,25 +118,25 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
       {/* Header con botón para abrir modal */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
             Gestión de Cuentas y Tarjetas
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Administra tus cuentas bancarias, billeteras de efectivo y tarjetas de crédito.
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 self-start sm:self-auto">
+            <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Cuenta</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
             <DialogHeader>
-              <DialogTitle>Registrar Nueva Cuenta</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Registrar Nueva Cuenta</DialogTitle>
+              <DialogDescription className="text-xs text-[#94A3B8]">
                 Crea una cuenta bancaria, efectivo o tarjeta de crédito con reglas de corte y pago.
               </DialogDescription>
             </DialogHeader>
@@ -154,10 +154,10 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
             if (!open) setEditingAccount(null);
           }}
         >
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
             <DialogHeader>
-              <DialogTitle>Editar Cuenta o Tarjeta</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Editar Cuenta o Tarjeta</DialogTitle>
+              <DialogDescription className="text-xs text-[#94A3B8]">
                 Modifica los detalles, saldo o configuración de corte y pago de tu cuenta.
               </DialogDescription>
             </DialogHeader>
@@ -174,15 +174,15 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
       {/* Banner de Notificación de Éxito */}
       {successNotice && (
-        <div className="p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-sm flex items-center justify-between gap-3 shadow-sm">
+        <div className="p-4 rounded-xl border border-[#10B981]/25 bg-[#10B981]/10 text-[#10B981] text-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-[#10B981] flex-shrink-0" />
             <span>{successNotice}</span>
           </div>
           <button
             type="button"
             onClick={() => setSuccessNotice(null)}
-            className="text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-semibold"
+            className="text-xs text-[#10B981] hover:underline font-semibold"
           >
             Cerrar
           </button>
@@ -191,15 +191,15 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
       {/* Banner de Notificación de Error */}
       {errorNotice && (
-        <div className="p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 text-sm flex items-center justify-between gap-3 shadow-sm">
+        <div className="p-4 rounded-xl border border-[#F43F5E]/30 bg-[#F43F5E]/10 text-[#F43F5E] text-sm flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-[#F43F5E] flex-shrink-0" />
             <span>{errorNotice}</span>
           </div>
           <button
             type="button"
             onClick={() => setErrorNotice(null)}
-            className="text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 font-semibold"
+            className="text-xs text-[#F43F5E] hover:underline font-semibold"
           >
             Cerrar
           </button>
@@ -208,66 +208,66 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Total Disponible</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Total Disponible</span>
+            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#10B981] mt-3">
             {formatMoneyCOP(totalAvailable)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Bancos + Efectivo</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Bancos + Efectivo</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Deuda en Tarjetas</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Deuda en Tarjetas</span>
+            <div className="w-8 h-8 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
               <CreditCard className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#F43F5E] mt-3">
             {formatMoneyCOP(totalDebt)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Saldo pendiente por pagar</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Saldo pendiente por pagar</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Cupo Total Aprobado</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Cupo Total Aprobado</span>
+            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
               <CardIcon className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#F8FAFC] mt-3">
             {formatMoneyCOP(totalCreditLimit)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Límite consolidado</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Límite consolidado</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Cupo Disponible</span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-600 dark:text-purple-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Cupo Disponible</span>
+            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#8B5CF6] mt-3">
             {formatMoneyCOP(availableCredit)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Cupo libre para usar</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Cupo libre para usar</p>
         </div>
       </div>
 
       {/* Tabs Filter */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+      <div className="flex items-center gap-2 border-b border-white/[0.08] pb-3">
         <Button
           variant={activeTab === "all" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("all")}
-          className={activeTab === "all" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : ""}
+          className={activeTab === "all" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"}
         >
           Todas ({accounts.length})
         </Button>
@@ -275,7 +275,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
           variant={activeTab === "standard" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("standard")}
-          className={activeTab === "standard" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : ""}
+          className={activeTab === "standard" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"}
         >
           Bancos y Efectivo (
           {accounts.filter((a) => a.account_type === "cash" || a.account_type === "bank").length})
@@ -284,7 +284,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
           variant={activeTab === "credit" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("credit")}
-          className={activeTab === "credit" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900" : ""}
+          className={activeTab === "credit" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"}
         >
           Tarjetas de Crédito ({accounts.filter((a) => a.account_type === "credit_card").length})
         </Button>
@@ -292,19 +292,19 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
       {/* Grid de Cuentas */}
       {filteredAccounts.length === 0 ? (
-        <div className="p-12 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-center">
-          <Building2 className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+        <div className="surface-card p-12 rounded-2xl border-dashed border-white/[0.1] text-center">
+          <Building2 className="w-10 h-10 text-[#94A3B8]/40 mx-auto mb-3" />
+          <h3 className="text-base font-heading font-bold text-[#F8FAFC]">
             No se encontraron cuentas en esta categoría
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-[#94A3B8] mt-1">
             Utiliza el botón de &quot;Nueva Cuenta&quot; para registrar una.
           </p>
           <div className="mt-4">
             <Button
               onClick={() => setIsDialogOpen(true)}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
             >
               Registrar Cuenta
             </Button>
@@ -321,23 +321,23 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
             return (
               <div
                 key={acc.id}
-                className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                className="surface-card p-6 rounded-2xl flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8] block">
                         {isCredit
                           ? "Tarjeta de Crédito"
                           : acc.account_type === "bank"
                           ? "Cuenta Bancaria"
                           : "Efectivo"}
                       </span>
-                      <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
+                      <h3 className="text-lg font-heading font-extrabold text-[#F8FAFC] mt-0.5">
                         {acc.name}
                       </h3>
                       {acc.institution && (
-                        <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                        <span className="text-xs text-[#94A3B8] block">
                           {acc.institution}
                         </span>
                       )}
@@ -345,8 +345,8 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center ${
                         isCredit
-                          ? "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
-                          : "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
+                          ? "bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/20"
+                          : "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
                       }`}
                     >
                       {isCredit ? <CreditCard className="w-5 h-5" /> : <Wallet className="w-5 h-5" />}
@@ -355,14 +355,14 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
                   {/* Saldo Principal */}
                   <div className="mt-5">
-                    <span className="text-xs text-slate-400 block">
+                    <span className="text-xs text-[#94A3B8] block">
                       {isCredit ? "Deuda Actual Pendiente:" : "Saldo Disponible:"}
                     </span>
                     <div
-                      className={`text-2xl font-extrabold tracking-tight mt-0.5 ${
+                      className={`text-2xl font-heading font-extrabold tracking-tight mt-0.5 ${
                         isCredit
-                          ? "text-rose-600 dark:text-rose-400"
-                          : "text-slate-900 dark:text-white"
+                          ? "text-[#F43F5E]"
+                          : "text-[#F8FAFC]"
                       }`}
                     >
                       {formatMoneyCOP(acc.current_balance)}
@@ -371,32 +371,32 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
                   {/* Detalle para Tarjetas de Crédito */}
                   {isCredit && (
-                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2 text-xs">
-                      <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                        <span className="text-slate-400">Cupo Total:</span>
-                        <span className="font-semibold">{formatMoneyCOP(acc.credit_limit || 0)}</span>
+                    <div className="mt-4 pt-3 border-t border-white/[0.08] space-y-2 text-xs">
+                      <div className="flex justify-between text-[#94A3B8]">
+                        <span className="text-[#94A3B8]">Cupo Total:</span>
+                        <span className="font-semibold text-[#F8FAFC]">{formatMoneyCOP(acc.credit_limit || 0)}</span>
                       </div>
-                      <div className="flex justify-between text-slate-600 dark:text-slate-300">
-                        <span className="text-slate-400">Cupo Libre:</span>
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      <div className="flex justify-between text-[#94A3B8]">
+                        <span className="text-[#94A3B8]">Cupo Libre:</span>
+                        <span className="font-semibold text-[#10B981]">
                           {formatMoneyCOP(remainingCredit)}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 pt-1">
+                      <div className="flex items-center justify-between text-[#94A3B8] pt-1">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           <span>Día de Corte:</span>
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="font-bold text-[#F8FAFC]">
                           {acc.closing_day} de cada mes
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
+                      <div className="flex items-center justify-between text-[#94A3B8]">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3.5 h-3.5" />
                           <span>Límite Pago:</span>
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">
+                        <span className="font-bold text-[#F8FAFC]">
                           Día {acc.payment_due_day}
                         </span>
                       </div>
@@ -404,8 +404,8 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                   )}
                 </div>
 
-                <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
+                <div className="mt-5 pt-3 border-t border-white/[0.08] flex items-center justify-between text-[11px] text-[#94A3B8]">
+                  <span className="flex items-center gap-1 text-[#10B981] font-medium">
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Activa</span>
                   </span>
@@ -415,7 +415,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                       variant="outline"
                       size="sm"
                       onClick={() => setEditingAccount(acc)}
-                      className="h-7 px-2.5 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
+                      className="h-7 px-2.5 text-xs text-[#F8FAFC] border-white/[0.08] bg-[#0B0F19] hover:bg-white/[0.05] flex items-center gap-1 rounded-xl"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       <span>Editar</span>
@@ -425,7 +425,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                       variant="outline"
                       size="sm"
                       onClick={() => setDeletingAccount(acc)}
-                      className="h-7 px-2.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
+                      className="h-7 px-2.5 text-xs text-[#F43F5E] hover:bg-[#F43F5E]/10 border-white/[0.08] bg-[#0B0F19] flex items-center gap-1 rounded-xl"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Eliminar</span>

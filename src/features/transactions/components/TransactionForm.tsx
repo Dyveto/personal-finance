@@ -377,67 +377,67 @@ export function TransactionForm({
 
       {/* Sección Opcional de Cuotas (Habilitada solo para Tarjetas de Crédito) */}
       {isCreditCard && (
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-3">
+        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0B0F19]/60 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <Label htmlFor="is_installment" className="font-semibold text-xs cursor-pointer">
+              <CreditCard className="w-4 h-4 text-[#8B5CF6]" />
+              <Label htmlFor="is_installment" className="font-semibold text-xs cursor-pointer text-[#F8FAFC]">
                 Diferir compra a cuotas
               </Label>
             </div>
             <input
               id="is_installment"
               type="checkbox"
-              className="w-4 h-4 accent-emerald-600 rounded cursor-pointer"
+              className="w-4 h-4 accent-[#8B5CF6] rounded cursor-pointer"
               checked={isInstallment}
               onChange={(e) => setValue("is_installment", e.target.checked)}
             />
           </div>
 
           {isInstallment && (
-            <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800 animate-in fade-in-50 duration-150">
+            <div className="space-y-3 pt-2 border-t border-white/[0.08] animate-in fade-in-50 duration-150">
               <div className="space-y-1.5">
-                <Label htmlFor="installment_count" className="text-xs">
+                <Label htmlFor="installment_count" className="text-xs text-[#F8FAFC]">
                   Número de Cuotas
                 </Label>
                 <Select
                   value={currentInstallments}
                   onValueChange={(val) => setValue("installment_count", val)}
                 >
-                  <SelectTrigger id="installment_count">
+                  <SelectTrigger id="installment_count" className="bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl text-xs">
                     <SelectValue placeholder="Selecciona cuotas" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-[#131B2E] border-white/[0.08] text-[#F8FAFC]">
                     {[1, 2, 3, 4, 6, 9, 12, 18, 24, 36].map((num) => (
-                      <SelectItem key={num} value={String(num)}>
+                      <SelectItem key={num} value={String(num)} className="hover:bg-white/[0.05]">
                         {num} {num === 1 ? "cuota (pago directo)" : "cuotas mensuales"}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.installment_count && (
-                  <p className="text-xs text-rose-500">{errors.installment_count.message}</p>
+                  <p className="text-xs text-[#F43F5E]">{errors.installment_count.message}</p>
                 )}
               </div>
 
               {/* Previsualización en vivo de la distribución de cuotas */}
               {installmentPreview && installmentPreview.count > 1 && (
-                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-emerald-800 dark:text-emerald-300">
+                <div className="p-3 rounded-xl bg-[#8B5CF6]/10 border border-[#8B5CF6]/25 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-[#8B5CF6]">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Distribución Exacta de Cuotas (Sin Pérdida de Centavos)</span>
                   </div>
-                  <div className="text-emerald-900 dark:text-emerald-200 pt-1 flex justify-between">
+                  <div className="text-[#F8FAFC] pt-1 flex justify-between">
                     <span>Cuota 1 (con ajuste de residuo):</span>
                     <span className="font-bold">{formatMoneyCOP(installmentPreview.first)}</span>
                   </div>
-                  <div className="text-emerald-900 dark:text-emerald-200 flex justify-between">
+                  <div className="text-[#F8FAFC] flex justify-between">
                     <span>Cuotas 2 a {installmentPreview.count}:</span>
                     <span className="font-bold">{formatMoneyCOP(installmentPreview.remaining)} c/u</span>
                   </div>
-                  <div className="text-slate-500 dark:text-slate-400 text-[11px] pt-1 border-t border-emerald-200 dark:border-emerald-800/40 flex justify-between">
+                  <div className="text-[#94A3B8] text-[11px] pt-1 border-t border-white/[0.08] flex justify-between">
                     <span>Suma total consolidada:</span>
-                    <span className="font-bold">{formatMoneyCOP(installmentPreview.total)}</span>
+                    <span className="font-bold text-[#F8FAFC]">{formatMoneyCOP(installmentPreview.total)}</span>
                   </div>
                 </div>
               )}
@@ -448,23 +448,23 @@ export function TransactionForm({
 
       {/* Notas opcionales */}
       <div className="space-y-1.5">
-        <Label htmlFor="notes">
-          Notas <span className="text-xs text-slate-400 font-normal">(Opcional)</span>
+        <Label htmlFor="notes" className="text-[#F8FAFC]">
+          Notas <span className="text-xs text-[#94A3B8] font-normal">(Opcional)</span>
         </Label>
-        <Input id="notes" placeholder="Notas adicionales o referencia" {...register("notes")} />
+        <Input id="notes" placeholder="Notas adicionales o referencia" className="bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl text-xs" {...register("notes")} />
       </div>
 
       {/* Botones de Acción */}
       <div className="flex items-center justify-end gap-2.5 pt-4">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs">
             Cancelar
           </Button>
         )}
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl text-xs transition-all"
         >
           {isSubmitting ? (
             <>

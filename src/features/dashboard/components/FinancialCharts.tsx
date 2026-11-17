@@ -35,14 +35,14 @@ interface FinancialChartsProps {
 }
 
 const CATEGORY_PALETTE = [
-  "#10b981", // emerald
-  "#3b82f6", // blue
-  "#f59e0b", // amber
-  "#ec4899", // pink
-  "#8b5cf6", // purple
-  "#14b8a6", // teal
-  "#f97316", // orange
-  "#64748b", // slate
+  "#8B5CF6", // Electric Violet
+  "#10B981", // Emerald
+  "#3B82F6", // Blue
+  "#F59E0B", // Amber
+  "#F43F5E", // Crimson
+  "#06B6D4", // Cyan
+  "#EC4899", // Pink
+  "#64748B", // Slate
 ];
 
 export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsProps) {
@@ -57,26 +57,26 @@ export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsPr
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* 1. Gráfico de Comparación Mensual: Ingresos vs. Gastos */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+      <div className="surface-card p-6 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <h3 className="text-base font-heading font-bold text-[#F8FAFC] flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-[#10B981]" />
               <span>Flujo Mensual (Ingresos vs. Gastos)</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-[#94A3B8] mt-0.5">
               Comparativa de ingresos y gastos consolidados
             </p>
           </div>
         </div>
 
         {!hasMonthlyData ? (
-          <div className="h-64 flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center p-6">
-            <BarChart3 className="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2" />
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <div className="h-64 flex flex-col items-center justify-center border border-dashed border-white/[0.1] rounded-xl text-center p-6">
+            <BarChart3 className="w-8 h-8 text-[#94A3B8]/40 mb-2" />
+            <p className="text-xs font-semibold text-[#F8FAFC]">
               Sin datos de movimientos suficientes
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">
               Registra transacciones para visualizar la comparativa mensual.
             </p>
           </div>
@@ -84,15 +84,15 @@ export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsPr
           <div className="h-72 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.06)" />
                 <XAxis
                   dataKey="month"
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
-                  axisLine={{ stroke: "#e2e8f0" }}
+                  tick={{ fontSize: 11, fill: "#94A3B8" }}
+                  axisLine={{ stroke: "rgba(255,255,255,0.08)" }}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  tick={{ fontSize: 10, fill: "#94A3B8" }}
                   tickFormatter={(val: number) => `$${(val / 1000).toFixed(0)}k`}
                   axisLine={false}
                   tickLine={false}
@@ -106,19 +106,20 @@ export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsPr
                     ];
                   }}
                   contentStyle={{
-                    backgroundColor: "#0f172a",
-                    borderColor: "#334155",
-                    borderRadius: "0.75rem",
+                    backgroundColor: "#131B2E",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "1rem",
                     fontSize: "12px",
-                    color: "#f8fafc",
+                    color: "#F8FAFC",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
                   }}
                 />
                 <Legend
                   formatter={(value: string) => (value === "income" ? "Ingresos" : "Gastos")}
-                  wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
+                  wrapperStyle={{ fontSize: "12px", paddingTop: "8px", color: "#94A3B8" }}
                 />
-                <Bar dataKey="income" fill="#10b981" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                <Bar dataKey="expense" fill="#f43f5e" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="income" fill="#10B981" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="expense" fill="#F43F5E" radius={[6, 6, 0, 0]} maxBarSize={36} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -126,26 +127,26 @@ export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsPr
       </div>
 
       {/* 2. Gráfico de Pastel: Distribución de Gastos por Categoría */}
-      <div className="p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+      <div className="surface-card p-6 rounded-2xl flex flex-col justify-between">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <PieIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <h3 className="text-base font-heading font-bold text-[#F8FAFC] flex items-center gap-2">
+              <PieIcon className="w-5 h-5 text-[#8B5CF6]" />
               <span>Gastos por Categoría</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-[#94A3B8] mt-0.5">
               Distribución porcentual de egresos acumulados
             </p>
           </div>
         </div>
 
         {!hasCategoryData ? (
-          <div className="h-64 flex flex-col items-center justify-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-center p-6">
-            <PieIcon className="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2" />
-            <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+          <div className="h-64 flex flex-col items-center justify-center border border-dashed border-white/[0.1] rounded-xl text-center p-6">
+            <PieIcon className="w-8 h-8 text-[#94A3B8]/40 mb-2" />
+            <p className="text-xs font-semibold text-[#F8FAFC]">
               Sin gastos categorizados
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-[#94A3B8] mt-0.5">
               Registra gastos para generar el desglose por categorías.
             </p>
           </div>
@@ -178,18 +179,19 @@ export function FinancialCharts({ monthlyData, categoryData }: FinancialChartsPr
                     ];
                   }}
                   contentStyle={{
-                    backgroundColor: "#0f172a",
-                    borderColor: "#334155",
-                    borderRadius: "0.75rem",
+                    backgroundColor: "#131B2E",
+                    borderColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: "1rem",
                     fontSize: "12px",
-                    color: "#f8fafc",
+                    color: "#F8FAFC",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
                   }}
                 />
                 <Legend
                   layout="horizontal"
                   align="center"
                   verticalAlign="bottom"
-                  wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
+                  wrapperStyle={{ fontSize: "11px", paddingTop: "10px", color: "#94A3B8" }}
                 />
               </PieChart>
             </ResponsiveContainer>

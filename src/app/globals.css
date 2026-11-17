@@ -1,59 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: #0B0F19;
+    --foreground: #F8FAFC;
+    --card: #131B2E;
+    --card-foreground: #F8FAFC;
+    --popover: #131B2E;
+    --popover-foreground: #F8FAFC;
+    --primary: #8B5CF6;
+    --primary-foreground: #F8FAFC;
+    --secondary: #131B2E;
+    --secondary-foreground: #F8FAFC;
+    --muted: rgba(255, 255, 255, 0.05);
+    --muted-foreground: #94A3B8;
+    --accent: #8B5CF6;
+    --accent-foreground: #F8FAFC;
+    --destructive: #F43F5E;
+    --destructive-foreground: #F8FAFC;
+    --border: rgba(255, 255, 255, 0.08);
+    --input: rgba(255, 255, 255, 0.08);
+    --ring: #8B5CF6;
+    --radius: 0.75rem;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: rgba(255, 255, 255, 0.08);
   }
+  
+  html {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    background-color: #0B0F19;
+    color: #F8FAFC;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9375rem;
+    font-weight: 400;
+    background-image: 
+      radial-gradient(circle at 10% 10%, rgba(139, 92, 246, 0.08) 0px, transparent 40%),
+      radial-gradient(circle at 90% 15%, rgba(16, 185, 129, 0.06) 0px, transparent 35%),
+      radial-gradient(circle at 50% 95%, rgba(244, 63, 94, 0.05) 0px, transparent 45%);
+    background-attachment: fixed;
+    min-height: 100vh;
   }
+
+  h1, .h1 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  h2, .h2 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+  }
+
+  h3, .h3 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+  }
+
+  .caption-fin {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+}
+
+/* Micro-interacciones y Animaciones Escalonadas (DESIGN.md) */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-stagger-1 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 100ms both;
+}
+
+.animate-stagger-2 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 200ms both;
+}
+
+.animate-stagger-3 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 300ms both;
+}
+
+.animate-stagger-4 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 400ms both;
+}
+
+.animate-stagger-5 {
+  animation: fadeInUp 0.45s cubic-bezier(0.4, 0, 0.2, 1) 500ms both;
+}
+
+/* Superficie de Tarjetas Estándar (DESIGN.md: #131B2E con borde sutil rgba(255,255,255,0.08)) */
+.surface-card {
+  background-color: #131B2E;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.surface-card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
 }

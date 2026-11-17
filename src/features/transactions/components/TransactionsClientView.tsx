@@ -157,21 +157,21 @@ export function TransactionsClientView({
         <div
           className={`p-4 rounded-xl text-xs flex items-center justify-between gap-3 shadow-sm ${
             feedback.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
-              : "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"
+              ? "bg-[#10B981]/10 border border-[#10B981]/25 text-[#10B981]"
+              : "bg-[#F43F5E]/10 border border-[#F43F5E]/30 text-[#F43F5E]"
           }`}
         >
           <div className="flex items-center gap-2">
             {feedback.type === "success" ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+              <AlertCircle className="w-4 h-4 text-[#F43F5E] flex-shrink-0" />
             )}
             <span className="font-medium">{feedback.message}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+            className="text-[#94A3B8] hover:text-[#F8FAFC] text-xs font-bold"
           >
             ✕
           </button>
@@ -181,25 +181,25 @@ export function TransactionsClientView({
       {/* Header y Modal Trigger */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
             Transacciones y Movimientos
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-[#94A3B8] mt-1">
             Registro de ingresos, gastos y compras diferidas a cuotas.
           </p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm flex items-center gap-1.5 self-start sm:self-auto">
+            <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Transacción</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
             <DialogHeader>
-              <DialogTitle>Registrar Transacción</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Registrar Transacción</DialogTitle>
+              <DialogDescription className="text-xs text-[#94A3B8]">
                 Ingresa los detalles del movimiento. En tarjetas de crédito puedes diferir a cuotas.
               </DialogDescription>
             </DialogHeader>
@@ -215,63 +215,63 @@ export function TransactionsClientView({
 
       {/* KPI Cards de Resumen */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Total Ingresos</span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Total Ingresos</span>
+            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#10B981] mt-3">
             +{formatMoneyCOP(totalIncome)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Ingresos acumulados registrados</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Ingresos acumulados registrados</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Total Gastos</span>
-            <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-950/50 flex items-center justify-center text-rose-600 dark:text-rose-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Total Gastos</span>
+            <div className="w-8 h-8 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#F43F5E] mt-3">
             -{formatMoneyCOP(totalExpense)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Gastos y compras en tarjetas</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Gastos y compras en tarjetas</p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-400">Balance Neto</span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/50 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <span className="text-xs font-semibold uppercase text-[#94A3B8]">Balance Neto</span>
+            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
           <div
-            className={`text-xl md:text-2xl font-extrabold mt-3 ${
+            className={`text-xl md:text-2xl font-heading font-extrabold mt-3 ${
               parseFloat(netBalance) >= 0
-                ? "text-slate-900 dark:text-white"
-                : "text-rose-600 dark:text-rose-400"
+                ? "text-[#F8FAFC]"
+                : "text-[#F43F5E]"
             }`}
           >
             {formatMoneyCOP(netBalance)}
           </div>
-          <p className="text-[11px] text-slate-400 mt-0.5">Ingresos menos gastos</p>
+          <p className="text-[11px] text-[#94A3B8] mt-0.5">Ingresos menos gastos</p>
         </div>
       </div>
 
       {/* Barra de Filtros y Búsqueda */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+      <div className="surface-card p-4 rounded-2xl space-y-3">
         <div className="flex flex-col sm:flex-row items-center gap-3">
           {/* Búsqueda por texto */}
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
             <Input
               placeholder="Buscar por descripción o categoría..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full"
+              className="pl-9 w-full bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl text-xs"
             />
           </div>
 
@@ -280,7 +280,7 @@ export function TransactionsClientView({
             <select
               value={selectedAccountFilter}
               onChange={(e) => setSelectedAccountFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full h-10 px-3 rounded-xl border border-white/[0.1] bg-[#0B0F19] text-xs font-medium text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
             >
               <option value="all">Todas las cuentas</option>
               {accounts.map((a) => (
@@ -298,7 +298,7 @@ export function TransactionsClientView({
             variant={typeFilter === "all" ? "default" : "ghost"}
             size="sm"
             onClick={() => setTypeFilter("all")}
-            className={typeFilter === "all" ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs" : "text-xs"}
+            className={typeFilter === "all" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
           >
             Todos ({transactions.length})
           </Button>
@@ -306,7 +306,7 @@ export function TransactionsClientView({
             variant={typeFilter === "income" ? "default" : "ghost"}
             size="sm"
             onClick={() => setTypeFilter("income")}
-            className={typeFilter === "income" ? "bg-emerald-600 text-white text-xs" : "text-xs"}
+            className={typeFilter === "income" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
           >
             Ingresos ({transactions.filter((t) => t.transaction_type === "income").length})
           </Button>
@@ -314,7 +314,7 @@ export function TransactionsClientView({
             variant={typeFilter === "expense" ? "default" : "ghost"}
             size="sm"
             onClick={() => setTypeFilter("expense")}
-            className={typeFilter === "expense" ? "bg-rose-600 text-white text-xs" : "text-xs"}
+            className={typeFilter === "expense" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl text-xs"}
           >
             Gastos ({transactions.filter((t) => t.transaction_type === "expense").length})
           </Button>
@@ -323,27 +323,27 @@ export function TransactionsClientView({
 
       {/* Lista de Transacciones */}
       {filteredTransactions.length === 0 ? (
-        <div className="p-12 rounded-2xl bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-800 text-center">
-          <Clock className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-900 dark:text-white">
+        <div className="surface-card p-12 rounded-2xl border-dashed border-white/[0.1] text-center">
+          <Clock className="w-10 h-10 text-[#94A3B8]/40 mx-auto mb-3" />
+          <h3 className="text-base font-heading font-bold text-[#F8FAFC]">
             No hay transacciones que coincidan con los filtros
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-xs text-[#94A3B8] mt-1">
             Registra tu primer movimiento financiero o ajusta la búsqueda.
           </p>
           <div className="mt-4">
             <Button
               onClick={() => setIsDialogOpen(true)}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
             >
               Registrar Movimiento
             </Button>
           </div>
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="surface-card rounded-2xl overflow-hidden">
+          <div className="divide-y divide-white/[0.06]">
             {filteredTransactions.map((tx) => {
               const isIncome = tx.transaction_type === "income";
               const account = accountsMap.get(tx.account_id);
@@ -353,14 +353,14 @@ export function TransactionsClientView({
               return (
                 <div
                   key={tx.id}
-                  className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                  className="p-4 sm:p-5 flex items-center justify-between gap-4 hover:bg-white/[0.03] transition-colors"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isIncome
-                          ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400"
-                          : "bg-rose-50 text-rose-600 dark:bg-rose-950/60 dark:text-rose-400"
+                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
+                          : "bg-white/[0.05] text-[#94A3B8] border border-white/[0.08]"
                       }`}
                     >
                       {isIncome ? (
@@ -372,24 +372,24 @@ export function TransactionsClientView({
 
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate">
+                        <h4 className="text-sm sm:text-base font-heading font-bold text-[#F8FAFC] truncate">
                           {tx.description}
                         </h4>
                         {tx.is_installment && tx.installment_count > 1 && (
-                          <span className="px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800/60 text-purple-700 dark:text-purple-300 text-[10px] font-bold tracking-wide uppercase flex-shrink-0">
+                          <span className="px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 text-[#8B5CF6] text-[10px] font-bold tracking-wide uppercase flex-shrink-0">
                             {tx.installment_count} cuotas
                           </span>
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-[#94A3B8] mt-0.5">
                         <span>{tx.transaction_date}</span>
                         <span>•</span>
-                        <span className="text-slate-600 dark:text-slate-300 font-medium">
+                        <span className="text-[#F8FAFC] font-medium">
                           {category?.name || "Sin categoría"}
                         </span>
                         <span>•</span>
-                        <span className="flex items-center gap-1 text-slate-500">
+                        <span className="flex items-center gap-1 text-[#94A3B8]">
                           {isCredit ? <CreditCard className="w-3 h-3" /> : <Wallet className="w-3 h-3" />}
                           <span>{account?.name || "Cuenta desconocida"}</span>
                         </span>
@@ -400,30 +400,30 @@ export function TransactionsClientView({
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
                       <div
-                        className={`text-base sm:text-lg font-extrabold tracking-tight ${
+                        className={`text-base sm:text-lg font-heading font-extrabold tracking-tight ${
                           isIncome
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-slate-900 dark:text-white"
+                            ? "text-[#10B981]"
+                            : "text-[#F8FAFC]"
                         }`}
                       >
                         {isIncome ? "+" : "-"}
                         {formatMoneyCOP(tx.amount)}
                       </div>
                       {tx.is_installment && tx.installment_count > 1 && (
-                        <span className="text-[11px] text-slate-400 block">
+                        <span className="text-[11px] text-[#94A3B8] block">
                           Diferido mensual
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1 border-l border-slate-100 dark:border-slate-800 pl-2 sm:pl-3">
+                    <div className="flex items-center gap-1 border-l border-white/[0.08] pl-2 sm:pl-3">
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setEditingTransaction(tx)}
                         title="Editar transacción"
-                        className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                        className="h-8 w-8 p-0 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/[0.05] rounded-lg"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                         <span className="sr-only">Editar</span>
@@ -434,7 +434,7 @@ export function TransactionsClientView({
                         size="sm"
                         onClick={() => setDeletingTransaction(tx)}
                         title="Eliminar transacción"
-                        className="h-8 w-8 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                        className="h-8 w-8 p-0 text-[#F43F5E] hover:text-rose-300 hover:bg-[#F43F5E]/10 rounded-lg"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span className="sr-only">Eliminar</span>
@@ -453,10 +453,10 @@ export function TransactionsClientView({
         open={Boolean(editingTransaction)}
         onOpenChange={(open) => !open && setEditingTransaction(null)}
       >
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
           <DialogHeader>
-            <DialogTitle>Editar Transacción</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="font-heading font-bold text-[#F8FAFC]">Editar Transacción</DialogTitle>
+            <DialogDescription className="text-xs text-[#94A3B8]">
               Modifica los detalles del movimiento. Los saldos de las cuentas se recalcularán automáticamente.
             </DialogDescription>
           </DialogHeader>

@@ -128,31 +128,31 @@ export function PayStatementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
+      <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl text-[#F8FAFC]">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+          <div className="flex items-center gap-2 text-[#8B5CF6]">
             <CreditCard className="w-5 h-5" />
-            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-white">
+            <DialogTitle className="text-lg font-heading font-bold text-[#F8FAFC]">
               Pagar Extracto de Tarjeta
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
+          <DialogDescription className="text-xs text-[#94A3B8]">
             ¿Desde qué cuenta o medio de pago realizaste el pago de este extracto?
           </DialogDescription>
         </DialogHeader>
 
         {successData ? (
           <div className="p-6 text-center space-y-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">
+              <h4 className="text-base font-heading font-bold text-[#F8FAFC]">
                 ¡Pago Registrado con Éxito!
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#94A3B8]">
                 El extracto {statementMonth} de {creditCardName} por valor de{" "}
-                <strong className="text-slate-800 dark:text-slate-200">
+                <strong className="text-[#F8FAFC]">
                   {formatMoneyCOP(successData.amountPaid)}
                 </strong>{" "}
                 ha sido liquidado y los saldos fueron actualizados.
@@ -162,7 +162,7 @@ export function PayStatementDialog({
               <Button
                 type="button"
                 onClick={handleClose}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+                className="w-full bg-[#10B981] hover:bg-[#059669] text-white text-xs font-semibold rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.25)] transition-all"
               >
                 Aceptar
               </Button>
@@ -171,27 +171,27 @@ export function PayStatementDialog({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 pt-1">
             {errorMessage && (
-              <div className="p-3 rounded-lg border border-rose-200 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl border border-[#F43F5E]/30 bg-[#F43F5E]/10 text-[#F43F5E] text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
             {/* Resumen del Extracto */}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-[#0B0F19]/60 border border-white/[0.08] flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Extracto {statementMonth}
                 </p>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">
+                <p className="text-sm font-heading font-bold text-[#F8FAFC]">
                   {creditCardName}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
                   Total Cuotas
                 </p>
-                <p className="text-base font-extrabold text-indigo-600 dark:text-indigo-400">
+                <p className="text-base font-heading font-extrabold text-[#8B5CF6]">
                   {formatMoneyCOP(totalAmount)}
                 </p>
               </div>
@@ -199,36 +199,36 @@ export function PayStatementDialog({
 
             {/* Selector de Cuenta de Pago */}
             <div className="space-y-1.5">
-              <Label htmlFor="payment_account" className="text-xs font-semibold">
+              <Label htmlFor="payment_account" className="text-xs font-semibold text-[#F8FAFC]">
                 Cuenta o medio de pago
               </Label>
               <Select
                 value={selectedAccountId}
                 onValueChange={(val) => setSelectedAccountId(val)}
               >
-                <SelectTrigger id="payment_account" className="w-full text-xs">
+                <SelectTrigger id="payment_account" className="w-full text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl">
                   <SelectValue placeholder="Selecciona una cuenta de pago" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-[#131B2E] border-white/[0.08] text-[#F8FAFC]">
                   {paymentAccounts.map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs text-[#F8FAFC] hover:bg-white/[0.05]">
                       {acc.name} ({acc.account_type === "bank" ? "Banco" : "Efectivo"} · Saldo:{" "}
                       {formatMoneyCOP(roundMoney(acc.current_balance))})
                     </SelectItem>
                   ))}
-                  <SelectItem value="none" className="text-xs text-slate-400">
+                  <SelectItem value="none" className="text-xs text-[#94A3B8] hover:bg-white/[0.05]">
                     Solo marcar como pagado (sin descontar de ninguna cuenta)
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[#94A3B8]">
                 Se registrará la salida del dinero de la cuenta seleccionada.
               </p>
             </div>
 
             {/* Monto a Liquidar */}
             <div className="space-y-1.5">
-              <Label htmlFor="amount_input" className="text-xs font-semibold">
+              <Label htmlFor="amount_input" className="text-xs font-semibold text-[#F8FAFC]">
                 Monto del pago (COP)
               </Label>
               <Input
@@ -239,14 +239,14 @@ export function PayStatementDialog({
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
                 placeholder="0.00"
-                className="text-xs"
+                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
                 required
               />
             </div>
 
             {/* Fecha del Pago */}
             <div className="space-y-1.5">
-              <Label htmlFor="payment_date" className="text-xs font-semibold">
+              <Label htmlFor="payment_date" className="text-xs font-semibold text-[#F8FAFC]">
                 Fecha de pago
               </Label>
               <Input
@@ -254,15 +254,15 @@ export function PayStatementDialog({
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
-                className="text-xs"
+                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
                 required
               />
             </div>
 
             {/* Notas opcionales */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs font-semibold">
-                Notas <span className="text-slate-400 font-normal">(Opcional)</span>
+              <Label htmlFor="notes" className="text-xs font-semibold text-[#F8FAFC]">
+                Notas <span className="text-[#94A3B8] font-normal">(Opcional)</span>
               </Label>
               <Input
                 id="notes"
@@ -270,7 +270,7 @@ export function PayStatementDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. Pago PSE o débito automático"
-                className="text-xs"
+                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
               />
             </div>
 
@@ -281,7 +281,7 @@ export function PayStatementDialog({
                 size="sm"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="text-xs"
+                className="text-xs border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
               >
                 Cancelar
               </Button>
@@ -289,7 +289,7 @@ export function PayStatementDialog({
                 type="submit"
                 size="sm"
                 disabled={isSubmitting}
-                className="text-xs bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-1.5"
+                className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
               >
                 {isSubmitting ? (
                   <>
