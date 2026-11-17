@@ -42,6 +42,7 @@ Allowed statuses:
 8. If blocked, describe the exact dependency.
 9. If a contract changes, notify every dependent agent.
 10. QA must verify the final repository state, not only the agent's own changes.
+11. Branching Strategy: Todos los desarrollos activos, commits y pruebas se realizan estrictamente en la rama `develop`. La rama `main` está protegida contra push directo y solo recibe cambios promovidos mediante Pull Request (`develop` -> `main`).
 
 ---
 
