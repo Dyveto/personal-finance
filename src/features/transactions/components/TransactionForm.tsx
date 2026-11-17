@@ -19,6 +19,8 @@ import type { CategoryRow } from "@/features/categories/actions/category-actions
 import {
   createTransaction,
   createInstallmentPurchase,
+  updateTransaction,
+  type TransactionRow,
 } from "@/features/transactions/actions/transaction-actions";
 import { formatMoneyCOP, splitInstallments, roundMoney } from "@/lib/finance/money";
 import { AlertCircle, CreditCard, Loader2, Sparkles } from "lucide-react";
@@ -74,6 +76,7 @@ type TransactionFormValues = z.infer<typeof TransactionFormSchema>;
 interface TransactionFormProps {
   accounts: AccountRow[];
   categories: CategoryRow[];
+  initialData?: TransactionRow;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
@@ -81,10 +84,12 @@ interface TransactionFormProps {
 export function TransactionForm({
   accounts,
   categories,
+  initialData,
   onSuccess,
   onCancel,
 }: TransactionFormProps) {
   const [serverError, setServerError] = useState<string | null>(null);
+  const isEditing = Boolean(initialData);
 
   // Fecha civil actual en Colombia (YYYY-MM-DD)
   const todayStr = useMemo(() => {
@@ -104,15 +109,15 @@ export function TransactionForm({
   } = useForm<TransactionFormValues>({
     resolver: zodResolver(TransactionFormSchema),
     defaultValues: {
-      account_id: accounts[0]?.id || "",
-      category_id: "",
-      description: "",
-      amount: "",
-      transaction_type: "expense",
-      transaction_date: todayStr,
-      is_installment: false,
-      installment_count: "1",
-      notes: "",
+      account_id: initialData?.account_id || accounts[0]?.id || "",
+      category_id: initialData?.category_id || "",
+      description: initialData?.description || "",
+      amount: initialData?.amount ? initialData.amount.toString() : "",
+      transaction_type: initialData?.transaction_type || "expense",
+      transaction_date: initialData?.transaction_date || todayStr,
+      is_installment: initialData?.is_installment ?? false,
+      installment_count: initialData?.installment_count ? initialData.installment_count.toString() : "1",
+      notes: initialData?.notes || "",
     },
   });
 
@@ -170,7 +175,25 @@ export function TransactionForm({
       const count = parseInt(values.installment_count || "1", 10);
       const isInstallmentActive = isCreditCard && values.is_installment && count > 1;
 
-      if (isInstallmentActive) {
+      if (initialData) {
+        // Edición de transacción existente
+        const payload = {
+          account_id: values.account_id,
+          category_id: values.category_id,
+          description: values.description,
+          amount: parseFloat(values.amount),
+          transaction_type: values.transaction_type,
+          transaction_date: values.transaction_date,
+          installment_count: isInstallmentActive ? count : 1,
+          notes: values.notes || null,
+        };
+
+        const result = await updateTransaction(initialData.id, payload);
+        if (!result.success) {
+          setServerError(result.error);
+          return;
+        }
+      } else if (isInstallmentActive) {
         // Compra diferida en Tarjeta de Crédito
         const payload = {
           account_id: values.account_id,
@@ -446,10 +469,10 @@ export function TransactionForm({
           {isSubmitting ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Guardando...
+              {isEditing ? "Actualizando..." : "Guardando..."}
             </>
           ) : (
-            "Registrar Transacción"
+            isEditing ? "Actualizar Transacción" : "Registrar Transacción"
           )}
         </Button>
       </div>

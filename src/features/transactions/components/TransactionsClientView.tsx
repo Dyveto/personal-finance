@@ -10,6 +10,10 @@ import {
   CreditCard,
   Clock,
   Wallet,
+  Pencil,
+  Trash2,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,8 +25,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
-import type { TransactionRow } from "@/features/transactions/actions/transaction-actions";
+import {
+  deleteTransaction,
+  type TransactionRow,
+} from "@/features/transactions/actions/transaction-actions";
 import type { AccountRow } from "@/features/accounts/actions/account-actions";
 import type { CategoryRow } from "@/features/categories/actions/category-actions";
 import { formatMoneyCOP, addMoney, subtractMoney, roundMoney } from "@/lib/finance/money";
@@ -40,7 +48,11 @@ export function TransactionsClientView({
 }: TransactionsClientViewProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [transactions] = useState<TransactionRow[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions);
+  const [editingTransaction, setEditingTransaction] = useState<TransactionRow | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
@@ -98,11 +110,74 @@ export function TransactionsClientView({
 
   const handleTransactionCreated = () => {
     setIsDialogOpen(false);
+    setFeedback({
+      type: "success",
+      message: "Transacción registrada exitosamente. Los saldos han sido actualizados.",
+    });
     router.refresh();
+  };
+
+  const handleTransactionUpdated = () => {
+    setEditingTransaction(null);
+    setFeedback({
+      type: "success",
+      message: "Transacción actualizada correctamente. Los saldos asociados han sido recalculados.",
+    });
+    router.refresh();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingTransaction) return;
+    try {
+      setIsDeleting(true);
+      const res = await deleteTransaction(deletingTransaction.id);
+      if (!res.success) {
+        setFeedback({ type: "error", message: res.error });
+        return;
+      }
+      setTransactions((prev) => prev.filter((t) => t.id !== deletingTransaction.id));
+      setDeletingTransaction(null);
+      setFeedback({
+        type: "success",
+        message: "Transacción eliminada con éxito. El saldo de la cuenta ha sido recalculado.",
+      });
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al eliminar la transacción";
+      setFeedback({ type: "error", message: msg });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
     <div className="space-y-8">
+      {/* Alerta de Notificación / Feedback */}
+      {feedback && (
+        <div
+          className={`p-4 rounded-xl text-xs flex items-center justify-between gap-3 shadow-sm ${
+            feedback.type === "success"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300"
+              : "bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {feedback.type === "success" ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+            )}
+            <span className="font-medium">{feedback.message}</span>
+          </div>
+          <button
+            onClick={() => setFeedback(null)}
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-bold"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Header y Modal Trigger */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -322,22 +397,49 @@ export function TransactionsClientView({
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0">
-                    <div
-                      className={`text-base sm:text-lg font-extrabold tracking-tight ${
-                        isIncome
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-slate-900 dark:text-white"
-                      }`}
-                    >
-                      {isIncome ? "+" : "-"}
-                      {formatMoneyCOP(tx.amount)}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="text-right">
+                      <div
+                        className={`text-base sm:text-lg font-extrabold tracking-tight ${
+                          isIncome
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-slate-900 dark:text-white"
+                        }`}
+                      >
+                        {isIncome ? "+" : "-"}
+                        {formatMoneyCOP(tx.amount)}
+                      </div>
+                      {tx.is_installment && tx.installment_count > 1 && (
+                        <span className="text-[11px] text-slate-400 block">
+                          Diferido mensual
+                        </span>
+                      )}
                     </div>
-                    {tx.is_installment && tx.installment_count > 1 && (
-                      <span className="text-[11px] text-slate-400 block">
-                        Diferido mensual
-                      </span>
-                    )}
+
+                    <div className="flex items-center gap-1 border-l border-slate-100 dark:border-slate-800 pl-2 sm:pl-3">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingTransaction(tx)}
+                        title="Editar transacción"
+                        className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span className="sr-only">Editar</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingTransaction(tx)}
+                        title="Eliminar transacción"
+                        className="h-8 w-8 p-0 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span className="sr-only">Eliminar</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               );
@@ -345,6 +447,42 @@ export function TransactionsClientView({
           </div>
         </div>
       )}
+
+      {/* Modal de Edición de Transacción */}
+      <Dialog
+        open={Boolean(editingTransaction)}
+        onOpenChange={(open) => !open && setEditingTransaction(null)}
+      >
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Transacción</DialogTitle>
+            <DialogDescription>
+              Modifica los detalles del movimiento. Los saldos de las cuentas se recalcularán automáticamente.
+            </DialogDescription>
+          </DialogHeader>
+          {editingTransaction && (
+            <TransactionForm
+              accounts={accounts}
+              categories={categories}
+              initialData={editingTransaction}
+              onSuccess={handleTransactionUpdated}
+              onCancel={() => setEditingTransaction(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmación de Eliminación */}
+      <ConfirmDeleteDialog
+        open={Boolean(deletingTransaction)}
+        onOpenChange={(open) => !open && setDeletingTransaction(null)}
+        title="¿Eliminar esta transacción?"
+        description={`¿Estás seguro de eliminar "${deletingTransaction?.description}" por ${formatMoneyCOP(
+          deletingTransaction?.amount || 0
+        )}? El saldo de la cuenta se ajustará automáticamente.`}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

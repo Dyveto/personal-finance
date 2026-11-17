@@ -239,6 +239,9 @@ Responsibilities:
 - [x] Implement transactions UI (history, search, filters by account and type).
 - [x] Implement forms and validation feedback (AccountForm, TransactionForm with installment split preview).
 - [x] Implement account and credit card editing modal UI with react-hook-form, Zod and updateAccount Server Action.
+- [x] Implement transaction editing modal UI with react-hook-form, Zod and updateTransaction Server Action.
+- [x] Implement safe deletion confirmation dialog (ConfirmDeleteDialog) with AlertDialog pattern, warning icons, and loading states for accounts, credit cards, and transactions.
+- [x] Implement optimistic real-time state updates and live KPI recalculation (available money, credit debt, net balance) on item edit or delete without requiring full page reload.
 - [x] Implement charts with Recharts (FinancialCharts: monthly comparison & category breakdown).
 - [x] Implement credit card installment projections (InstallmentProjectionsCard & projections.ts).
 - [x] Implement responsive layouts.
@@ -624,6 +627,24 @@ Task: Implemented server-side mutations for safe deletion and general editing wi
 3. `updateTransaction(transactionId: string, rawInput: unknown)` in `transaction-actions.ts`: Validates input with `UpdateTransactionSchema` preventing illegal states (e.g., installments on income, negative amounts, mismatched category types). Reverts the financial effect of the old transaction and applies the effect of the updated transaction (supporting reassignment across accounts). Revalidates cache across dashboard, transactions, accounts, and credit card routes.
 4. Added 13 new unit tests in `tests/unit/actions.test.ts` and `tests/unit/validations.test.ts` covering validation rules, ownership enforcement, UUID checking, decimal balance recalculations, and deletion flows. Total test suite increased to 89 passed tests.
 Files created/modified: src/features/accounts/actions/account-actions.ts, src/features/transactions/actions/transaction-actions.ts, src/lib/validations/finance.ts, tests/unit/actions.test.ts, tests/unit/validations.test.ts, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - FRONTEND AGENT (Interactive Edit & Deletion UI with Live Recalculation & Confirmation Dialogs)
+Task: Implemented complete UI workflows for editing and deleting transactions, accounts, and credit cards with optimistic live recalculation:
+1. Reusable Confirmation Dialog (`ConfirmDeleteDialog.tsx`): Built accessible deletion modal styled with Shadcn/UI and Lucide icons. Includes alert badge, title, detailed warning explanation, "Cancelar" and destructive "Sí, eliminar" actions with loading spinner and disabled state prevention.
+2. Transactions UI (`TransactionsClientView.tsx` & `TransactionForm.tsx`):
+   - Added action buttons (Pencil for editing, Trash2 for deletion) in each transaction row.
+   - Enhanced `TransactionForm` to support editing mode (`initialData`), pre-populating fields and executing `updateTransaction`.
+   - Connected deletion to `ConfirmDeleteDialog` and `deleteTransaction`. Optimistically removes items from local state (`setTransactions`), recalculates totals and net balance in real-time, and shows feedback banner with `router.refresh()` in background.
+3. Accounts UI (`AccountsClientView.tsx`):
+   - Added "Eliminar" button alongside "Editar" in each account card.
+   - Connected deletion with `ConfirmDeleteDialog` and `deleteAccount`, updating local account state and KPI cards immediately.
+4. Credit Cards UI (`CreditCardsClientView.tsx`):
+   - Added quick actions (Pencil & Trash2) in each credit card card header.
+   - Connected with `AccountForm` editing modal and `ConfirmDeleteDialog`, recalculating total credit limit, debt, and available credit instantly.
+Files created/modified: src/components/shared/ConfirmDeleteDialog.tsx, src/features/transactions/components/TransactionForm.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/accounts/components/AccountsClientView.tsx, src/features/credit-cards/components/CreditCardsClientView.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED

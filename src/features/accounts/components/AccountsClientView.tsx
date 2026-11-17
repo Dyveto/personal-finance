@@ -11,7 +11,9 @@ import {
   Calendar,
   ShieldAlert,
   Pencil,
+  Trash2,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +24,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { AccountForm } from "@/features/accounts/components/AccountForm";
-import type { AccountRow } from "@/features/accounts/actions/account-actions";
+import {
+  deleteAccount,
+  type AccountRow,
+} from "@/features/accounts/actions/account-actions";
 import { formatMoneyCOP, addMoney, subtractMoney, roundMoney } from "@/lib/finance/money";
 
 interface AccountsClientViewProps {
@@ -34,7 +40,10 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AccountRow | null>(null);
+  const [deletingAccount, setDeletingAccount] = useState<AccountRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountRow[]>(initialAccounts);
   const [activeTab, setActiveTab] = useState<"all" | "standard" | "credit">("all");
 
@@ -79,6 +88,29 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
     setSuccessNotice(`Cuenta "${updatedAccount.name}" actualizada exitosamente.`);
     setTimeout(() => setSuccessNotice(null), 5000);
     router.refresh();
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingAccount) return;
+    try {
+      setIsDeleting(true);
+      setErrorNotice(null);
+      const res = await deleteAccount(deletingAccount.id);
+      if (!res.success) {
+        setErrorNotice(res.error);
+        return;
+      }
+      setAccounts((prev) => prev.filter((a) => a.id !== deletingAccount.id));
+      setDeletingAccount(null);
+      setSuccessNotice(`Cuenta "${deletingAccount.name}" eliminada exitosamente.`);
+      setTimeout(() => setSuccessNotice(null), 5000);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al eliminar la cuenta";
+      setErrorNotice(msg);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -151,6 +183,23 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
             type="button"
             onClick={() => setSuccessNotice(null)}
             className="text-xs text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 font-semibold"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Banner de Notificación de Error */}
+      {errorNotice && (
+        <div className="p-4 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 text-sm flex items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+            <span>{errorNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErrorNotice(null)}
+            className="text-xs text-rose-600 hover:text-rose-800 dark:text-rose-400 dark:hover:text-rose-200 font-semibold"
           >
             Cerrar
           </button>
@@ -360,22 +409,44 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Activa</span>
                   </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingAccount(acc)}
-                    className="h-7 px-2.5 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>Editar</span>
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingAccount(acc)}
+                      className="h-7 px-2.5 text-xs text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      <span>Editar</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingAccount(acc)}
+                      className="h-7 px-2.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 border-slate-200 dark:border-slate-700 flex items-center gap-1 rounded-lg"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      {/* Diálogo de Confirmación de Eliminación de Cuenta */}
+      <ConfirmDeleteDialog
+        open={Boolean(deletingAccount)}
+        onOpenChange={(open) => !open && setDeletingAccount(null)}
+        title="¿Eliminar esta cuenta?"
+        description={`¿Estás seguro de eliminar "${deletingAccount?.name}"? Esta acción eliminará permanentemente todas sus transacciones asociadas y actualizará los balances.`}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

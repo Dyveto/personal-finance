@@ -1,11 +1,32 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { CreditCard, Calendar, PlusCircle, CheckCircle2 } from "lucide-react";
+import {
+  CreditCard,
+  Calendar,
+  PlusCircle,
+  CheckCircle2,
+  AlertCircle,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { AccountForm } from "@/features/accounts/components/AccountForm";
 import { InstallmentProjectionsCard } from "@/features/dashboard/components/InstallmentProjectionsCard";
-import type { AccountRow } from "@/features/accounts/actions/account-actions";
+import {
+  deleteAccount,
+  type AccountRow,
+} from "@/features/accounts/actions/account-actions";
 import type { CreditCardStatementRow } from "@/types/database.types";
 import type { ProjectedInstallment } from "@/lib/finance/projections";
 import type { MarkExtractAsPaidResult } from "@/features/credit-cards/actions/statement-actions";
@@ -24,10 +45,15 @@ export function CreditCardsClientView({
   initialStatements,
   projections,
 }: CreditCardsClientViewProps) {
+  const router = useRouter();
   const [creditCards, setCreditCards] = useState<AccountRow[]>(initialCreditCards);
   const [paymentAccounts, setPaymentAccounts] = useState<AccountRow[]>(initialPaymentAccounts);
   const [statements, setStatements] = useState<CreditCardStatementRow[]>(initialStatements);
+  const [editingCard, setEditingCard] = useState<AccountRow | null>(null);
+  const [deletingCard, setDeletingCard] = useState<AccountRow | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
   // KPIs calculados reactivamente
   let totalDebt = "0.00";
@@ -92,6 +118,39 @@ export function CreditCardsClientView({
     }, 6000);
   };
 
+  const handleCardUpdated = (updatedCard: AccountRow) => {
+    setCreditCards((prev) =>
+      prev.map((c) => (c.id === updatedCard.id ? updatedCard : c))
+    );
+    setEditingCard(null);
+    setSuccessNotice(`Tarjeta "${updatedCard.name}" actualizada con éxito.`);
+    router.refresh();
+    setTimeout(() => setSuccessNotice(null), 5000);
+  };
+
+  const handleConfirmDeleteCard = async () => {
+    if (!deletingCard) return;
+    try {
+      setIsDeleting(true);
+      setErrorNotice(null);
+      const res = await deleteAccount(deletingCard.id);
+      if (!res.success) {
+        setErrorNotice(res.error);
+        return;
+      }
+      setCreditCards((prev) => prev.filter((c) => c.id !== deletingCard.id));
+      setDeletingCard(null);
+      setSuccessNotice(`Tarjeta "${deletingCard.name}" eliminada exitosamente.`);
+      router.refresh();
+      setTimeout(() => setSuccessNotice(null), 5000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al eliminar la tarjeta";
+      setErrorNotice(msg);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Encabezado y Acciones */}
@@ -119,7 +178,7 @@ export function CreditCardsClientView({
         </div>
       </div>
 
-      {/* Banner de éxito al pagar un extracto */}
+      {/* Banner de éxito al pagar un extracto o modificar tarjeta */}
       {successNotice && (
         <div className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
           <div className="flex items-center gap-2.5">
@@ -129,6 +188,22 @@ export function CreditCardsClientView({
           <button
             onClick={() => setSuccessNotice(null)}
             className="text-xs font-semibold underline text-emerald-700 dark:text-emerald-300 ml-4 hover:opacity-80"
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Banner de error */}
+      {errorNotice && (
+        <div className="p-4 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-200 text-xs flex items-center justify-between shadow-sm animate-in fade-in-50 duration-300">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+            <span>{errorNotice}</span>
+          </div>
+          <button
+            onClick={() => setErrorNotice(null)}
+            className="text-xs font-semibold underline text-rose-700 dark:text-rose-300 ml-4 hover:opacity-80"
           >
             Cerrar
           </button>
@@ -221,7 +296,31 @@ export function CreditCardsClientView({
                       <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
                         {card.currency}
                       </span>
-                      <CreditCard className="w-6 h-6 text-blue-400" />
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingCard(card)}
+                          title="Editar tarjeta"
+                          className="h-7 w-7 p-0 text-slate-400 hover:text-white hover:bg-slate-700/60 rounded-lg"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingCard(card)}
+                          title="Eliminar tarjeta"
+                          className="h-7 w-7 p-0 text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 rounded-lg"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="sr-only">Eliminar</span>
+                        </Button>
+                        <CreditCard className="w-5 h-5 text-blue-400 ml-1" />
+                      </div>
                     </div>
 
                     <h4 className="text-lg font-bold mt-3 tracking-wide">{card.name}</h4>
@@ -272,6 +371,38 @@ export function CreditCardsClientView({
         paymentAccounts={paymentAccounts}
         statements={statements}
         onStatementPaid={handleStatementPaid}
+      />
+
+      {/* Modal de Edición de Tarjeta */}
+      <Dialog
+        open={Boolean(editingCard)}
+        onOpenChange={(open) => !open && setEditingCard(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar Tarjeta de Crédito</DialogTitle>
+            <DialogDescription>
+              Modifica el cupo, fecha de corte o fecha límite de pago de tu tarjeta.
+            </DialogDescription>
+          </DialogHeader>
+          {editingCard && (
+            <AccountForm
+              account={editingCard}
+              onSuccess={handleCardUpdated}
+              onCancel={() => setEditingCard(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmación de Eliminación de Tarjeta */}
+      <ConfirmDeleteDialog
+        open={Boolean(deletingCard)}
+        onOpenChange={(open) => !open && setDeletingCard(null)}
+        title="¿Eliminar esta tarjeta de crédito?"
+        description={`¿Estás seguro de eliminar "${deletingCard?.name}"? Esta acción eliminará permanentemente todas sus transacciones vinculadas y recalculará la deuda acumulada.`}
+        onConfirm={handleConfirmDeleteCard}
+        isDeleting={isDeleting}
       />
     </div>
   );
