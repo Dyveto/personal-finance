@@ -575,6 +575,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - FRONTEND AGENT (UX Enhancement: Persistent Statement Success Modal)
+Task: Enhanced the UX of the statement payment flow in `PayStatementDialog.tsx`. Removed automatic closing timers (`setTimeout`), ensuring that the success view ("¡Pago Registrado con Éxito!") remains static and visible until explicit user dismissal via the "Aceptar" button, backdrop click, or the "X" button. Wired `handleClose` to trigger `router.refresh()` upon user dismissal, ensuring a seamless and reliable refresh of the dashboard and credit card balances.
+Files modified: src/features/credit-cards/components/PayStatementDialog.tsx, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (72/72 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

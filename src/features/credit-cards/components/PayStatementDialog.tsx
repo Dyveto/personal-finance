@@ -104,14 +104,7 @@ export function PayStatementDialog({
       if (onSuccess) {
         onSuccess(result.data);
       }
-
-      router.refresh();
-
-      setTimeout(() => {
-        setIsSubmitting(false);
-        setSuccessData(null);
-        onClose();
-      }, 1200);
+      setIsSubmitting(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error inesperado al registrar el pago del extracto.";
       setErrorMessage(msg);
@@ -119,11 +112,17 @@ export function PayStatementDialog({
     }
   };
 
+  const handleClose = () => {
+    if (isSubmitting) return;
+    setErrorMessage(null);
+    setSuccessData(null);
+    router.refresh();
+    onClose();
+  };
+
   const handleOpenChange = (open: boolean) => {
-    if (!open && !isSubmitting) {
-      setErrorMessage(null);
-      setSuccessData(null);
-      onClose();
+    if (!open) {
+      handleClose();
     }
   };
 
@@ -143,20 +142,31 @@ export function PayStatementDialog({
         </DialogHeader>
 
         {successData ? (
-          <div className="p-6 text-center space-y-3">
+          <div className="p-6 text-center space-y-4">
             <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
               <CheckCircle2 className="w-7 h-7" />
             </div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">
-              ¡Pago Registrado con Éxito!
-            </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              El extracto {statementMonth} de {creditCardName} por valor de{" "}
-              <strong className="text-slate-800 dark:text-slate-200">
-                {formatMoneyCOP(successData.amountPaid)}
-              </strong>{" "}
-              ha sido liquidado y los saldos fueron actualizados.
-            </p>
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-slate-900 dark:text-white">
+                ¡Pago Registrado con Éxito!
+              </h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                El extracto {statementMonth} de {creditCardName} por valor de{" "}
+                <strong className="text-slate-800 dark:text-slate-200">
+                  {formatMoneyCOP(successData.amountPaid)}
+                </strong>{" "}
+                ha sido liquidado y los saldos fueron actualizados.
+              </p>
+            </div>
+            <div className="pt-2">
+              <Button
+                type="button"
+                onClick={handleClose}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold"
+              >
+                Aceptar
+              </Button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 pt-1">
