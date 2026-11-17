@@ -582,6 +582,13 @@ Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run 
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-16 - FRONTEND AGENT (Statement History Collapsible & Interactive Payment Breakdown)
+Task: Restructured `InstallmentProjectionsCard.tsx` for optimal UX and clutter-free visibility. Separated pending statement obligations from liquidated ones so only pending charges occupy the primary grid. Moved paid statements into a collapsible accordion section titled "Historial de Extractos Pagados" (closed by default, displaying a counter badge). Added an interactive breakdown view within each paid extract item to inspect payment timestamp (`paid_at`), payment source account/medium, total amount liquidated, and covered installment lines, with an explicit action to collapse the detail. Added friendly empty states for when all statements are up to date.
+Files modified: src/features/dashboard/components/InstallmentProjectionsCard.tsx, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (72/72 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
