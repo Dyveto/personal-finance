@@ -244,12 +244,19 @@ export interface Database {
           payment_due_day: number | null
           current_balance: number | null
           unpaid_expenses_total: number | null
+          total_expenses: number | null
+          total_statements_paid: number | null
         }
         Relationships: []
       }
     }
     Functions: {
-      [_ in never]: never
+      recalculate_account_balance: {
+        Args: {
+          target_account_id: string
+        }
+        Returns: number | null
+      }
     }
     Enums: {
       [_ in never]: never

@@ -63,6 +63,11 @@ Responsibilities:
 - [x] Support marking statements/installments as paid (`is_paid`, `paid_at` in `transactions`).
 - [x] Create formal `credit_card_statements` table with RLS and owner integrity.
 - [x] Create `credit_card_balance_summary` view with `security_invoker = true` for balance consistency.
+- [x] Audit referential integrity: add `ON DELETE CASCADE` to `transactions_account_owner` constraint.
+- [x] Create deterministic stored function `public.recalculate_account_balance(UUID)` with `SECURITY DEFINER` and RLS owner verification.
+- [x] Implement database triggers `trg_transactions_sync_balance` and `trg_statements_sync_balance` to automatically recalculate balances upon transaction or statement insertion, update, or deletion.
+- [x] Implement covering composite indexes (`transactions_account_type_amount_idx`, `statements_account_paid_amount_idx`) for instant index-only balance recalculations.
+- [x] Update `src/types/database.types.ts` with `recalculate_account_balance` RPC function signature and extended summary view types.
 
 Expected deliverables:
 
@@ -593,6 +598,18 @@ Handoff status: COMPLETED
 Task: Upgraded the notification bell in the top dashboard navigation header (`Header.tsx`). Implemented `NotificationBell.tsx` with a floating popover menu styled with Shadcn/UI and Tailwind CSS. Connected the component with backend server action `getPaymentAlerts()` and civil date arithmetic utility `diffCivilDays`. The popover alerts users of upcoming or overdue credit card payment due dates (`payment_due_day`), displaying credit card names, outstanding debt amounts, days remaining, and priority badges (`overdue`, `due_today`, `upcoming`). Shows clean friendly empty state ("¡Estás al día!") when all cards are settled. Supported backdrop click dismissal, escape key closure, explicit "X" button, and a badge on the bell icon with the active alert count.
 Files created/modified: src/components/layout/NotificationBell.tsx, src/components/layout/Header.tsx, src/features/credit-cards/actions/statement-actions.ts, src/lib/finance/calendar.ts, tests/unit/finance.test.ts, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (76/76 passed), npm run build (0)
+Verdic: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-16 - DATABASE AGENT (Safe Deletion Cascade, Balance Recalculation Triggers & Covering Indexes)
+Task: Upgraded database referential integrity, automated balance recalculation triggers, and performance indexes:
+1. Referential Integrity & Safe Deletion: Altered `public.transactions` composite foreign key `transactions_account_owner` to include `ON DELETE CASCADE`. Now deleting an account automatically cascades and deletes all associated transactions and credit card statements without foreign key violation errors or orphan records. Category deletion remains protected (`NO ACTION`/`RESTRICT`) to prevent orphan transactions without category.
+2. Deterministic Balance Recalculation Function: Implemented `public.recalculate_account_balance(target_account_id UUID)` in PL/pgSQL with `SECURITY DEFINER` and `SET search_path = ''`. For cash/bank accounts, recalculates `initial_balance + SUM(income) - SUM(expense)`. For credit cards, recalculates `initial_balance + SUM(unpaid expense) - SUM(paid statements)` with non-negative lower bound `GREATEST(0, ...)`. Strictly validates `auth.uid()` ownership to prevent cross-user balance tampering.
+3. Automatic Sync Triggers: Attached `trg_transactions_sync_balance` to `public.transactions` (`AFTER INSERT OR UPDATE OR DELETE`) and `trg_statements_sync_balance` to `public.credit_card_statements` (`AFTER INSERT OR UPDATE OR DELETE`) ensuring accounts' `current_balance` is permanently synchronized whenever transactions or statements are deleted, modified, or added.
+4. High-Performance Covering Indexes: Added composite indexes `transactions_account_type_amount_idx` (`transactions(account_id, transaction_type) INCLUDE (amount, is_paid)`) and `statements_account_paid_amount_idx` (`credit_card_statements(account_id, is_paid) INCLUDE (total_amount)`) for sub-millisecond index-only recalculation scans.
+5. Migration & Types: Created migration `20260331100000_safe_delete_and_balance_recalculation.sql` in both `supabase/migrations/` and `database/migrations/`. Pushed to remote Supabase project (`faqflrvvzfqbilwakapn`) with status 100% verified. Updated `src/types/database.types.ts` with `recalculate_account_balance` RPC function definition and extended view row types.
+Files created/modified: supabase/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, database/migrations/20260331100000_safe_delete_and_balance_recalculation.sql, src/types/database.types.ts, .agents-team/BOARD.md
+Verification commands: npx supabase db push --remote --yes (0), npx supabase migration list --remote (100% sync), npx tsc --noEmit (0), npm run lint (0), npm run test:run (76/76 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
 Handoff status: COMPLETED
 
