@@ -251,13 +251,15 @@ Responsibilities:
 - [x] Apply unified dark atmospheric palette (#0B0F19 canvas with radial illumination, #131B2E surface containers with 1px border rgba(255,255,255,0.08), #8B5CF6 electric violet accent, #10B981 emerald income/success, #F43F5E crimson expense/debt, #F8FAFC primary text, #94A3B8 secondary text).
 - [x] Implement cascading staggered micro-interactions (animate-stagger-1 through animate-stagger-5 with 100ms cascading delays) across Dashboard KPI cards, Recharts visualizations, and installment projections.
 - [x] Ensure strict absence of generic shadows, replacing them with crisp surface containers and subtle atmospheric glows.
+- [x] Implement Dark Mode / Light Mode switcher (ThemeToggle.tsx & switch.tsx) placed in the sidebar directly above the Sign Out button, with localStorage persistence and anti-FOUC inline script in root layout.
 
 Expected deliverables:
 
 - DESIGN.md and .agents-team/DESIGN.md
 - tailwind.config.ts and src/app/globals.css (design tokens, Google Fonts import, radial lighting, surface-card, animation-delay helpers)
 - src/app/(dashboard)/page.tsx
-- src/components/layout/{Sidebar,Header,NotificationBell,DashboardShell}.tsx
+- src/components/layout/{Sidebar,Header,NotificationBell,DashboardShell,ThemeToggle}.tsx
+- src/components/ui/switch.tsx
 - src/features/dashboard/components/{FinancialCharts,InstallmentProjectionsCard}.tsx
 - src/features/credit-cards/components/{CreditCardsClientView,PayStatementDialog}.tsx
 - src/features/accounts/components/{AccountsClientView,AccountForm}.tsx
@@ -268,25 +270,14 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
-- DESIGN.md
-- .agents-team/DESIGN.md
-- tailwind.config.ts
-- src/app/globals.css
-- src/app/layout.tsx
-- src/app/(dashboard)/page.tsx
-- src/components/layout/DashboardShell.tsx
+- src/components/ui/switch.tsx
+- src/components/layout/ThemeToggle.tsx
 - src/components/layout/Sidebar.tsx
 - src/components/layout/Header.tsx
-- src/components/layout/NotificationBell.tsx
-- src/features/dashboard/components/FinancialCharts.tsx
-- src/features/dashboard/components/InstallmentProjectionsCard.tsx
-- src/features/credit-cards/components/PayStatementDialog.tsx
-- src/features/credit-cards/components/CreditCardsClientView.tsx
-- src/features/accounts/components/AccountsClientView.tsx
-- src/features/accounts/components/AccountForm.tsx
-- src/features/transactions/components/TransactionsClientView.tsx
-- src/features/transactions/components/TransactionForm.tsx
-- src/components/shared/ConfirmDeleteDialog.tsx
+- src/components/layout/DashboardShell.tsx
+- src/app/layout.tsx
+- src/app/globals.css
+- src/app/(dashboard)/page.tsx
 
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)

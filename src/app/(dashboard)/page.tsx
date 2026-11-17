@@ -132,10 +132,10 @@ export default async function DashboardPage() {
       {/* Welcome Banner & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
             Resumen Financiero
           </h2>
-          <p className="text-sm text-[#94A3B8] mt-1">
+          <p className="text-sm text-slate-500 dark:text-[#94A3B8] mt-1">
             Control de cuentas, tarjetas de crédito, gráficos interactivos y proyecciones.
           </p>
         </div>
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
             </Button>
           </Link>
           <Link href="/accounts">
-            <Button variant="outline" className="border-white/[0.08] bg-[#131B2E] text-[#F8FAFC] hover:bg-[#1a233a] rounded-xl transition-all">
+            <Button variant="outline" className="border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1a233a] rounded-xl transition-all">
               Gestionar Cuentas
             </Button>
           </Link>
@@ -157,12 +157,12 @@ export default async function DashboardPage() {
       {/* Alerta de sesión no iniciada (si corresponde) */}
       {authRequired && (
         <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="w-5 h-5 text-amber-500 dark:text-amber-400 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-semibold text-amber-200">
+            <p className="font-semibold text-amber-900 dark:text-amber-200">
               Modo Invitado / Sesión requerida
             </p>
-            <p className="text-amber-300/90 mt-0.5">
+            <p className="text-amber-800 dark:text-amber-300/90 mt-0.5">
               Inicia sesión con Supabase Auth para acceder a tus cuentas reales y proyecciones aisladas por RLS.
             </p>
           </div>
@@ -174,7 +174,7 @@ export default async function DashboardPage() {
         {/* 1. Dinero Disponible (Efectivo + Bancos) */}
         <div className="surface-card p-6 rounded-2xl animate-stagger-1 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-[#94A3B8] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-slate-500 dark:text-[#94A3B8] uppercase">
               Dinero Disponible
             </span>
             <div className="w-10 h-10 rounded-xl bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
             <div className="text-2xl md:text-3xl font-heading font-bold text-[#10B981] tracking-tight">
               {formatMoneyCOP(availableMoney)}
             </div>
-            <p className="text-xs text-[#94A3B8] mt-1">
+            <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
               Total en cuentas de ahorro, corriente y efectivo
             </p>
           </div>
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
         {/* 2. Deuda Total en Tarjetas de Crédito */}
         <div className="surface-card p-6 rounded-2xl animate-stagger-2 relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-[#94A3B8] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-slate-500 dark:text-[#94A3B8] uppercase">
               Deuda en Tarjetas
             </span>
             <div className="w-10 h-10 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
@@ -205,7 +205,7 @@ export default async function DashboardPage() {
             <div className="text-2xl md:text-3xl font-heading font-bold text-[#F43F5E] tracking-tight">
               {formatMoneyCOP(creditDebt)}
             </div>
-            <p className="text-xs text-[#94A3B8] mt-1">
+            <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
               Monto pendiente por pagar en extractos
             </p>
           </div>
@@ -214,7 +214,7 @@ export default async function DashboardPage() {
         {/* 3. Cupo Total de Crédito */}
         <div className="surface-card p-6 rounded-2xl animate-stagger-3 relative overflow-hidden sm:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold tracking-wider text-[#94A3B8] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-slate-500 dark:text-[#94A3B8] uppercase">
               Cupo de Crédito Total
             </span>
             <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
@@ -222,10 +222,10 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-2xl md:text-3xl font-heading font-bold text-[#F8FAFC] tracking-tight">
+            <div className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
               {formatMoneyCOP(totalCreditLimit)}
             </div>
-            <p className="text-xs text-[#94A3B8] mt-1">
+            <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
               Límite de crédito consolidado disponible
             </p>
           </div>
@@ -250,7 +250,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-heading font-bold text-[#F8FAFC]">
+            <h3 className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
               Cuentas Activas
             </h3>
             <Link
@@ -262,17 +262,17 @@ export default async function DashboardPage() {
           </div>
 
           {accounts.length === 0 ? (
-            <div className="surface-card p-8 rounded-2xl border-dashed border-white/[0.15] text-center">
-              <Building2 className="w-8 h-8 text-[#94A3B8] mx-auto mb-2" />
-              <p className="text-sm font-medium text-[#F8FAFC]">
+            <div className="surface-card p-8 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.15] text-center">
+              <Building2 className="w-8 h-8 text-slate-400 dark:text-[#94A3B8] mx-auto mb-2" />
+              <p className="text-sm font-medium text-slate-900 dark:text-[#F8FAFC]">
                 No tienes cuentas registradas
               </p>
-              <p className="text-xs text-[#94A3B8] mt-1">
+              <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
                 Agrega tu primera cuenta bancaria o tarjeta para comenzar.
               </p>
               <div className="mt-4">
                 <Link href="/accounts">
-                  <Button size="sm" variant="outline" className="border-white/[0.08] bg-[#131B2E] text-[#F8FAFC] hover:bg-[#1a233a] rounded-xl">
+                  <Button size="sm" variant="outline" className="border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1a233a] rounded-xl">
                     Registrar Cuenta
                   </Button>
                 </Link>
@@ -289,14 +289,14 @@ export default async function DashboardPage() {
                   >
                     <div className="flex items-start justify-between">
                       <div>
-                        <span className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider block">
+                        <span className="text-xs font-semibold text-slate-400 dark:text-[#94A3B8] uppercase tracking-wider block">
                           {isCredit ? "Tarjeta de Crédito" : acc.account_type === "bank" ? "Banco" : "Efectivo"}
                         </span>
-                        <h4 className="text-base font-heading font-bold text-[#F8FAFC] mt-0.5">
+                        <h4 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] mt-0.5">
                           {acc.name}
                         </h4>
                         {acc.institution && (
-                          <span className="text-xs text-[#94A3B8]">
+                          <span className="text-xs text-slate-500 dark:text-[#94A3B8]">
                             {acc.institution}
                           </span>
                         )}
@@ -312,16 +312,16 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-white/[0.08] flex items-end justify-between">
+                    <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/[0.08] flex items-end justify-between">
                       <div>
-                        <span className="text-[11px] text-[#94A3B8] block">
+                        <span className="text-[11px] text-slate-400 dark:text-[#94A3B8] block">
                           {isCredit ? "Deuda actual:" : "Saldo disponible:"}
                         </span>
                         <span
                           className={`text-lg font-heading font-extrabold ${
                             isCredit
                               ? "text-[#F43F5E]"
-                              : "text-[#F8FAFC]"
+                              : "text-slate-900 dark:text-[#F8FAFC]"
                           }`}
                         >
                           {formatMoneyCOP(acc.current_balance)}
@@ -329,8 +329,8 @@ export default async function DashboardPage() {
                       </div>
                       {isCredit && acc.closing_day && (
                         <div className="text-right">
-                          <span className="text-[11px] text-[#94A3B8] block">Corte día:</span>
-                          <span className="text-xs font-bold text-[#F8FAFC]">
+                          <span className="text-[11px] text-slate-400 dark:text-[#94A3B8] block">Corte día:</span>
+                          <span className="text-xs font-bold text-slate-800 dark:text-[#F8FAFC]">
                             {acc.closing_day}
                           </span>
                         </div>
@@ -346,7 +346,7 @@ export default async function DashboardPage() {
         {/* Últimas Transacciones */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-heading font-bold text-[#F8FAFC]">
+            <h3 className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
               Transacciones Recientes
             </h3>
             <Link
@@ -360,13 +360,13 @@ export default async function DashboardPage() {
           <div className="surface-card p-5 rounded-2xl">
             {transactions.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="w-7 h-7 text-[#94A3B8] mx-auto mb-2" />
-                <p className="text-xs font-medium text-[#94A3B8]">
+                <Clock className="w-7 h-7 text-slate-400 dark:text-[#94A3B8] mx-auto mb-2" />
+                <p className="text-xs font-medium text-slate-500 dark:text-[#94A3B8]">
                   Sin transacciones recientes
                 </p>
               </div>
             ) : (
-              <div className="divide-y divide-white/[0.06]">
+              <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
                 {transactions.slice(0, 5).map((tx) => {
                   const isIncome = tx.transaction_type === "income";
                   return (
@@ -376,7 +376,7 @@ export default async function DashboardPage() {
                           className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                             isIncome
                               ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
-                              : "bg-white/[0.05] text-[#94A3B8] border border-white/[0.08]"
+                              : "bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-[#94A3B8] border border-slate-200 dark:border-white/[0.08]"
                           }`}
                         >
                           {isIncome ? (
@@ -386,10 +386,10 @@ export default async function DashboardPage() {
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[#F8FAFC] truncate">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-[#F8FAFC] truncate">
                             {tx.description}
                           </p>
-                          <span className="text-[11px] text-[#94A3B8] block">
+                          <span className="text-[11px] text-slate-400 dark:text-[#94A3B8] block">
                             {tx.transaction_date}
                             {tx.is_installment && ` · ${tx.installment_count} cuotas`}
                           </span>
@@ -400,7 +400,7 @@ export default async function DashboardPage() {
                         className={`text-sm font-heading font-bold flex-shrink-0 ${
                           isIncome
                             ? "text-[#10B981]"
-                            : "text-[#F8FAFC]"
+                            : "text-slate-900 dark:text-[#F8FAFC]"
                         }`}
                       >
                         {isIncome ? "+" : "-"}

@@ -37,7 +37,7 @@ export function DashboardShell({
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen bg-[#0B0F19] text-[#F8FAFC] overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] overflow-hidden transition-colors duration-300">
       {/* Sidebar fijo en escritorio */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar />
@@ -53,20 +53,20 @@ export function DashboardShell({
         >
           {/* Backdrop con desenfoque */}
           <div
-            className="fixed inset-0 bg-[#0B0F19]/80 backdrop-blur-md transition-opacity"
+            className="fixed inset-0 bg-slate-900/60 dark:bg-[#0B0F19]/80 backdrop-blur-md transition-opacity"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
           {/* Contenido del drawer */}
-          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-[#131B2E] border-r border-white/[0.08] shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-72 max-w-[80vw] h-full bg-white dark:bg-[#131B2E] border-r border-slate-200 dark:border-white/[0.08] shadow-2xl z-10 animate-in slide-in-from-left duration-200">
             {/* Botón de cierre */}
             <div className="absolute top-3 right-3 z-20">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-xl"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-xl"
                 aria-label="Cerrar menú móvil"
               >
                 <X className="w-5 h-5" />
