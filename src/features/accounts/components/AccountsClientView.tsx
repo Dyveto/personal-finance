@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Wallet,
@@ -46,6 +46,11 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<AccountRow[]>(initialAccounts);
   const [activeTab, setActiveTab] = useState<"all" | "standard" | "credit">("all");
+
+  // Sincronizar estado local al recibir nuevos datos desde revalidación del servidor
+  useEffect(() => {
+    setAccounts(initialAccounts);
+  }, [initialAccounts]);
 
   // Cálculos consolidados
   let totalAvailable = "0.00";

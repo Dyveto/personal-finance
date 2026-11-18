@@ -303,7 +303,9 @@ export async function createTransaction(
 
     revalidatePath("/transactions");
     revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
     revalidatePath("/dashboard");
+    revalidatePath("/");
 
     return { success: true, data: insertedTransaction };
   } catch (err) {
@@ -431,7 +433,9 @@ export async function createInstallmentPurchase(
 
     revalidatePath("/transactions");
     revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
     revalidatePath("/dashboard");
+    revalidatePath("/");
 
     return {
       success: true,

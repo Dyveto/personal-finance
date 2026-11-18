@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownRight,
@@ -44,7 +44,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
-import { TransactionForm } from "@/features/transactions/components/TransactionForm";
+import {
+  TransactionForm,
+  type TransactionCreatedResult,
+} from "@/features/transactions/components/TransactionForm";
 import { CategoryMultiSelect } from "@/features/transactions/components/CategoryMultiSelect";
 import {
   deleteTransaction,
@@ -119,6 +122,11 @@ export function TransactionsClientView({
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  // Sincronizar estado local de forma reactiva al revalidar datos del servidor
+  useEffect(() => {
+    setTransactions(initialTransactions);
+  }, [initialTransactions]);
 
   // Estados de filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -347,7 +355,11 @@ export function TransactionsClientView({
     };
   }, [filteredTransactions, categoriesMap]);
 
-  const handleTransactionCreated = () => {
+  const handleTransactionCreated = (result?: TransactionCreatedResult) => {
+    if (result) {
+      const newTx = "transaction" in result ? result.transaction : result;
+      setTransactions((prev) => [newTx, ...prev.filter((t) => t.id !== newTx.id)]);
+    }
     setIsDialogOpen(false);
     setFeedback({
       type: "success",
@@ -356,7 +368,13 @@ export function TransactionsClientView({
     router.refresh();
   };
 
-  const handleTransactionUpdated = () => {
+  const handleTransactionUpdated = (result?: TransactionCreatedResult) => {
+    if (result) {
+      const updatedTx = "transaction" in result ? result.transaction : result;
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))
+      );
+    }
     setEditingTransaction(null);
     setFeedback({
       type: "success",

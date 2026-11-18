@@ -83,11 +83,15 @@ const TransactionFormSchema = z
 
 type TransactionFormValues = z.infer<typeof TransactionFormSchema>;
 
+export type TransactionCreatedResult =
+  | TransactionRow
+  | { transaction: TransactionRow; installments: string[] };
+
 interface TransactionFormProps {
   accounts: AccountRow[];
   categories: CategoryRow[];
   initialData?: TransactionRow;
-  onSuccess?: () => void;
+  onSuccess?: (result?: TransactionCreatedResult) => void;
   onCancel?: () => void;
 }
 
@@ -197,6 +201,8 @@ export function TransactionForm({
         ? values.category_id
         : undefined;
 
+      let createdOrUpdated: TransactionCreatedResult | undefined;
+
       if (initialData) {
         // Edición de transacción existente
         const payload = {
@@ -216,6 +222,7 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       } else if (isInstallmentActive) {
         // Compra diferida en Tarjeta de Crédito
         const payload = {
@@ -234,6 +241,7 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       } else {
         // Transacción estándar
         const payload = {
@@ -254,10 +262,11 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       }
 
       if (onSuccess) {
-        onSuccess();
+        onSuccess(createdOrUpdated);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al procesar la transacción";

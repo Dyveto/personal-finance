@@ -358,6 +358,11 @@ Responsibilities:
   - Reestructuración de la jerarquía envolvente de contenedores en `src/app/(dashboard)/transactions/page.tsx`, `TransactionsClientView.tsx` y `DashboardShell.tsx`.
   - Eliminación de `min-height: 100vh;` en `globals.css` que competía con `html.h-full`, `body.h-full` y `DashboardShell.h-screen`, eliminando la doble barra de desplazamiento y el espacio vacío inferior.
   - Configuración del contenedor principal con `w-full h-auto pb-12`, asegurando flujo natural sin desbordes verticales fantasma en resoluciones de escritorio y móviles (`h-[100dvh]`).
+- [x] Actualización Reactiva Inmediata al crear transacciones y cuentas (eliminación de recargas manuales F5):
+  - Retorno y propagación de la entidad creada en `TransactionForm.tsx` a través del callback `onSuccess(createdOrUpdated)`.
+  - Actualización optimista inmediata del estado local `transactions` en `TransactionsClientView.tsx`, recalculando en el mismo frame los KPIs superiores, los totales y porcentajes por categoría, y el listado ordenado.
+  - Sincronización reactiva con `useEffect` en `TransactionsClientView`, `AccountsClientView`, `CreditCardsClientView` y `CategoriesClientView` para reflejar instantáneamente las revalidaciones del servidor (`initialTransactions`, `initialAccounts`, `initialCreditCards`, etc.).
+  - Revalidación integral de rutas (`/`, `/transactions`, `/accounts`, `/credit-cards`, `/dashboard`) en las Server Actions `createTransaction`, `createInstallmentPurchase` y `createAccount`, garantizando que el Dashboard principal y las vistas dependientes queden sincronizadas sin requerir recargar la página.
 
 Expected deliverables:
 

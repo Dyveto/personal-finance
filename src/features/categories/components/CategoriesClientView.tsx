@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Tag,
@@ -122,6 +122,15 @@ export function CategoriesClientView({
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryRow[]>(initialCategories);
   const [usageCounts, setUsageCounts] = useState<Record<string, number>>(initialUsageCounts);
+
+  // Sincronizar estado local al revalidar datos del servidor
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
+
+  useEffect(() => {
+    setUsageCounts(initialUsageCounts);
+  }, [initialUsageCounts]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<
     "all" | "expense" | "income" | "protected" | "free" | "archived"

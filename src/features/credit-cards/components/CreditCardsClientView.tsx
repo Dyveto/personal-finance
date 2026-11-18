@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -55,6 +55,19 @@ export function CreditCardsClientView({
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
 
+  // Sincronizar estado local al revalidar datos del servidor
+  useEffect(() => {
+    setCreditCards(initialCreditCards);
+  }, [initialCreditCards]);
+
+  useEffect(() => {
+    setPaymentAccounts(initialPaymentAccounts);
+  }, [initialPaymentAccounts]);
+
+  useEffect(() => {
+    setStatements(initialStatements);
+  }, [initialStatements]);
+
   // KPIs calculados reactivamente
   let totalDebt = "0.00";
   let totalLimit = "0.00";
@@ -106,12 +119,14 @@ export function CreditCardsClientView({
     // 3. Registrar el extracto en la lista local
     setStatements((prev) => [result.statement, ...prev]);
 
-    // 4. Mostrar notificación de éxito
+    // 4. Mostrar notificación de éxito y refrescar servidor
     setSuccessNotice(
       `¡Extracto ${result.statement.statement_month} pagado con éxito! Se redujo la deuda en ${formatMoneyCOP(
         result.amountPaid
       )} y los KPIs se actualizaron de inmediato.`
     );
+
+    router.refresh();
 
     setTimeout(() => {
       setSuccessNotice(null);
