@@ -180,6 +180,62 @@ export function TransactionsClientView({
     });
   };
 
+  // Manejador para clic en tarjeta de gastos de una categoría en "Totales por Categoría"
+  const handleToggleExpenseCategory = (categoryName: string) => {
+    const norm = categoryName.trim().toLowerCase();
+    const isCurrentlyFiltered =
+      typeFilter === "expense" &&
+      selectedCategoryNames.some((n) => n.trim().toLowerCase() === norm);
+
+    if (isCurrentlyFiltered) {
+      // Si ya estaba filtrada como gasto, quitarla
+      const remaining = selectedCategoryNames.filter(
+        (n) => n.trim().toLowerCase() !== norm
+      );
+      setSelectedCategoryNames(remaining);
+      if (remaining.length === 0) {
+        setTypeFilter("all");
+      }
+    } else {
+      // Filtrar precisamente como gasto de esta categoría
+      setTypeFilter("expense");
+      setSelectedCategoryNames((prev) => {
+        if (prev.some((n) => n.trim().toLowerCase() === norm)) {
+          return prev;
+        }
+        return [...prev, categoryName.trim()];
+      });
+    }
+  };
+
+  // Manejador para clic en tarjeta de ingresos de una categoría en "Totales por Categoría"
+  const handleToggleIncomeCategory = (categoryName: string) => {
+    const norm = categoryName.trim().toLowerCase();
+    const isCurrentlyFiltered =
+      typeFilter === "income" &&
+      selectedCategoryNames.some((n) => n.trim().toLowerCase() === norm);
+
+    if (isCurrentlyFiltered) {
+      // Si ya estaba filtrada como ingreso, quitarla
+      const remaining = selectedCategoryNames.filter(
+        (n) => n.trim().toLowerCase() !== norm
+      );
+      setSelectedCategoryNames(remaining);
+      if (remaining.length === 0) {
+        setTypeFilter("all");
+      }
+    } else {
+      // Filtrar precisamente como ingreso de esta categoría
+      setTypeFilter("income");
+      setSelectedCategoryNames((prev) => {
+        if (prev.some((n) => n.trim().toLowerCase() === norm)) {
+          return prev;
+        }
+        return [...prev, categoryName.trim()];
+      });
+    }
+  };
+
   // Mapas auxiliares para búsqueda rápida de nombres de cuentas y categorías
   const accountsMap = useMemo(() => {
     return new Map((accounts ?? []).map((a) => [a.id, a]));
@@ -1045,23 +1101,15 @@ export function TransactionsClientView({
                     ) : (
                       <div className="space-y-2.5">
                         {categorySummariesExpense.map((item) => {
-                          const isSelected = selectedCategoryNames.some(
-                            (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
-                          );
+                          const isSelected =
+                            typeFilter !== "income" &&
+                            selectedCategoryNames.some(
+                              (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                            );
                           return (
                             <div
                               key={`expense-${item.id}`}
-                              onClick={() =>
-                                setSelectedCategoryNames((prev) =>
-                                  isSelected
-                                    ? prev.filter(
-                                        (n) =>
-                                          n.trim().toLowerCase() !==
-                                          item.name.trim().toLowerCase()
-                                      )
-                                    : [...prev, item.name]
-                                )
-                              }
+                              onClick={() => handleToggleExpenseCategory(item.name)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
                                   ? "bg-[#F43F5E]/10 border-[#F43F5E]/50 shadow-[0_0_15px_rgba(244,63,94,0.18)]"
@@ -1069,8 +1117,8 @@ export function TransactionsClientView({
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para remover del filtro de categorías"
-                                  : "Haz clic para agregar o filtrar por esta categoría"
+                                  ? "Haz clic para remover del filtro de gastos"
+                                  : "Haz clic para filtrar solo los gastos de esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1085,7 +1133,7 @@ export function TransactionsClientView({
                                       </span>
                                       {isSelected && (
                                         <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F43F5E] text-white">
-                                          ✓ Filtrada
+                                          {typeFilter === "expense" ? "✓ Gasto filtrado" : "✓ Filtrada"}
                                         </span>
                                       )}
                                     </div>
@@ -1142,23 +1190,15 @@ export function TransactionsClientView({
                     ) : (
                       <div className="space-y-2.5">
                         {categorySummariesIncome.map((item) => {
-                          const isSelected = selectedCategoryNames.some(
-                            (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
-                          );
+                          const isSelected =
+                            typeFilter !== "expense" &&
+                            selectedCategoryNames.some(
+                              (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                            );
                           return (
                             <div
                               key={`income-${item.id}`}
-                              onClick={() =>
-                                setSelectedCategoryNames((prev) =>
-                                  isSelected
-                                    ? prev.filter(
-                                        (n) =>
-                                          n.trim().toLowerCase() !==
-                                          item.name.trim().toLowerCase()
-                                      )
-                                    : [...prev, item.name]
-                                )
-                              }
+                              onClick={() => handleToggleIncomeCategory(item.name)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
                                   ? "bg-[#10B981]/10 border-[#10B981]/50 shadow-[0_0_15px_rgba(16,185,129,0.18)]"
@@ -1166,8 +1206,8 @@ export function TransactionsClientView({
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para remover del filtro de categorías"
-                                  : "Haz clic para agregar o filtrar por esta categoría"
+                                  ? "Haz clic para remover del filtro de ingresos"
+                                  : "Haz clic para filtrar solo los ingresos de esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -1182,7 +1222,7 @@ export function TransactionsClientView({
                                       </span>
                                       {isSelected && (
                                         <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#10B981] text-white">
-                                          ✓ Filtrada
+                                          {typeFilter === "income" ? "✓ Ingreso filtrado" : "✓ Filtrada"}
                                         </span>
                                       )}
                                     </div>
@@ -1293,8 +1333,8 @@ export function TransactionsClientView({
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isIncome
-                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
-                          : "bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-white/[0.08]"
+                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25"
+                          : "bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/25"
                       }`}
                     >
                       {isIncome ? (

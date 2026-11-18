@@ -386,6 +386,9 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/TransactionsClientView.tsx (Acento rojo #F43F5E en iconos de transacciones de gasto; filtrado preciso e independiente al hacer clic en categorías de Gastos o Ingresos en "Totales por Categoría" con badges dinámicos)
+- src/features/dashboard/components/widgets/DashboardRecentTransactions.tsx (Acento rojo #F43F5E en contenedor de icono y texto de monto para transacciones de tipo gasto)
+- tests/unit/category-summary-interaction.test.ts (5 pruebas unitarias de interacción independiente por tipo de movimiento, alternancia de estado y restablecimiento)
 - src/features/transactions/components/CategoryMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
 - src/features/transactions/components/AccountMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
 - src/features/transactions/components/TransactionsClientView.tsx (Corrección de contexto de apilamiento: contenedor de filtros con relative z-30 y hover:transform-none; contenedor de Totales por Categoría y listado con relative z-10)
@@ -435,7 +438,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (174/174 unit tests passing across 12 suites, 100%)
+- `npm run test:run` -> PASS (179/179 unit tests passing across 13 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
