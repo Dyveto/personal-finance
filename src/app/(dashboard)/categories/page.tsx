@@ -1,4 +1,7 @@
-import { listCategories } from "@/features/categories/actions/category-actions";
+import {
+  listCategories,
+  getCategoryUsageCounts,
+} from "@/features/categories/actions/category-actions";
 import { CategoriesClientView } from "@/features/categories/components/CategoriesClientView";
 import { AlertCircle } from "lucide-react";
 
@@ -8,10 +11,15 @@ export const metadata = {
 };
 
 export default async function CategoriesPage() {
-  const result = await listCategories();
+  const [categoriesResult, usageResult] = await Promise.all([
+    listCategories(),
+    getCategoryUsageCounts(),
+  ]);
 
-  if (!result.success) {
-    const isAuthError = result.error.includes("Unauthorized");
+  const usageCounts = usageResult.success ? usageResult.data : {};
+
+  if (!categoriesResult.success) {
+    const isAuthError = categoriesResult.error.includes("Unauthorized");
 
     return (
       <div className="space-y-6">
@@ -33,15 +41,20 @@ export default async function CategoriesPage() {
             <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
               {isAuthError
                 ? "Debes iniciar sesión con Supabase Auth para ver y gestionar tus categorías privadas."
-                : result.error}
+                : categoriesResult.error}
             </p>
           </div>
         </div>
 
-        <CategoriesClientView initialCategories={[]} />
+        <CategoriesClientView initialCategories={[]} initialUsageCounts={{}} />
       </div>
     );
   }
 
-  return <CategoriesClientView initialCategories={result.data} />;
+  return (
+    <CategoriesClientView
+      initialCategories={categoriesResult.data}
+      initialUsageCounts={usageCounts}
+    />
+  );
 }

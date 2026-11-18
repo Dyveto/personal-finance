@@ -31,8 +31,11 @@ import {
   Gamepad2,
   Briefcase,
   Music,
-  Check,
-  Layers,
+  ShieldCheck,
+  ShieldAlert,
+  Lock,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +44,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -54,6 +58,7 @@ import {
 
 interface CategoriesClientViewProps {
   initialCategories: CategoryRow[];
+  initialUsageCounts?: Record<string, number>;
 }
 
 const COLOR_PALETTE = [
@@ -92,7 +97,11 @@ const AVAILABLE_ICONS = [
   { id: "more-horizontal", label: "Otros", icon: MoreHorizontal },
 ];
 
-function renderCategoryIcon(iconName: string | null, type: "income" | "expense", className = "w-4 h-4") {
+function renderCategoryIcon(
+  iconName: string | null,
+  type: "income" | "expense",
+  className = "w-4 h-4"
+) {
   const match = AVAILABLE_ICONS.find((i) => i.id === iconName);
   if (match) {
     const IconComp = match.icon;
@@ -106,16 +115,31 @@ function renderCategoryIcon(iconName: string | null, type: "income" | "expense",
   );
 }
 
-export function CategoriesClientView({ initialCategories }: CategoriesClientViewProps) {
+export function CategoriesClientView({
+  initialCategories,
+  initialUsageCounts = {},
+}: CategoriesClientViewProps) {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryRow[]>(initialCategories);
+  const [usageCounts, setUsageCounts] = useState<Record<string, number>>(initialUsageCounts);
   const [searchTerm, setSearchTerm] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "expense" | "income" | "archived">("all");
+  const [typeFilter, setTypeFilter] = useState<
+    "all" | "expense" | "income" | "protected" | "free" | "archived"
+  >("all");
 
   // Estados de diálogo
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryRow | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<CategoryRow | null>(null);
+  const [protectedCategory, setProtectedCategory] = useState<{
+    category: CategoryRow;
+    count: number;
+  } | null>(null);
+  const [deleteErrorAlert, setDeleteErrorAlert] = useState<{
+    title: string;
+    message: string;
+  } | null>(null);
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -126,7 +150,9 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
   const [formColor, setFormColor] = useState("#8B5CF6");
   const [formActive, setFormActive] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(
+    null
+  );
 
   // Reset del formulario para nueva categoría
   const handleOpenCreateDialog = () => {
@@ -150,6 +176,16 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
     setFormActive(cat.is_active !== false);
     setFormError(null);
     setIsDialogOpen(true);
+  };
+
+  // Manejo de intento de borrado de categoría protegida
+  const handleAttemptDelete = (cat: CategoryRow) => {
+    const txCount = usageCounts[cat.id] ?? 0;
+    if (txCount > 0) {
+      setProtectedCategory({ category: cat, count: txCount });
+    } else {
+      setDeletingCategory(cat);
+    }
   };
 
   // Guardado de categoría (creación o edición)
@@ -218,7 +254,7 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
     }
   };
 
-  // Confirmar eliminación
+  // Confirmar eliminación física
   const handleConfirmDelete = async () => {
     if (!deletingCategory) return;
     try {
@@ -227,11 +263,21 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
 
       if (!res.success) {
         setFeedback({ type: "error", message: res.error });
+        setDeleteErrorAlert({
+          title: "Eliminación Bloqueada por Seguridad",
+          message: res.error,
+        });
         setDeletingCategory(null);
         return;
       }
 
       setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id));
+      setUsageCounts((prev) => {
+        const next = { ...prev };
+        delete next[deletingCategory.id];
+        return next;
+      });
+
       setFeedback({
         type: "success",
         message: `Categoría '${deletingCategory.name}' eliminada definitivamente.`,
@@ -242,6 +288,10 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al eliminar la categoría";
       setFeedback({ type: "error", message: msg });
+      setDeleteErrorAlert({
+        title: "Error inesperado al eliminar",
+        message: msg,
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -250,9 +300,15 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
   // Categorías filtradas
   const filteredCategories = useMemo(() => {
     return categories.filter((cat) => {
+      const txCount = usageCounts[cat.id] ?? 0;
+
       // Filtro por tipo o estado
       if (typeFilter === "archived") {
         if (cat.is_active !== false) return false;
+      } else if (typeFilter === "protected") {
+        if (txCount === 0 || cat.is_active === false) return false;
+      } else if (typeFilter === "free") {
+        if (txCount > 0 || cat.is_active === false) return false;
       } else {
         if (cat.is_active === false && typeFilter !== "all") return false;
         if (typeFilter === "expense" && cat.category_type !== "expense") return false;
@@ -267,36 +323,46 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
 
       return true;
     });
-  }, [categories, typeFilter, searchTerm]);
+  }, [categories, usageCounts, typeFilter, searchTerm]);
 
   // Contadores
   const totalActive = categories.filter((c) => c.is_active !== false).length;
-  const totalExpense = categories.filter((c) => c.category_type === "expense" && c.is_active !== false).length;
-  const totalIncome = categories.filter((c) => c.category_type === "income" && c.is_active !== false).length;
+  const totalExpense = categories.filter(
+    (c) => c.category_type === "expense" && c.is_active !== false
+  ).length;
+  const totalIncome = categories.filter(
+    (c) => c.category_type === "income" && c.is_active !== false
+  ).length;
+  const totalProtected = categories.filter(
+    (c) => (usageCounts[c.id] ?? 0) > 0 && c.is_active !== false
+  ).length;
+  const totalFree = categories.filter(
+    (c) => (usageCounts[c.id] ?? 0) === 0 && c.is_active !== false
+  ).length;
   const totalArchived = categories.filter((c) => c.is_active === false).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fadeIn">
       {/* Alerta de Notificación / Feedback */}
       {feedback && (
         <div
-          className={`p-4 rounded-xl text-xs flex items-center justify-between gap-3 shadow-sm ${
+          className={`p-4 rounded-2xl text-xs flex items-center justify-between gap-3 shadow-sm border transition-all ${
             feedback.type === "success"
-              ? "bg-[#10B981]/10 border border-[#10B981]/25 text-[#10B981]"
-              : "bg-[#F43F5E]/10 border border-[#F43F5E]/30 text-[#F43F5E]"
+              ? "bg-[#10B981]/10 border-[#10B981]/30 text-[#10B981]"
+              : "bg-[#F43F5E]/10 border-[#F43F5E]/30 text-[#F43F5E]"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             {feedback.type === "success" ? (
               <CheckCircle2 className="w-4 h-4 text-[#10B981] flex-shrink-0" />
             ) : (
               <AlertCircle className="w-4 h-4 text-[#F43F5E] flex-shrink-0" />
             )}
-            <span className="font-medium">{feedback.message}</span>
+            <span className="font-semibold leading-relaxed">{feedback.message}</span>
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] text-xs font-bold"
+            className="text-slate-400 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] text-xs font-bold p-1 rounded-lg"
           >
             ✕
           </button>
@@ -306,11 +372,16 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
       {/* Header y Acción Principal */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
-            Administración de Categorías
-          </h2>
+          <div className="flex items-center gap-2.5">
+            <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
+              Administración de Categorías
+            </h2>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+              {totalActive} activas · {categories.length} totales
+            </span>
+          </div>
           <p className="text-sm text-slate-500 dark:text-[#94A3B8] mt-1">
-            Personaliza iconos, colores y nombres para organizar tus ingresos y gastos.
+            Personaliza iconos, colores y nombres. Las categorías con transacciones registradas cuentan con seguro de borrado automático.
           </p>
         </div>
 
@@ -324,55 +395,72 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
       </div>
 
       {/* KPI Cards de Resumen */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="surface-card p-5 rounded-2xl">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="surface-card p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08]">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
-              Categorías de Gasto
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
+              Gastos
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
+            <div className="w-7 h-7 rounded-lg bg-[#F43F5E]/15 border border-[#F43F5E]/25 flex items-center justify-center text-[#F43F5E]">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl md:text-3xl font-heading font-extrabold text-[#F43F5E] mt-3">
+          <div className="text-2xl font-heading font-extrabold text-[#F43F5E] mt-2">
             {totalExpense}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-            Clasificación de compras y salidas
+            Clasificación de salidas
           </p>
         </div>
 
-        <div className="surface-card p-5 rounded-2xl">
+        <div className="surface-card p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08]">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
-              Categorías de Ingreso
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
+              Ingresos
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
+            <div className="w-7 h-7 rounded-lg bg-[#10B981]/15 border border-[#10B981]/25 flex items-center justify-center text-[#10B981]">
               <ArrowDownRight className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl md:text-3xl font-heading font-extrabold text-[#10B981] mt-3">
+          <div className="text-2xl font-heading font-extrabold text-[#10B981] mt-2">
             {totalIncome}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-            Sueldos, honorarios y rentas
+            Entradas y sueldos
           </p>
         </div>
 
-        <div className="surface-card p-5 rounded-2xl">
+        <div className="surface-card p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08]">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase text-slate-500 dark:text-[#94A3B8]">
-              Total Activas
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
+              Protegidas (En Uso)
             </span>
-            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
-              <Layers className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+              <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl md:text-3xl font-heading font-extrabold text-slate-900 dark:text-[#F8FAFC] mt-3">
-            {totalActive}
+          <div className="text-2xl font-heading font-extrabold text-[#8B5CF6] mt-2">
+            {totalProtected}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-            {totalArchived > 0 ? `${totalArchived} archivada(s)` : "Todas disponibles"}
+            Con movimientos registrados
+          </p>
+        </div>
+
+        <div className="surface-card p-4 rounded-2xl border border-slate-200/80 dark:border-white/[0.08]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
+              Libres para Borrar
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-500">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-2xl font-heading font-extrabold text-emerald-600 dark:text-emerald-400 mt-2">
+            {totalFree}
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
+            0 movimientos · Borrado seguro
           </p>
         </div>
       </div>
@@ -390,12 +478,12 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <Button
               variant={typeFilter === "all" ? "default" : "ghost"}
               size="sm"
               onClick={() => setTypeFilter("all")}
-              className={`rounded-xl text-xs ${
+              className={`rounded-xl text-xs h-9 ${
                 typeFilter === "all"
                   ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED]"
                   : "text-slate-600 dark:text-[#94A3B8]"
@@ -407,7 +495,7 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
               variant={typeFilter === "expense" ? "default" : "ghost"}
               size="sm"
               onClick={() => setTypeFilter("expense")}
-              className={`rounded-xl text-xs ${
+              className={`rounded-xl text-xs h-9 ${
                 typeFilter === "expense"
                   ? "bg-[#F43F5E] text-white hover:bg-rose-600"
                   : "text-slate-600 dark:text-[#94A3B8]"
@@ -419,7 +507,7 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
               variant={typeFilter === "income" ? "default" : "ghost"}
               size="sm"
               onClick={() => setTypeFilter("income")}
-              className={`rounded-xl text-xs ${
+              className={`rounded-xl text-xs h-9 ${
                 typeFilter === "income"
                   ? "bg-[#10B981] text-white hover:bg-emerald-600"
                   : "text-slate-600 dark:text-[#94A3B8]"
@@ -427,12 +515,36 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
             >
               Ingresos ({totalIncome})
             </Button>
+            <Button
+              variant={typeFilter === "protected" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter("protected")}
+              className={`rounded-xl text-xs h-9 ${
+                typeFilter === "protected"
+                  ? "bg-[#8B5CF6]/90 text-white hover:bg-[#8B5CF6]"
+                  : "text-slate-600 dark:text-[#94A3B8]"
+              }`}
+            >
+              Con Movimientos ({totalProtected})
+            </Button>
+            <Button
+              variant={typeFilter === "free" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setTypeFilter("free")}
+              className={`rounded-xl text-xs h-9 ${
+                typeFilter === "free"
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                  : "text-slate-600 dark:text-[#94A3B8]"
+              }`}
+            >
+              Libres para Borrar ({totalFree})
+            </Button>
             {totalArchived > 0 && (
               <Button
                 variant={typeFilter === "archived" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTypeFilter("archived")}
-                className={`rounded-xl text-xs ${
+                className={`rounded-xl text-xs h-9 ${
                   typeFilter === "archived"
                     ? "bg-slate-700 text-white"
                     : "text-slate-500 dark:text-[#94A3B8]"
@@ -453,7 +565,7 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
             No se encontraron categorías
           </h3>
           <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-1">
-            Modifica la búsqueda o crea tu primera categoría personalizada.
+            Modifica la búsqueda o filtro seleccionado para ver más resultados.
           </p>
           <div className="mt-4">
             <Button
@@ -471,6 +583,8 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
             const isExpense = cat.category_type === "expense";
             const isInactive = cat.is_active === false;
             const categoryColor = cat.color || (isExpense ? "#F43F5E" : "#10B981");
+            const txCount = usageCounts[cat.id] ?? 0;
+            const hasTransactions = txCount > 0;
 
             return (
               <div
@@ -540,30 +654,60 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
                         <Pencil className="w-3.5 h-3.5" />
                         <span className="sr-only">Editar</span>
                       </Button>
+
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setDeletingCategory(cat)}
-                        title="Eliminar o archivar categoría"
-                        className="h-8 w-8 p-0 text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 rounded-lg"
+                        onClick={() => handleAttemptDelete(cat)}
+                        title={
+                          hasTransactions
+                            ? `Categoría protegida: posee ${txCount} transacción(es) asociada(s)`
+                            : "Eliminar categoría definitivamente"
+                        }
+                        className={`h-8 w-8 p-0 rounded-lg transition-colors ${
+                          hasTransactions
+                            ? "text-slate-400 hover:text-amber-500 hover:bg-amber-500/10 dark:text-[#94A3B8]/60 dark:hover:text-amber-400"
+                            : "text-rose-500 hover:text-rose-600 hover:bg-rose-500/10"
+                        }`}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span className="sr-only">Eliminar</span>
+                        {hasTransactions ? (
+                          <Lock className="w-3.5 h-3.5" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                        <span className="sr-only">
+                          {hasTransactions ? "Protegida" : "Eliminar"}
+                        </span>
                       </Button>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8]">
-                  <span className="flex items-center gap-1.5">
+                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-[11px]">
+                  {hasTransactions ? (
                     <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: categoryColor }}
-                    />
-                    <span>Color temático</span>
+                      className="inline-flex items-center gap-1.5 text-slate-600 dark:text-[#94A3B8] bg-slate-100 dark:bg-white/[0.04] px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/[0.06]"
+                      title={`Categoría con ${txCount} transacciones registradas. Protegida contra borrado accidental.`}
+                    >
+                      <ShieldCheck className="w-3 h-3 text-[#8B5CF6]" />
+                      <span className="font-semibold text-slate-800 dark:text-[#F8FAFC]">
+                        {txCount} movimiento{txCount > 1 ? "s" : ""}
+                      </span>
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20"
+                      title="No posee transacciones asociadas. Puede eliminarse de forma permanente."
+                    >
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span className="font-semibold">Libre para borrar</span>
+                    </span>
+                  )}
+
+                  <span className="text-slate-400 dark:text-[#94A3B8]">
+                    {cat.is_active !== false ? "Activa" : "Oculta"}
                   </span>
-                  <span>{cat.is_active !== false ? "Activa" : "Oculta"}</span>
                 </div>
               </div>
             );
@@ -580,19 +724,19 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
               {editingCategory
-                ? "Modifica el nombre, icono o color. Los cambios se actualizarán inmediatamente."
-                : "Crea una nueva categoría para organizar tus transacciones e informes."}
+                ? "Modifica el icono, color o estado de la categoría."
+                : "Crea una nueva categoría para organizar tus transacciones."}
             </DialogDescription>
           </DialogHeader>
 
           {formError && (
-            <div className="p-3 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
+            <div className="p-3 rounded-xl border border-rose-300 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               <span>{formError}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmitForm} className="space-y-4">
+          <form onSubmit={handleSubmitForm} className="space-y-4 mt-2">
             {/* Nombre */}
             <div className="space-y-1.5">
               <Label htmlFor="cat_name" className="text-xs font-semibold">
@@ -602,60 +746,63 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
                 id="cat_name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ej. Cine, Mascotas, Suscripciones..."
-                className="bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-xs h-10"
-                autoFocus
+                placeholder="Ej. Gimnasio, Mascotas, Cursos..."
+                className="bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-xs h-10 rounded-xl"
+                maxLength={50}
+                required
               />
             </div>
 
-            {/* Tipo de Movimiento */}
+            {/* Tipo de Categoría */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Tipo de Movimiento</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
+              <div className="grid grid-cols-2 gap-3">
+                <button
                   type="button"
-                  variant={formType === "expense" ? "default" : "outline"}
                   onClick={() => setFormType("expense")}
-                  className={`text-xs font-bold rounded-xl ${
+                  className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                     formType === "expense"
-                      ? "bg-[#F43F5E] hover:bg-rose-600 text-white shadow-[0_0_12px_rgba(244,63,94,0.3)]"
-                      : "border-slate-200 dark:border-white/[0.1] text-slate-600 dark:text-[#94A3B8]"
+                      ? "bg-[#F43F5E]/15 border-[#F43F5E] text-[#F43F5E] shadow-sm"
+                      : "border-slate-200 dark:border-white/[0.1] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                   }`}
                 >
-                  Gasto
-                </Button>
-                <Button
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>Gasto</span>
+                </button>
+                <button
                   type="button"
-                  variant={formType === "income" ? "default" : "outline"}
                   onClick={() => setFormType("income")}
-                  className={`text-xs font-bold rounded-xl ${
+                  className={`p-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                     formType === "income"
-                      ? "bg-[#10B981] hover:bg-emerald-600 text-white shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-                      : "border-slate-200 dark:border-white/[0.1] text-slate-600 dark:text-[#94A3B8]"
+                      ? "bg-[#10B981]/15 border-[#10B981] text-[#10B981] shadow-sm"
+                      : "border-slate-200 dark:border-white/[0.1] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.04]"
                   }`}
                 >
-                  Ingreso
-                </Button>
+                  <ArrowDownRight className="w-4 h-4" />
+                  <span>Ingreso</span>
+                </button>
               </div>
             </div>
 
-            {/* Paleta de Colores */}
+            {/* Selector de Color */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Color Temático</Label>
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                {COLOR_PALETTE.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setFormColor(color)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 relative"
-                    style={{ backgroundColor: color }}
-                  >
-                    {formColor === color && (
-                      <Check className="w-3.5 h-3.5 text-white drop-shadow" />
-                    )}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 flex-wrap p-2 rounded-xl bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.08]">
+                {COLOR_PALETTE.map((c) => {
+                  const isSelected = formColor.toLowerCase() === c.toLowerCase();
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setFormColor(c)}
+                      className={`w-6 h-6 rounded-full transition-transform ${
+                        isSelected ? "scale-125 ring-2 ring-offset-2 ring-[#8B5CF6]" : "hover:scale-110"
+                      }`}
+                      style={{ backgroundColor: c }}
+                      title={c}
+                    />
+                  );
+                })}
               </div>
             </div>
 
@@ -718,19 +865,127 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
                 disabled={isSubmitting}
                 className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl"
               >
-                {isSubmitting ? "Guardando..." : editingCategory ? "Guardar Cambios" : "Crear Categoría"}
+                {isSubmitting
+                  ? "Guardando..."
+                  : editingCategory
+                  ? "Guardar Cambios"
+                  : "Crear Categoría"}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de Confirmación de Eliminación */}
+      {/* Diálogo de Información de Categoría Protegida */}
+      <Dialog
+        open={Boolean(protectedCategory)}
+        onOpenChange={(open) => !open && setProtectedCategory(null)}
+      >
+        <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-amber-500/30 text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+          <DialogHeader className="gap-2">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+              Categoría Protegida contra Eliminación
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-600 dark:text-[#94A3B8] leading-relaxed">
+              La categoría{" "}
+              <strong className="text-slate-900 dark:text-[#F8FAFC]">
+                &quot;{protectedCategory?.category.name}&quot;
+              </strong>{" "}
+              contiene{" "}
+              <strong className="text-amber-600 dark:text-amber-400">
+                {protectedCategory?.count} movimiento
+                {(protectedCategory?.count || 0) > 1 ? "s" : ""} activo
+                {(protectedCategory?.count || 0) > 1 ? "s" : ""}
+              </strong>{" "}
+              en tu historial financiero.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-slate-700 dark:text-amber-200 space-y-2">
+            <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <span>
+                Por integridad contable, el sistema no permite eliminar categorías que posean
+                movimientos registrados.
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-amber-300/80 pl-6">
+              💡 <strong>Opciones disponibles:</strong> Puedes reasignar o borrar las transacciones
+              en el módulo de Transacciones, o <strong>archivar</strong> esta categoría editándola
+              para que no aparezca en futuros registros sin perder tu histórico.
+            </p>
+          </div>
+
+          <DialogFooter className="mt-4 flex flex-row justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setProtectedCategory(null)}
+              className="text-xs border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-white/[0.05] rounded-xl"
+            >
+              Entendido
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                const target = protectedCategory?.category;
+                setProtectedCategory(null);
+                if (target) {
+                  handleOpenEditDialog(target);
+                }
+              }}
+              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              <span>Editar o Archivar</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Alerta de Error de Borrado Backend */}
+      <Dialog
+        open={Boolean(deleteErrorAlert)}
+        onOpenChange={(open) => !open && setDeleteErrorAlert(null)}
+      >
+        <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-rose-500/30 text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+          <DialogHeader className="gap-2">
+            <div className="w-10 h-10 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/25 text-[#F43F5E] flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+              {deleteErrorAlert?.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-rose-600 dark:text-rose-300 leading-relaxed">
+              {deleteErrorAlert?.message}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 flex flex-row justify-end">
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={() => setDeleteErrorAlert(null)}
+              className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
+            >
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Diálogo de Confirmación de Eliminación Física (Para categorías con 0 transacciones) */}
       <ConfirmDeleteDialog
         open={Boolean(deletingCategory)}
         onOpenChange={(open) => !open && setDeletingCategory(null)}
         title="¿Eliminar categoría definitivamente?"
-        description={`¿Estás seguro de que deseas eliminar permanentemente la categoría "${deletingCategory?.name}"? Esta acción solo es posible si no tiene transacciones asociadas.`}
+        description={`¿Estás seguro de que deseas eliminar permanentemente la categoría "${deletingCategory?.name}"? Esta categoría no posee movimientos registrados y se eliminará por completo.`}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
       />

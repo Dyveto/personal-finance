@@ -29,6 +29,7 @@ import {
   updateCategory,
   deleteCategory,
   cleanUnusedDefaultCategories,
+  getCategoryUsageCounts,
 } from "@/features/categories/actions/category-actions";
 import {
   createTransaction,
@@ -1284,6 +1285,35 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
         expect(result.data.totalKept).toBe(1);
         expect(result.data.deletedCategories[0].name).toBe("Salary");
         expect(result.data.keptCategories[0].name).toBe("Alimentación");
+      }
+    });
+
+    it("should return category usage counts map for authenticated user", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const mockTxs = [
+        { category_id: "cat-1" },
+        { category_id: "cat-1" },
+        { category_id: "cat-2" },
+      ];
+
+      const mockSelectTxs = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({
+          data: mockTxs,
+          error: null,
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelectTxs });
+
+      const result = await getCategoryUsageCounts();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data["cat-1"]).toBe(2);
+        expect(result.data["cat-2"]).toBe(1);
       }
     });
   });

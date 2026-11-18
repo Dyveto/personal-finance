@@ -341,6 +341,13 @@ Responsibilities:
   - Módulo utilitario desacoplado `src/lib/theme.ts` para persistencia en `localStorage` y manipulación limpia de clases `dark`/`light` en `document.documentElement` y `document.body`.
   - Adaptación de componentes `WelcomeHubBanner.tsx` e `InstallmentProjectionsCard.tsx` para modo claro/oscuro (bordes, gradientes y tipografías legibles).
   - Cobertura de pruebas unitarias en `tests/unit/theme.test.ts` (8 pruebas unitarias añadidas, 100% pasadas).
+- [x] Actualización de la interfaz del panel de administración de categorías para reflejar el seguro de borrado y permitir una limpieza limpia:
+  - Indicadores visuales en tiempo real para categorías protegidas (`ShieldCheck` con conteo de movimientos) vs libres para borrar (`CheckCircle2` en verde esmeralda).
+  - Botón de papelera inteligente con icono de candado (`Lock`) para categorías protegidas, que al pulsarse abre un diálogo explicativo (`Dialog` de Categoría Protegida) informando que contiene movimientos activos y ofreciendo la opción de "Editar y Archivar".
+  - Manejo de excepciones de la Server Action: captura de rechazo del backend (`res.error`) con alerta en banner superior y modal emergente de error de seguridad.
+  - Nuevas pestañas de filtrado: "Con Movimientos" (categorías protegidas) y "Libres para Borrar" (categorías con 0 movimientos para limpieza ágil).
+  - Actualización de `ConfirmDeleteDialog.tsx` con soporte completo de tema claro y oscuro.
+  - Adaptación de la página servidor `src/app/(dashboard)/categories/page.tsx` para precargar en paralelo `listCategories()` y `getCategoryUsageCounts()`.
 
 Expected deliverables:
 
@@ -389,14 +396,14 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (138/138 unit tests passing across 8 suites, 100%)
+- `npm run test:run` -> PASS (141/141 unit tests passing across 8 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
 - `getDashboardLayout()`, `saveDashboardLayout()`, `resetDashboardLayout()` de `@/features/dashboard/actions/dashboard-actions`
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
-- `listCategories()` de `@/features/categories/actions/category-actions`
+- `listCategories()`, `getCategoryUsageCounts()`, `deleteCategory()` de `@/features/categories/actions/category-actions`
 - `splitInstallments()`, `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
 - `projectTransactionInstallments()` de `@/lib/finance/projections`
 

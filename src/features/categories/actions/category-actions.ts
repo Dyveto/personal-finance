@@ -637,3 +637,43 @@ export async function cleanUnusedDefaultCategories(
     return { success: false, error: message };
   }
 }
+
+/**
+ * Obtiene el mapa de conteo de transacciones por categoría para el usuario autenticado.
+ * Retorna un objeto { [categoryId: string]: number }.
+ */
+export async function getCategoryUsageCounts(): Promise<ActionResult<Record<string, number>>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const { data: transactions, error } = await supabase
+      .from("transactions")
+      .select("category_id")
+      .eq("user_id", user.id);
+
+    if (error) {
+      return { success: false, error: `Error al consultar transacciones: ${error.message}` };
+    }
+
+    const counts: Record<string, number> = {};
+    for (const tx of transactions || []) {
+      if (tx.category_id) {
+        counts[tx.category_id] = (counts[tx.category_id] || 0) + 1;
+      }
+    }
+
+    return { success: true, data: counts };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error desconocido al obtener conteos de uso";
+    return { success: false, error: message };
+  }
+}
