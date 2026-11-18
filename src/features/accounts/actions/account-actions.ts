@@ -148,7 +148,10 @@ export async function createAccount(
     }
 
     revalidatePath("/accounts");
+    revalidatePath("/credit-cards");
+    revalidatePath("/transactions");
     revalidatePath("/dashboard");
+    revalidatePath("/");
 
     return { success: true, data: createdAccount };
   } catch (err) {

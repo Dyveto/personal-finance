@@ -11,7 +11,7 @@ export default async function AccountsPage() {
   const result = await listAccounts();
 
   if (!result.success) {
-    const isAuthError = result.error.includes("Unauthorized");
+    const isAuthError = typeof result.error === "string" && result.error.includes("Unauthorized");
 
     return (
       <div className="space-y-6">

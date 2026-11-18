@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Tag,
@@ -122,6 +122,15 @@ export function CategoriesClientView({
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryRow[]>(initialCategories);
   const [usageCounts, setUsageCounts] = useState<Record<string, number>>(initialUsageCounts);
+
+  // Sincronizar estado local al revalidar datos del servidor
+  useEffect(() => {
+    setCategories(initialCategories);
+  }, [initialCategories]);
+
+  useEffect(() => {
+    setUsageCounts(initialUsageCounts);
+  }, [initialUsageCounts]);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<
     "all" | "expense" | "income" | "protected" | "free" | "archived"
@@ -856,7 +865,7 @@ export function CategoriesClientView({
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="text-xs border-slate-200 dark:border-white/[0.1] rounded-xl"
+                className="text-xs border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl font-medium"
               >
                 Cancelar
               </Button>

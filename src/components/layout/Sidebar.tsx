@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions/auth-actions";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { APP_VERSION } from "@/config/version";
 
 interface NavItem {
   name: string;
@@ -135,9 +136,14 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       {/* Bottom Status Card & Sign Out */}
       <div className="p-4 border border-slate-200 dark:border-white/[0.08] m-3 rounded-2xl bg-slate-50/80 dark:bg-[#0B0F19]/60 space-y-3 transition-colors">
         <div>
-          <div className="flex items-center gap-2 text-xs font-medium text-[#10B981] mb-1">
-            <ShieldCheck className="w-4 h-4" />
-            <span>RLS & Seguridad Activa</span>
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-[#10B981]">
+              <ShieldCheck className="w-4 h-4" />
+              <span>RLS & Seguridad Activa</span>
+            </div>
+            <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded-md bg-slate-200/70 dark:bg-white/[0.06] text-slate-600 dark:text-[#94A3B8] border border-slate-300/80 dark:border-white/[0.06] tracking-tight">
+              v{APP_VERSION}
+            </span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] leading-relaxed">
             Datos aislados por usuario y cálculos con precisión decimal en COP.

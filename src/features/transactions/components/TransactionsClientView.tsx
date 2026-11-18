@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowDownRight,
@@ -32,6 +32,7 @@ import {
   MoreHorizontal,
   Laptop,
   TrendingUp,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
-import { TransactionForm } from "@/features/transactions/components/TransactionForm";
+import {
+  TransactionForm,
+  type TransactionCreatedResult,
+} from "@/features/transactions/components/TransactionForm";
+import { CategoryMultiSelect } from "@/features/transactions/components/CategoryMultiSelect";
+import { AccountMultiSelect } from "@/features/transactions/components/AccountMultiSelect";
 import {
   deleteTransaction,
   type TransactionRow,
@@ -52,11 +58,20 @@ import {
 import type { AccountRow } from "@/features/accounts/actions/account-actions";
 import type { CategoryRow } from "@/features/categories/actions/category-actions";
 import { formatMoneyCOP, addMoney, subtractMoney, roundMoney } from "@/lib/finance/money";
+import {
+  getCategoryTotalsCollapsedPreference,
+  setCategoryTotalsCollapsedPreference,
+} from "@/lib/transactions-preferences";
+import {
+  matchesSearchKeywords,
+  addSearchTag,
+  removeSearchTag,
+} from "@/lib/transactions-search";
 
 interface TransactionsClientViewProps {
-  initialTransactions: TransactionRow[];
-  accounts: AccountRow[];
-  categories: CategoryRow[];
+  initialTransactions?: TransactionRow[];
+  accounts?: AccountRow[];
+  categories?: CategoryRow[];
 }
 
 type DatePreset = "all" | "this_month" | "last_30_days" | "this_year" | "custom";
@@ -107,38 +122,143 @@ function renderCategoryIcon(iconName: string | null, type: "income" | "expense")
 }
 
 export function TransactionsClientView({
-  initialTransactions,
-  accounts,
-  categories,
+  initialTransactions = [],
+  accounts = [],
+  categories = [],
 }: TransactionsClientViewProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions ?? []);
   const [editingTransaction, setEditingTransaction] = useState<TransactionRow | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
+  // Sincronizar estado local de forma reactiva al revalidar datos del servidor
+  useEffect(() => {
+    setTransactions(initialTransactions ?? []);
+  }, [initialTransactions]);
+
   // Estados de filtros
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTags, setSearchTags] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
-  const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>([]);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  // Manejadores para palabras clave de búsqueda multi-etiqueta (OR)
+  const handleAddSearchTag = (tagToAdd?: string) => {
+    const raw = (tagToAdd ?? searchInput).trim();
+    if (!raw) return;
+    setSearchTags((prev) => addSearchTag(prev, raw));
+    setSearchInput("");
+  };
+
+  const handleRemoveSearchTag = (tagToRemove: string) => {
+    setSearchTags((prev) => removeSearchTag(prev, tagToRemove));
+  };
 
   // Estados visuales de la sección de categorías
   const [isCategorySummaryOpen, setIsCategorySummaryOpen] = useState(true);
   const [categoryViewTab, setCategoryViewTab] = useState<"all" | "expense" | "income">("all");
 
+  // Restaurar preferencia guardada en localStorage para la sección de Totales por Categoría
+  useEffect(() => {
+    const isCollapsed = getCategoryTotalsCollapsedPreference();
+    setIsCategorySummaryOpen(!isCollapsed);
+  }, []);
+
+  // Alternar y persistir el estado de colapso
+  const handleToggleCategorySummary = () => {
+    setIsCategorySummaryOpen((prev) => {
+      const nextOpen = !prev;
+      setCategoryTotalsCollapsedPreference(!nextOpen);
+      return nextOpen;
+    });
+  };
+
+  // Cambio reactivo de pestaña de Totales por Categoría (sincronizado con typeFilter)
+  const handleCategoryViewTabChange = (tab: "all" | "expense" | "income") => {
+    setCategoryViewTab(tab);
+    setTypeFilter(tab);
+  };
+
+  // Cambio reactivo de filtro de tipo en barra de filtros (sincronizado con categoryViewTab)
+  const handleTypeFilterChange = (type: "all" | "income" | "expense") => {
+    setTypeFilter(type);
+    setCategoryViewTab(type);
+  };
+
+  // Manejador para clic en tarjeta de gastos de una categoría en "Totales por Categoría"
+  const handleToggleExpenseCategory = (categoryName: string) => {
+    const norm = categoryName.trim().toLowerCase();
+    const isCurrentlyFiltered =
+      typeFilter === "expense" &&
+      selectedCategoryNames.some((n) => n.trim().toLowerCase() === norm);
+
+    if (isCurrentlyFiltered) {
+      // Si ya estaba filtrada como gasto, quitarla
+      const remaining = selectedCategoryNames.filter(
+        (n) => n.trim().toLowerCase() !== norm
+      );
+      setSelectedCategoryNames(remaining);
+      if (remaining.length === 0) {
+        setTypeFilter("all");
+        setCategoryViewTab("all");
+      }
+    } else {
+      // Filtrar precisamente como gasto de esta categoría
+      setTypeFilter("expense");
+      setCategoryViewTab("expense");
+      setSelectedCategoryNames((prev) => {
+        if (prev.some((n) => n.trim().toLowerCase() === norm)) {
+          return prev;
+        }
+        return [...prev, categoryName.trim()];
+      });
+    }
+  };
+
+  // Manejador para clic en tarjeta de ingresos de una categoría en "Totales por Categoría"
+  const handleToggleIncomeCategory = (categoryName: string) => {
+    const norm = categoryName.trim().toLowerCase();
+    const isCurrentlyFiltered =
+      typeFilter === "income" &&
+      selectedCategoryNames.some((n) => n.trim().toLowerCase() === norm);
+
+    if (isCurrentlyFiltered) {
+      // Si ya estaba filtrada como ingreso, quitarla
+      const remaining = selectedCategoryNames.filter(
+        (n) => n.trim().toLowerCase() !== norm
+      );
+      setSelectedCategoryNames(remaining);
+      if (remaining.length === 0) {
+        setTypeFilter("all");
+        setCategoryViewTab("all");
+      }
+    } else {
+      // Filtrar precisamente como ingreso de esta categoría
+      setTypeFilter("income");
+      setCategoryViewTab("income");
+      setSelectedCategoryNames((prev) => {
+        if (prev.some((n) => n.trim().toLowerCase() === norm)) {
+          return prev;
+        }
+        return [...prev, categoryName.trim()];
+      });
+    }
+  };
+
   // Mapas auxiliares para búsqueda rápida de nombres de cuentas y categorías
   const accountsMap = useMemo(() => {
-    return new Map(accounts.map((a) => [a.id, a]));
+    return new Map((accounts ?? []).map((a) => [a.id, a]));
   }, [accounts]);
 
   const categoriesMap = useMemo(() => {
-    return new Map(categories.map((c) => [c.id, c]));
+    return new Map((categories ?? []).map((c) => [c.id, c]));
   }, [categories]);
 
   // Aplicación rápida de presets de fecha
@@ -171,39 +291,50 @@ export function TransactionsClientView({
 
   // Restablecer todos los filtros
   const handleClearFilters = () => {
-    setSearchTerm("");
+    setSearchInput("");
+    setSearchTags([]);
     setTypeFilter("all");
-    setSelectedAccountFilter("all");
-    setSelectedCategoryFilter("all");
+    setCategoryViewTab("all");
+    setSelectedAccountIds([]);
+    setSelectedCategoryNames([]);
     setDatePreset("all");
     setStartDate("");
     setEndDate("");
   };
 
   const isFilterActive =
-    searchTerm.trim() !== "" ||
+    searchTags.length > 0 ||
+    searchInput.trim() !== "" ||
     typeFilter !== "all" ||
-    selectedAccountFilter !== "all" ||
-    selectedCategoryFilter !== "all" ||
+    selectedAccountIds.length > 0 ||
+    selectedCategoryNames.length > 0 ||
     startDate !== "" ||
     endDate !== "";
 
-  // Filtrado reactivo de transacciones
-  const filteredTransactions = useMemo(() => {
+  // Transacciones base que cumplen con los filtros activos (cuentas, categorías, fechas, búsqueda)
+  const categoryBaseTransactions = useMemo(() => {
+    // Palabras clave activas para búsqueda: tags confirmados + texto en edición
+    const activeKeywords = [
+      ...searchTags,
+      ...(searchInput.trim() ? [searchInput.trim()] : []),
+    ];
+
     return transactions.filter((tx) => {
-      // Filtro por tipo
-      if (typeFilter !== "all" && tx.transaction_type !== typeFilter) {
+      // Filtro por cuentas (multi-select)
+      if (selectedAccountIds.length > 0 && !selectedAccountIds.includes(tx.account_id)) {
         return false;
       }
 
-      // Filtro por cuenta
-      if (selectedAccountFilter !== "all" && tx.account_id !== selectedAccountFilter) {
-        return false;
-      }
-
-      // Filtro por categoría
-      if (selectedCategoryFilter !== "all" && tx.category_id !== selectedCategoryFilter) {
-        return false;
+      // Filtro por categoría (unificado por nombre base y multi-select)
+      if (selectedCategoryNames.length > 0) {
+        const cat = categoriesMap.get(tx.category_id);
+        const catName = cat?.name.trim().toLowerCase() || "";
+        const matches = selectedCategoryNames.some(
+          (name) => name.trim().toLowerCase() === catName
+        );
+        if (!matches) {
+          return false;
+        }
       }
 
       // Filtro por rango de fechas
@@ -214,31 +345,37 @@ export function TransactionsClientView({
         return false;
       }
 
-      // Filtro por término de búsqueda (descripción, notas, categoría o cuenta)
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        const descMatch = tx.description.toLowerCase().includes(term);
-        const notesMatch = tx.notes ? tx.notes.toLowerCase().includes(term) : false;
-        const catName = categoriesMap.get(tx.category_id)?.name.toLowerCase() || "";
-        const catMatch = catName.includes(term);
-        const accName = accountsMap.get(tx.account_id)?.name.toLowerCase() || "";
-        const accMatch = accName.includes(term);
-        return descMatch || notesMatch || catMatch || accMatch;
+      // Filtro por palabras clave de búsqueda (descripción, notas, categoría o cuenta) - Lógica OR
+      if (activeKeywords.length > 0) {
+        const catName = categoriesMap.get(tx.category_id)?.name || "";
+        const accName = accountsMap.get(tx.account_id)?.name || "";
+        const matches = matchesSearchKeywords(tx, catName, accName, activeKeywords);
+        if (!matches) {
+          return false;
+        }
       }
 
       return true;
     });
   }, [
     transactions,
-    typeFilter,
-    selectedAccountFilter,
-    selectedCategoryFilter,
+    selectedAccountIds,
+    selectedCategoryNames,
     startDate,
     endDate,
-    searchTerm,
+    searchInput,
+    searchTags,
     categoriesMap,
     accountsMap,
   ]);
+
+  // Filtrado reactivo final de transacciones aplicando typeFilter
+  const filteredTransactions = useMemo(() => {
+    if (typeFilter === "all") {
+      return categoryBaseTransactions;
+    }
+    return categoryBaseTransactions.filter((tx) => tx.transaction_type === typeFilter);
+  }, [categoryBaseTransactions, typeFilter]);
 
   // Cálculos de métricas globales (históricas sin filtros)
   let overallIncome = "0.00";
@@ -275,16 +412,17 @@ export function TransactionsClientView({
     const expenseMap = new Map<string, CategoryAccumulator>();
     const incomeMap = new Map<string, CategoryAccumulator>();
 
-    for (const tx of filteredTransactions) {
+    for (const tx of categoryBaseTransactions) {
       const amtStr = roundMoney(tx.amount);
       const cat = categoriesMap.get(tx.category_id);
       const catId = tx.category_id || "uncategorized";
       const catName = cat?.name || (tx.category_id ? "Categoría no encontrada" : "Sin categoría");
       const catIcon = cat?.icon || null;
+      const mapKey = catName.trim().toLowerCase();
 
       if (tx.transaction_type === "income") {
         fIncome = addMoney(fIncome, amtStr);
-        const prev = incomeMap.get(catId) || {
+        const prev = incomeMap.get(mapKey) || {
           id: catId,
           name: catName,
           type: "income",
@@ -294,10 +432,10 @@ export function TransactionsClientView({
         };
         prev.totalAmount = addMoney(prev.totalAmount, amtStr);
         prev.count += 1;
-        incomeMap.set(catId, prev);
+        incomeMap.set(mapKey, prev);
       } else {
         fExpense = addMoney(fExpense, amtStr);
-        const prev = expenseMap.get(catId) || {
+        const prev = expenseMap.get(mapKey) || {
           id: catId,
           name: catName,
           type: "expense",
@@ -307,7 +445,7 @@ export function TransactionsClientView({
         };
         prev.totalAmount = addMoney(prev.totalAmount, amtStr);
         prev.count += 1;
-        expenseMap.set(catId, prev);
+        expenseMap.set(mapKey, prev);
       }
     }
 
@@ -330,15 +468,24 @@ export function TransactionsClientView({
       .sort((a, b) => parseFloat(b.totalAmount) - parseFloat(a.totalAmount));
 
     return {
-      filteredIncome: fIncome,
-      filteredExpense: fExpense,
-      filteredNet: fNet,
+      filteredIncome: typeFilter === "expense" ? "0.00" : fIncome,
+      filteredExpense: typeFilter === "income" ? "0.00" : fExpense,
+      filteredNet:
+        typeFilter === "expense"
+          ? subtractMoney("0.00", fExpense)
+          : typeFilter === "income"
+          ? fIncome
+          : fNet,
       categorySummariesExpense: expenseList,
       categorySummariesIncome: incomeList,
     };
-  }, [filteredTransactions, categoriesMap]);
+  }, [categoryBaseTransactions, categoriesMap, typeFilter]);
 
-  const handleTransactionCreated = () => {
+  const handleTransactionCreated = (result?: TransactionCreatedResult) => {
+    if (result) {
+      const newTx = "transaction" in result ? result.transaction : result;
+      setTransactions((prev) => [newTx, ...prev.filter((t) => t.id !== newTx.id)]);
+    }
     setIsDialogOpen(false);
     setFeedback({
       type: "success",
@@ -347,7 +494,13 @@ export function TransactionsClientView({
     router.refresh();
   };
 
-  const handleTransactionUpdated = () => {
+  const handleTransactionUpdated = (result?: TransactionCreatedResult) => {
+    if (result) {
+      const updatedTx = "transaction" in result ? result.transaction : result;
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))
+      );
+    }
     setEditingTransaction(null);
     setFeedback({
       type: "success",
@@ -381,7 +534,7 @@ export function TransactionsClientView({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full h-auto space-y-8">
       {/* Alerta de Notificación / Feedback */}
       {feedback && (
         <div
@@ -529,7 +682,7 @@ export function TransactionsClientView({
       </div>
 
       {/* Barra de Filtros Multicriterio */}
-      <div className="surface-card p-5 rounded-2xl space-y-4">
+      <div className="surface-card p-5 rounded-2xl space-y-4 relative z-30 hover:transform-none">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2 text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             <Filter className="w-4 h-4 text-[#8B5CF6]" />
@@ -543,10 +696,10 @@ export function TransactionsClientView({
 
           {isFilterActive && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleClearFilters}
-              className="h-7 px-2.5 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-1.5"
+              className="h-7 px-2.5 text-xs border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-300 rounded-lg flex items-center gap-1.5 font-medium transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Limpiar filtros</span>
@@ -555,48 +708,77 @@ export function TransactionsClientView({
         </div>
 
         {/* Fila 1: Búsqueda, Cuenta, Categoría y Selector de Fecha */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Búsqueda por texto */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#94A3B8]" />
-            <Input
-              placeholder="Buscar descripción o notas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl text-xs h-10"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-30">
+          {/* Búsqueda por texto con soporte multi-palabra (OR) */}
+          <div className="space-y-1.5">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 absolute left-3 text-slate-400 dark:text-[#94A3B8] pointer-events-none" />
+              <Input
+                placeholder="Buscar (Enter para añadir)..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddSearchTag();
+                  }
+                }}
+                className="pl-9 pr-14 w-full bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl text-xs h-10"
+              />
+              {searchInput.trim() && (
+                <button
+                  type="button"
+                  onClick={() => handleAddSearchTag()}
+                  className="absolute right-2 px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  title="Añadir término de búsqueda"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Añadir</span>
+                </button>
+              )}
+            </div>
+
+            {/* Mini etiquetas bajo el input para confirmación inmediata */}
+            {searchTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                {searchTags.map((tag) => (
+                  <span
+                    key={`mini-tag-${tag}`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[10px] font-medium"
+                  >
+                    <span>{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSearchTag(tag)}
+                      className="hover:text-rose-500 font-bold leading-none"
+                      title={`Quitar ${tag}`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Filtro por Cuentas (Multi-Select con Casillas) */}
+          <div>
+            <AccountMultiSelect
+              accounts={accounts}
+              selectedAccountIds={selectedAccountIds}
+              onChange={setSelectedAccountIds}
+              placeholder="Todas las cuentas"
             />
           </div>
 
-          {/* Filtro por Cuenta */}
+          {/* Filtro por Categoría (Multi-Select unificado por nombre base) */}
           <div>
-            <select
-              value={selectedAccountFilter}
-              onChange={(e) => setSelectedAccountFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
-            >
-              <option value="all">Todas las cuentas</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.account_type === "credit_card" ? "Tarjeta" : "Cuenta"})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Filtro por Categoría */}
-          <div>
-            <select
-              value={selectedCategoryFilter}
-              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.category_type === "income" ? "Ingreso" : "Gasto"})
-                </option>
-              ))}
-            </select>
+            <CategoryMultiSelect
+              categories={categories}
+              selectedCategoryNames={selectedCategoryNames}
+              onChange={setSelectedCategoryNames}
+              placeholder="Todas las categorías"
+            />
           </div>
 
           {/* Preset Temporal */}
@@ -669,7 +851,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "all" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("all")}
+              onClick={() => handleTypeFilterChange("all")}
               className={
                 typeFilter === "all"
                   ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]"
@@ -681,7 +863,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "income" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("income")}
+              onClick={() => handleTypeFilterChange("income")}
               className={
                 typeFilter === "income"
                   ? "bg-[#10B981] text-white hover:bg-emerald-600 rounded-xl text-xs shadow-[0_0_12px_rgba(16,185,129,0.25)]"
@@ -693,7 +875,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "expense" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("expense")}
+              onClick={() => handleTypeFilterChange("expense")}
               className={
                 typeFilter === "expense"
                   ? "bg-[#F43F5E] text-white hover:bg-rose-600 rounded-xl text-xs shadow-[0_0_12px_rgba(244,63,94,0.25)]"
@@ -704,18 +886,120 @@ export function TransactionsClientView({
             </Button>
           </div>
 
-          {/* Badge de Categoría activa si fue seleccionada */}
-          {selectedCategoryFilter !== "all" && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs text-[#8B5CF6] font-medium">
-              <Tag className="w-3.5 h-3.5" />
-              <span>Categoría: {categoriesMap.get(selectedCategoryFilter)?.name || "Seleccionada"}</span>
-              <button
-                onClick={() => setSelectedCategoryFilter("all")}
-                className="ml-1 hover:text-white font-bold"
-                title="Quitar filtro de categoría"
-              >
-                ✕
-              </button>
+          {/* Badges de Palabras clave de Búsqueda (Multi-Tag OR) */}
+          {searchTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Search className="w-3 h-3 text-cyan-500" />
+                <span>Búsqueda ({searchTags.length} términos - OR):</span>
+              </span>
+              {searchTags.map((tag) => (
+                <span
+                  key={`chip-search-${tag}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-xs font-semibold text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500/20"
+                >
+                  <span>&ldquo;{tag}&rdquo;</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSearchTag(tag)}
+                    className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                    title={`Quitar palabra "${tag}"`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {searchTags.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTags([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar palabras
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Badges de Cuentas seleccionadas (Multi-Select) */}
+          {selectedAccountIds.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Wallet className="w-3 h-3 text-[#3B82F6]" />
+                <span>Cuentas ({selectedAccountIds.length}):</span>
+              </span>
+              {selectedAccountIds.map((accId) => {
+                const acc = accountsMap.get(accId);
+                const accName = acc?.name || "Cuenta";
+                return (
+                  <span
+                    key={`chip-acc-${accId}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#3B82F6]/15 border border-[#3B82F6]/30 text-xs font-semibold text-[#3B82F6] dark:text-[#60A5FA] transition-all hover:bg-[#3B82F6]/20"
+                  >
+                    <span>{accName}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedAccountIds((prev) => prev.filter((id) => id !== accId))
+                      }
+                      className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                      title={`Quitar ${accName}`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                );
+              })}
+              {selectedAccountIds.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedAccountIds([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar todas
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Badges de Categorías seleccionadas (Multi-Select unificado) */}
+          {selectedCategoryNames.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Tag className="w-3 h-3 text-[#8B5CF6]" />
+                <span>Categorías ({selectedCategoryNames.length}):</span>
+              </span>
+              {selectedCategoryNames.map((catName) => (
+                <span
+                  key={`chip-${catName}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs font-semibold text-[#8B5CF6] transition-all hover:bg-[#8B5CF6]/20"
+                >
+                  <span>{catName}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedCategoryNames((prev) =>
+                        prev.filter(
+                          (n) => n.trim().toLowerCase() !== catName.trim().toLowerCase()
+                        )
+                      )
+                    }
+                    className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                    title={`Quitar ${catName}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {selectedCategoryNames.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryNames([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar todas
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -724,7 +1008,7 @@ export function TransactionsClientView({
       {/* ------------------------------------------------------------------ */}
       {/* SECCIÓN DINÁMICA: TOTALES AGRUPADOS POR CATEGORÍA EN TIEMPO REAL   */}
       {/* ------------------------------------------------------------------ */}
-      <div className="surface-card p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-4">
+      <div className="surface-card p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-4 relative z-10">
         {/* Cabecera de la sección de categorías */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2.5">
@@ -750,30 +1034,33 @@ export function TransactionsClientView({
             {/* Selector de vista interna de categorías */}
             <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.08] text-xs">
               <button
-                onClick={() => setCategoryViewTab("all")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("all")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "all"
-                    ? "bg-white dark:bg-[#131B2E] text-slate-900 dark:text-[#F8FAFC] shadow-sm"
+                    ? "bg-white dark:bg-[#131B2E] text-slate-900 dark:text-[#F8FAFC] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
                 Ambos ({categorySummariesExpense.length + categorySummariesIncome.length})
               </button>
               <button
-                onClick={() => setCategoryViewTab("expense")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("expense")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "expense"
-                    ? "bg-[#F43F5E]/15 text-[#F43F5E] shadow-sm"
+                    ? "bg-[#F43F5E]/15 text-[#F43F5E] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
                 Gastos ({categorySummariesExpense.length})
               </button>
               <button
-                onClick={() => setCategoryViewTab("income")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("income")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "income"
-                    ? "bg-[#10B981]/15 text-[#10B981] shadow-sm"
+                    ? "bg-[#10B981]/15 text-[#10B981] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
@@ -785,7 +1072,7 @@ export function TransactionsClientView({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsCategorySummaryOpen((prev) => !prev)}
+              onClick={handleToggleCategorySummary}
               className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] rounded-lg"
               title={isCategorySummaryOpen ? "Ocultar desglose" : "Mostrar desglose"}
             >
@@ -816,7 +1103,7 @@ export function TransactionsClientView({
                 className={`grid gap-6 ${
                   categoryViewTab === "all"
                     ? "grid-cols-1 lg:grid-cols-2"
-                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    : "grid-cols-1"
                 }`}
               >
                 {/* Panel de Gastos por Categoría */}
@@ -839,24 +1126,32 @@ export function TransactionsClientView({
                         Sin gastos registrados en el filtro
                       </p>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div
+                        className={
+                          categoryViewTab === "all"
+                            ? "space-y-2.5"
+                            : "grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+                        }
+                      >
                         {categorySummariesExpense.map((item) => {
-                          const isSelected = selectedCategoryFilter === item.id;
+                          const isSelected =
+                            typeFilter !== "income" &&
+                            selectedCategoryNames.some(
+                              (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                            );
                           return (
                             <div
                               key={`expense-${item.id}`}
-                              onClick={() =>
-                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
-                              }
+                              onClick={() => handleToggleExpenseCategory(item.name)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
-                                  ? "bg-[#F43F5E]/10 border-[#F43F5E]/40 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                                  ? "bg-[#F43F5E]/10 border-[#F43F5E]/50 shadow-[0_0_15px_rgba(244,63,94,0.18)]"
                                   : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#F43F5E]/30 hover:bg-[#F43F5E]/5"
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para quitar filtro"
-                                  : "Haz clic para filtrar solo por esta categoría"
+                                  ? "Haz clic para remover del filtro de gastos"
+                                  : "Haz clic para filtrar solo los gastos de esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -865,9 +1160,16 @@ export function TransactionsClientView({
                                     {renderCategoryIcon(item.icon, "expense")}
                                   </div>
                                   <div className="min-w-0">
-                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#F43F5E] transition-colors">
-                                      {item.name}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#F43F5E] transition-colors">
+                                        {item.name}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F43F5E] text-white">
+                                          {typeFilter === "expense" ? "✓ Gasto filtrado" : "✓ Filtrada"}
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
                                       {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                                     </span>
@@ -919,24 +1221,32 @@ export function TransactionsClientView({
                         Sin ingresos registrados en el filtro
                       </p>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div
+                        className={
+                          categoryViewTab === "all"
+                            ? "space-y-2.5"
+                            : "grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+                        }
+                      >
                         {categorySummariesIncome.map((item) => {
-                          const isSelected = selectedCategoryFilter === item.id;
+                          const isSelected =
+                            typeFilter !== "expense" &&
+                            selectedCategoryNames.some(
+                              (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                            );
                           return (
                             <div
                               key={`income-${item.id}`}
-                              onClick={() =>
-                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
-                              }
+                              onClick={() => handleToggleIncomeCategory(item.name)}
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
-                                  ? "bg-[#10B981]/10 border-[#10B981]/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                                  ? "bg-[#10B981]/10 border-[#10B981]/50 shadow-[0_0_15px_rgba(16,185,129,0.18)]"
                                   : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#10B981]/30 hover:bg-[#10B981]/5"
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para quitar filtro"
-                                  : "Haz clic para filtrar solo por esta categoría"
+                                  ? "Haz clic para remover del filtro de ingresos"
+                                  : "Haz clic para filtrar solo los ingresos de esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -945,9 +1255,16 @@ export function TransactionsClientView({
                                     {renderCategoryIcon(item.icon, "income")}
                                   </div>
                                   <div className="min-w-0">
-                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#10B981] transition-colors">
-                                      {item.name}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#10B981] transition-colors">
+                                        {item.name}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#10B981] text-white">
+                                          {typeFilter === "income" ? "✓ Ingreso filtrado" : "✓ Filtrada"}
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
                                       {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                                     </span>
@@ -986,7 +1303,7 @@ export function TransactionsClientView({
 
       {/* Lista de Transacciones Filtradas */}
       {filteredTransactions.length === 0 ? (
-        <div className="surface-card p-12 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.1] text-center">
+        <div className="surface-card p-12 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.1] text-center relative z-10">
           <Clock className="w-10 h-10 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-3" />
           <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             No hay transacciones que coincidan con los filtros
@@ -1000,7 +1317,7 @@ export function TransactionsClientView({
                 variant="outline"
                 size="sm"
                 onClick={handleClearFilters}
-                className="rounded-xl border-slate-200 dark:border-white/[0.1] text-xs"
+                className="rounded-xl border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] dark:hover:bg-white/[0.05] text-slate-800 dark:text-[#F8FAFC] text-xs font-semibold shadow-sm"
               >
                 Limpiar filtros
               </Button>
@@ -1015,16 +1332,28 @@ export function TransactionsClientView({
           </div>
         </div>
       ) : (
-        <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
-          <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-[#94A3B8]">
+        <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08] relative z-10">
+          <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-[#94A3B8]">
             <span className="font-semibold">
               Mostrando {filteredTransactions.length} de {transactions.length} transacciones
             </span>
-            {selectedCategoryFilter !== "all" && (
-              <span className="text-[#8B5CF6] font-bold">
-                Filtrado por: {categoriesMap.get(selectedCategoryFilter)?.name}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {searchTags.length > 0 && (
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">
+                  Búsqueda: {searchTags.map((t) => `"${t}"`).join(" ó ")}
+                </span>
+              )}
+              {selectedAccountIds.length > 0 && (
+                <span className="text-[#3B82F6] dark:text-[#60A5FA] font-bold">
+                  Cuentas: {selectedAccountIds.map((id) => accountsMap.get(id)?.name || id).join(", ")}
+                </span>
+              )}
+              {selectedCategoryNames.length > 0 && (
+                <span className="text-[#8B5CF6] font-bold">
+                  Filtrado por: {selectedCategoryNames.join(", ")}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
@@ -1043,8 +1372,8 @@ export function TransactionsClientView({
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
                         isIncome
-                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
-                          : "bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-[#94A3B8] border border-slate-200 dark:border-white/[0.08]"
+                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25"
+                          : "bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/25"
                       }`}
                     >
                       {isIncome ? (
