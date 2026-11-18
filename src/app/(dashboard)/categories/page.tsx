@@ -19,7 +19,8 @@ export default async function CategoriesPage() {
   const usageCounts = usageResult.success ? usageResult.data : {};
 
   if (!categoriesResult.success) {
-    const isAuthError = categoriesResult.error.includes("Unauthorized");
+    const isAuthError =
+      typeof categoriesResult.error === "string" && categoriesResult.error.includes("Unauthorized");
 
     return (
       <div className="space-y-6">

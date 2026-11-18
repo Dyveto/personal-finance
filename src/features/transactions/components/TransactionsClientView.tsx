@@ -69,9 +69,9 @@ import {
 } from "@/lib/transactions-search";
 
 interface TransactionsClientViewProps {
-  initialTransactions: TransactionRow[];
-  accounts: AccountRow[];
-  categories: CategoryRow[];
+  initialTransactions?: TransactionRow[];
+  accounts?: AccountRow[];
+  categories?: CategoryRow[];
 }
 
 type DatePreset = "all" | "this_month" | "last_30_days" | "this_year" | "custom";
@@ -122,13 +122,13 @@ function renderCategoryIcon(iconName: string | null, type: "income" | "expense")
 }
 
 export function TransactionsClientView({
-  initialTransactions,
-  accounts,
-  categories,
+  initialTransactions = [],
+  accounts = [],
+  categories = [],
 }: TransactionsClientViewProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions);
+  const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions ?? []);
   const [editingTransaction, setEditingTransaction] = useState<TransactionRow | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -136,7 +136,7 @@ export function TransactionsClientView({
 
   // Sincronizar estado local de forma reactiva al revalidar datos del servidor
   useEffect(() => {
-    setTransactions(initialTransactions);
+    setTransactions(initialTransactions ?? []);
   }, [initialTransactions]);
 
   // Estados de filtros
@@ -182,11 +182,11 @@ export function TransactionsClientView({
 
   // Mapas auxiliares para búsqueda rápida de nombres de cuentas y categorías
   const accountsMap = useMemo(() => {
-    return new Map(accounts.map((a) => [a.id, a]));
+    return new Map((accounts ?? []).map((a) => [a.id, a]));
   }, [accounts]);
 
   const categoriesMap = useMemo(() => {
-    return new Map(categories.map((c) => [c.id, c]));
+    return new Map((categories ?? []).map((c) => [c.id, c]));
   }, [categories]);
 
   // Aplicación rápida de presets de fecha

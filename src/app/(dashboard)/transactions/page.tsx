@@ -21,8 +21,9 @@ export default async function TransactionsPage() {
   const categories = categoriesResult.success ? categoriesResult.data : [];
 
   const isAuthError =
-    (!txResult.success && txResult.error.includes("Unauthorized")) ||
-    (!accountsResult.success && accountsResult.error.includes("Unauthorized"));
+    (!txResult.success && typeof txResult.error === "string" && txResult.error.includes("Unauthorized")) ||
+    (!accountsResult.success && typeof accountsResult.error === "string" && accountsResult.error.includes("Unauthorized")) ||
+    (!categoriesResult.success && typeof categoriesResult.error === "string" && categoriesResult.error.includes("Unauthorized"));
 
   if (isAuthError) {
     return (

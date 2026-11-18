@@ -53,9 +53,10 @@ export function AccountMultiSelect({
 
   // Filtrado interno para el buscador dentro del desplegable
   const filteredOptions = useMemo(() => {
-    if (!searchQuery.trim()) return accounts;
+    const list = Array.isArray(accounts) ? accounts : [];
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.toLowerCase().trim();
-    return accounts.filter((acc) => acc.name.toLowerCase().includes(q));
+    return list.filter((acc) => acc && (acc.name ?? "").toLowerCase().includes(q));
   }, [accounts, searchQuery]);
 
   // Cerrar al hacer clic fuera o presionar Escape
@@ -114,7 +115,9 @@ export function AccountMultiSelect({
   const count = selectedAccountIds.length;
   let triggerLabel = placeholder;
   if (count === 1) {
-    const selectedAcc = accounts.find((a) => a.id === selectedAccountIds[0]);
+    const selectedAcc = (Array.isArray(accounts) ? accounts : []).find(
+      (a) => a.id === selectedAccountIds[0]
+    );
     triggerLabel = `1 cuenta: ${selectedAcc ? selectedAcc.name : selectedAccountIds[0]}`;
   } else if (count > 1) {
     triggerLabel = `${count} cuentas seleccionadas`;

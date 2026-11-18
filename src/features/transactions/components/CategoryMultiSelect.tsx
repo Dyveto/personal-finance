@@ -82,11 +82,13 @@ function renderCategoryIcon(
  * Unifica un listado de categorías de la base de datos por su nombre base (sin importar
  * si están registradas como ingreso o gasto por separado).
  */
-export function unifyCategoriesByBaseName(categories: CategoryRow[]): UniqueBaseCategory[] {
+export function unifyCategoriesByBaseName(categories?: CategoryRow[]): UniqueBaseCategory[] {
   const map = new Map<string, UniqueBaseCategory>();
+  if (!Array.isArray(categories)) return [];
 
   for (const cat of categories) {
-    const rawName = cat.name.trim();
+    if (!cat) continue;
+    const rawName = (cat.name ?? "").trim();
     if (!rawName) continue;
     const key = rawName.toLowerCase();
 

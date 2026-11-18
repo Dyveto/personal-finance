@@ -36,7 +36,9 @@ export default async function DashboardPage() {
   const statements = statementsResult.success ? statementsResult.data : [];
   const initialLayout = layoutResult.success ? layoutResult.data : null;
 
-  const authRequired = !accountsResult.success && accountsResult.error.includes("Unauthorized");
+  const authRequired =
+    (!accountsResult.success && typeof accountsResult.error === "string" && accountsResult.error.includes("Unauthorized")) ||
+    (!transactionsResult.success && typeof transactionsResult.error === "string" && transactionsResult.error.includes("Unauthorized"));
 
   // Mapas auxiliares
   const accountsMap = new Map(accounts.map((a) => [a.id, a]));

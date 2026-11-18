@@ -16,14 +16,14 @@ export default async function CreditCardsPage() {
     listAllStatements(),
   ]);
 
-  const allAccounts = accountsRes.success ? accountsRes.data : [];
+  const allAccounts = accountsRes.success && Array.isArray(accountsRes.data) ? accountsRes.data : [];
   const creditCards = allAccounts.filter((acc) => acc.account_type === "credit_card");
   const paymentAccounts = allAccounts.filter(
     (acc) => acc.account_type === "bank" || acc.account_type === "cash"
   );
 
-  const transactions = txRes.success ? txRes.data : [];
-  const statements = statementsRes.success ? statementsRes.data : [];
+  const transactions = txRes.success && Array.isArray(txRes.data) ? txRes.data : [];
+  const statements = statementsRes.success && Array.isArray(statementsRes.data) ? statementsRes.data : [];
 
   const installmentPurchases = transactions.filter(
     (tx) => tx.is_installment && tx.installment_count && tx.installment_count > 1

@@ -31,10 +31,10 @@ export function matchesSearchKeywords(
     return true;
   }
 
-  const desc = tx.description.toLowerCase();
-  const notes = tx.notes ? tx.notes.toLowerCase() : "";
-  const cat = categoryName.toLowerCase();
-  const acc = accountName.toLowerCase();
+  const desc = (tx?.description ?? "").toLowerCase();
+  const notes = tx?.notes ? tx.notes.toLowerCase() : "";
+  const cat = (categoryName ?? "").toLowerCase();
+  const acc = (accountName ?? "").toLowerCase();
 
   // Lógica OR: Al menos una palabra clave debe coincidir en alguno de los campos
   return cleanedKeywords.some(

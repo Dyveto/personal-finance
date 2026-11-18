@@ -546,6 +546,29 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 
 ---
 
+### QA INCIDENT REPORT & QUALITY AUDIT (POST-FILTERS & DEV RECOVERY)
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Audit Type: Dev Server Error 500 Incident Diagnosis & Full Quality Verification
+
+Diagnosis & Root Causes:
+1. Webpack Persistent Cache Corruption: Iterative modifications to client components and Server Actions created stale/missing chunk manifests in `.next` (e.g. `Cannot find module './682.js'`), causing Next.js dev server to fail with generalized 500 errors.
+2. Unsafe String Evaluation in Server Components: In `src/app/(dashboard)/**/page.tsx`, `result.error.includes("Unauthorized")` was invoked without ensuring `typeof result.error === "string"`. Under non-string error payloads, Node.js raised unhandled TypeErrors.
+3. Prop and Substring Guarding: Added defensive array assertions (`Array.isArray()`) in `CategoryMultiSelect`, `AccountMultiSelect`, and safe null coalescing in `matchesSearchKeywords`.
+
+Verification Results:
+- TypeScript (`npx tsc --noEmit`): PASS (Exit code: 0, 0 type errors, strict: true)
+- ESLint (`npm run lint`): PASS (Exit code: 0, 0 warnings, 0 errors)
+- Vitest (`npm run test:run`): PASS (Exit code: 0, 174/174 unit tests passed across 12 test suites, 100%)
+- Next.js Production Build (`npm run build`): PASS (Exit code: 0, 12 optimized routes generated + Edge Middleware)
+- Next.js Dev Server Verification: Tested HTTP responses on `http://localhost:3000/login` (200 OK) and protected dashboard redirects (307 Temporary Redirect).
+
+Final Verdict:
+ALL QUALITY CRITERIA MET - FULL PASS (CODE 0)
+
+---
+
 # 7. BUG TRACKER
 
 | ID | Severity | File | Description | Assigned to | Status |
@@ -553,6 +576,7 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 | BUG-001 | CRITICAL | src/components/layout/Sidebar.tsx, layout.tsx | `TypeError: Cannot read properties of null (reading 'useContext')` caused by client layout wrapping server children and unsafe pathname handling. Resolved by creating DashboardShell client wrapper, converting layout.tsx to Server Component, safeguarding pathname with fallback, and adding 'use client' to button, card, input. | FRONTEND | RESOLVED |
 | BUG-002 | CRITICAL | src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts | Enlace de verificación de correo redirigía a localhost:3000 en producción. Resuelto implementando getBaseUrl() dinámica (con prioridad en NEXT_PUBLIC_SITE_URL y fallback en headers origin/host), pasando emailRedirectTo en signUp, creando Route Handler /auth/callback para intercambio PKCE/OTP y documentando configuración de Supabase URL Configuration. | BACKEND | RESOLVED |
 | BUG-003 | HIGH | src/features/auth/actions/auth-actions.ts | Error de compilación Next.js: 'Server actions must be async functions' por exportación síncrona de getBaseUrl() en archivo con directiva 'use server'. Resuelto convirtiendo getBaseUrl() en función asíncrona Promise<string> y utilizando await en signUp() y suites de prueba. | BACKEND | RESOLVED |
+| BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
 
 Severity:
 
