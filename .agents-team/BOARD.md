@@ -43,6 +43,7 @@ Allowed statuses:
 9. If a contract changes, notify every dependent agent.
 10. QA must verify the final repository state, not only the agent's own changes.
 11. Branching Strategy: Todos los desarrollos activos, commits y pruebas se realizan estrictamente en la rama `develop`. La rama `main` está protegida contra push directo y solo recibe cambios promovidos mediante Pull Request (`develop` -> `main`).
+12. Regla Inquebrantable de Aprobación de Calidad (Anti-Corrupción de Chunks y CSS): Antes de aprobar cualquier PR, commit o entrega de cambios visuales/frontend, es MANDATORIO ejecutar el ciclo estricto de 5 pasos en orden: (1) Limpieza de caché `rm -rf .next`, (2) Validación de tipado estricto `npx tsc --noEmit`, (3) Validación de linter `npm run lint`, (4) Ejecución de pruebas unitarias `npx vitest run`, y (5) Compilación de producción obligatoria `npm run build`. Si `npm run build` falla o genera fallos de chunks/CSS, el cambio NO se aprueba ni se entrega al usuario. Todos los comandos deben finalizar con código de salida 0.
 
 ---
 
@@ -626,6 +627,31 @@ APROBADO Y VERIFICADO - COMPILACIÓN Y CHUNKS 100% OPERATIVOS (CÓDIGO DE SALIDA
 
 ---
 
+### QA PROTOCOL AUDIT: PROTOCOLO OBLIGATORIO DE COMPILACIÓN Y CALIDAD PREVIA A APROBACIÓN
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Protocol: Protocolo Obligatorio Anti-Corrupción de Chunks y Recursos Estáticos (Regla Inquebrantable de Calidad)
+
+Mandated Protocol Pipeline:
+1. Limpieza total de caché local: `rm -rf .next`
+2. Validación de tipado TypeScript estricto: `npx tsc --noEmit`
+3. Validación de linting ESLint: `npm run lint`
+4. Ejecución completa de pruebas unitarias Vitest: `npx vitest run`
+5. Compilación de producción Next.js obligatoria: `npm run build`
+
+Execution Results (Audit en Vivo):
+1. Limpieza de caché (`rm -rf .next`): COMPLETADA (Directorio `.next` purgado satisfactoriamente).
+2. `npx tsc --noEmit`: PASS (Código de salida: 0, 0 errores de tipado, strict: true).
+3. `npm run lint`: PASS (Código de salida: 0, 0 advertencias, 0 errores).
+4. `npx vitest run`: PASS (Código de salida: 0, 183/183 tests pasados en 13 suites, 100%).
+5. `npm run build`: PASS (Código de salida: 0, 12/12 rutas estáticas y dinámicas compiladas limpiamente, middleware verificado, cero advertencias o fallos de chunks).
+
+Veredicto del Protocolo:
+RATIFICADO Y EN VIGOR. Todo cambio visual o funcional de Frontend/Backend debe aprobar obligatoriamente este ciclo con código de salida 0 antes de considerarse entregado al usuario o promovido a PR.
+
+---
+
 # 7. BUG TRACKER
 
 | ID | Severity | File | Description | Assigned to | Status |
@@ -950,6 +976,19 @@ Task: Resolved visual contrast defect on "Limpiar filtros" and outline/secondary
 Files modified: src/components/ui/button.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/categories/components/CategoriesClientView.tsx, src/features/dashboard/components/WelcomeHubManagerModal.tsx, src/features/transactions/components/TransactionForm.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - QA VERIFIER AGENT (Mandatory Quality Gate & Anti-Chunk Corruption Protocol Ratified)
+Task: Formalized and executed mandatory 5-step Quality Gate to eliminate chunk corruption and 404/500 static asset defects:
+1. Cache purge: Executed full wipe of `.next/` directory.
+2. Verified strict TypeScript: `npx tsc --noEmit` (0 errors, strict: true).
+3. Verified lint: `npm run lint` (0 warnings, 0 errors).
+4. Executed Vitest unit test suite: `npx vitest run` (183/183 passed across 13 test suites).
+5. Executed mandatory Next.js production build: `npm run build` (Exit code 0, 12 static/dynamic routes + Edge Middleware generated without chunk warnings or missing styles).
+6. Shared rule 12 added to `.agents-team/BOARD.md`: Every future frontend/visual change and PR must execute and pass this 5-step pipeline with code 0 before being approved.
+Files modified: .agents-team/BOARD.md
+Verification commands: powershell "Remove-Item -Recurse -Force .next" (0), npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
+Verdict: RATIFIED, VERIFIED & APPROVED (CODE 0)
 Handoff status: COMPLETED
 
 ---
