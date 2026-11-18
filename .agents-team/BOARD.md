@@ -386,6 +386,9 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/lib/transactions-search.ts (Utilidades de filtrado multi-etiqueta con lógica OR inclusiva, agregación/remoción de tags case-insensitive)
+- tests/unit/search-multitag.test.ts (12 pruebas unitarias de búsqueda multi-etiqueta, OR inclusivo, case-insensitivity, notas, categorías y cuentas)
+- src/features/transactions/components/TransactionsClientView.tsx (Búsqueda multi-palabra con badges interactivos, botón Añadir/Enter, chips con botón [x], lógica OR en filtrado reactivo y resumen en cabecera de tabla)
 - src/lib/transactions-preferences.ts (Módulo utilitario de persistencia en localStorage para el estado colapsable de Totales por Categoría)
 - tests/unit/transactions-preferences.test.ts (Pruebas unitarias de persistencia, fallback y manejo seguro de Storage)
 - src/features/transactions/components/TransactionsClientView.tsx (Restauración al montar y guardado persistente del estado colapsable de Totales por Categoría; actualización optimista y reactiva inmediata en creación)
@@ -425,7 +428,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (155/155 unit tests passing across 10 suites, 100%)
+- `npm run test:run` -> PASS (167/167 unit tests passing across 11 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:

@@ -32,6 +32,7 @@ import {
   MoreHorizontal,
   Laptop,
   TrendingUp,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,11 @@ import {
   getCategoryTotalsCollapsedPreference,
   setCategoryTotalsCollapsedPreference,
 } from "@/lib/transactions-preferences";
+import {
+  matchesSearchKeywords,
+  addSearchTag,
+  removeSearchTag,
+} from "@/lib/transactions-search";
 
 interface TransactionsClientViewProps {
   initialTransactions: TransactionRow[];
@@ -133,13 +139,26 @@ export function TransactionsClientView({
   }, [initialTransactions]);
 
   // Estados de filtros
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTags, setSearchTags] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
   const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>([]);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  // Manejadores para palabras clave de búsqueda multi-etiqueta (OR)
+  const handleAddSearchTag = (tagToAdd?: string) => {
+    const raw = (tagToAdd ?? searchInput).trim();
+    if (!raw) return;
+    setSearchTags((prev) => addSearchTag(prev, raw));
+    setSearchInput("");
+  };
+
+  const handleRemoveSearchTag = (tagToRemove: string) => {
+    setSearchTags((prev) => removeSearchTag(prev, tagToRemove));
+  };
 
   // Estados visuales de la sección de categorías
   const [isCategorySummaryOpen, setIsCategorySummaryOpen] = useState(true);
@@ -199,7 +218,8 @@ export function TransactionsClientView({
 
   // Restablecer todos los filtros
   const handleClearFilters = () => {
-    setSearchTerm("");
+    setSearchInput("");
+    setSearchTags([]);
     setTypeFilter("all");
     setSelectedAccountFilter("all");
     setSelectedCategoryNames([]);
@@ -209,7 +229,8 @@ export function TransactionsClientView({
   };
 
   const isFilterActive =
-    searchTerm.trim() !== "" ||
+    searchTags.length > 0 ||
+    searchInput.trim() !== "" ||
     typeFilter !== "all" ||
     selectedAccountFilter !== "all" ||
     selectedCategoryNames.length > 0 ||
@@ -218,6 +239,12 @@ export function TransactionsClientView({
 
   // Filtrado reactivo de transacciones
   const filteredTransactions = useMemo(() => {
+    // Palabras clave activas para búsqueda: tags confirmados + texto en edición
+    const activeKeywords = [
+      ...searchTags,
+      ...(searchInput.trim() ? [searchInput.trim()] : []),
+    ];
+
     return transactions.filter((tx) => {
       // Filtro por tipo
       if (typeFilter !== "all" && tx.transaction_type !== typeFilter) {
@@ -249,16 +276,14 @@ export function TransactionsClientView({
         return false;
       }
 
-      // Filtro por término de búsqueda (descripción, notas, categoría o cuenta)
-      if (searchTerm.trim()) {
-        const term = searchTerm.toLowerCase();
-        const descMatch = tx.description.toLowerCase().includes(term);
-        const notesMatch = tx.notes ? tx.notes.toLowerCase().includes(term) : false;
-        const catName = categoriesMap.get(tx.category_id)?.name.toLowerCase() || "";
-        const catMatch = catName.includes(term);
-        const accName = accountsMap.get(tx.account_id)?.name.toLowerCase() || "";
-        const accMatch = accName.includes(term);
-        return descMatch || notesMatch || catMatch || accMatch;
+      // Filtro por palabras clave de búsqueda (descripción, notas, categoría o cuenta) - Lógica OR
+      if (activeKeywords.length > 0) {
+        const catName = categoriesMap.get(tx.category_id)?.name || "";
+        const accName = accountsMap.get(tx.account_id)?.name || "";
+        const matches = matchesSearchKeywords(tx, catName, accName, activeKeywords);
+        if (!matches) {
+          return false;
+        }
       }
 
       return true;
@@ -270,7 +295,8 @@ export function TransactionsClientView({
     selectedCategoryNames,
     startDate,
     endDate,
-    searchTerm,
+    searchInput,
+    searchTags,
     categoriesMap,
     accountsMap,
   ]);
@@ -602,15 +628,56 @@ export function TransactionsClientView({
 
         {/* Fila 1: Búsqueda, Cuenta, Categoría y Selector de Fecha */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Búsqueda por texto */}
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#94A3B8]" />
-            <Input
-              placeholder="Buscar descripción o notas..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9 w-full bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl text-xs h-10"
-            />
+          {/* Búsqueda por texto con soporte multi-palabra (OR) */}
+          <div className="space-y-1.5">
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 absolute left-3 text-slate-400 dark:text-[#94A3B8] pointer-events-none" />
+              <Input
+                placeholder="Buscar (Enter para añadir)..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddSearchTag();
+                  }
+                }}
+                className="pl-9 pr-14 w-full bg-slate-50 dark:bg-[#0B0F19] border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl text-xs h-10"
+              />
+              {searchInput.trim() && (
+                <button
+                  type="button"
+                  onClick={() => handleAddSearchTag()}
+                  className="absolute right-2 px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-600 dark:text-cyan-400 text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  title="Añadir término de búsqueda"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Añadir</span>
+                </button>
+              )}
+            </div>
+
+            {/* Mini etiquetas bajo el input para confirmación inmediata */}
+            {searchTags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1">
+                {searchTags.map((tag) => (
+                  <span
+                    key={`mini-tag-${tag}`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-[10px] font-medium"
+                  >
+                    <span>{tag}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSearchTag(tag)}
+                      className="hover:text-rose-500 font-bold leading-none"
+                      title={`Quitar ${tag}`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Filtro por Cuenta */}
@@ -743,6 +810,41 @@ export function TransactionsClientView({
               Gastos ({transactions.filter((t) => t.transaction_type === "expense").length})
             </Button>
           </div>
+
+          {/* Badges de Palabras clave de Búsqueda (Multi-Tag OR) */}
+          {searchTags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Search className="w-3 h-3 text-cyan-500" />
+                <span>Búsqueda ({searchTags.length} términos - OR):</span>
+              </span>
+              {searchTags.map((tag) => (
+                <span
+                  key={`chip-search-${tag}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-xs font-semibold text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500/20"
+                >
+                  <span>&ldquo;{tag}&rdquo;</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveSearchTag(tag)}
+                    className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                    title={`Quitar palabra "${tag}"`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {searchTags.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTags([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar palabras
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Badges de Categorías seleccionadas (Multi-Select unificado) */}
           {selectedCategoryNames.length > 0 && (
@@ -1116,15 +1218,22 @@ export function TransactionsClientView({
         </div>
       ) : (
         <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
-          <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex items-center justify-between text-xs text-slate-500 dark:text-[#94A3B8]">
+          <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-[#94A3B8]">
             <span className="font-semibold">
               Mostrando {filteredTransactions.length} de {transactions.length} transacciones
             </span>
-            {selectedCategoryNames.length > 0 && (
-              <span className="text-[#8B5CF6] font-bold">
-                Filtrado por: {selectedCategoryNames.join(", ")}
-              </span>
-            )}
+            <div className="flex flex-wrap items-center gap-3">
+              {searchTags.length > 0 && (
+                <span className="text-cyan-600 dark:text-cyan-400 font-bold">
+                  Búsqueda: {searchTags.map((t) => `"${t}"`).join(" ó ")}
+                </span>
+              )}
+              {selectedCategoryNames.length > 0 && (
+                <span className="text-[#8B5CF6] font-bold">
+                  Filtrado por: {selectedCategoryNames.join(", ")}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-white/[0.06]">
