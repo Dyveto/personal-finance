@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { TransactionForm } from "@/features/transactions/components/TransactionForm";
+import { CategoryMultiSelect } from "@/features/transactions/components/CategoryMultiSelect";
 import {
   deleteTransaction,
   type TransactionRow,
@@ -123,7 +124,7 @@ export function TransactionsClientView({
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
   const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>("all");
+  const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>([]);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -174,7 +175,7 @@ export function TransactionsClientView({
     setSearchTerm("");
     setTypeFilter("all");
     setSelectedAccountFilter("all");
-    setSelectedCategoryFilter("all");
+    setSelectedCategoryNames([]);
     setDatePreset("all");
     setStartDate("");
     setEndDate("");
@@ -184,7 +185,7 @@ export function TransactionsClientView({
     searchTerm.trim() !== "" ||
     typeFilter !== "all" ||
     selectedAccountFilter !== "all" ||
-    selectedCategoryFilter !== "all" ||
+    selectedCategoryNames.length > 0 ||
     startDate !== "" ||
     endDate !== "";
 
@@ -201,9 +202,16 @@ export function TransactionsClientView({
         return false;
       }
 
-      // Filtro por categoría
-      if (selectedCategoryFilter !== "all" && tx.category_id !== selectedCategoryFilter) {
-        return false;
+      // Filtro por categoría (unificado por nombre base y multi-select)
+      if (selectedCategoryNames.length > 0) {
+        const cat = categoriesMap.get(tx.category_id);
+        const catName = cat?.name.trim().toLowerCase() || "";
+        const matches = selectedCategoryNames.some(
+          (name) => name.trim().toLowerCase() === catName
+        );
+        if (!matches) {
+          return false;
+        }
       }
 
       // Filtro por rango de fechas
@@ -232,7 +240,7 @@ export function TransactionsClientView({
     transactions,
     typeFilter,
     selectedAccountFilter,
-    selectedCategoryFilter,
+    selectedCategoryNames,
     startDate,
     endDate,
     searchTerm,
@@ -281,10 +289,11 @@ export function TransactionsClientView({
       const catId = tx.category_id || "uncategorized";
       const catName = cat?.name || (tx.category_id ? "Categoría no encontrada" : "Sin categoría");
       const catIcon = cat?.icon || null;
+      const mapKey = catName.trim().toLowerCase();
 
       if (tx.transaction_type === "income") {
         fIncome = addMoney(fIncome, amtStr);
-        const prev = incomeMap.get(catId) || {
+        const prev = incomeMap.get(mapKey) || {
           id: catId,
           name: catName,
           type: "income",
@@ -294,10 +303,10 @@ export function TransactionsClientView({
         };
         prev.totalAmount = addMoney(prev.totalAmount, amtStr);
         prev.count += 1;
-        incomeMap.set(catId, prev);
+        incomeMap.set(mapKey, prev);
       } else {
         fExpense = addMoney(fExpense, amtStr);
-        const prev = expenseMap.get(catId) || {
+        const prev = expenseMap.get(mapKey) || {
           id: catId,
           name: catName,
           type: "expense",
@@ -307,7 +316,7 @@ export function TransactionsClientView({
         };
         prev.totalAmount = addMoney(prev.totalAmount, amtStr);
         prev.count += 1;
-        expenseMap.set(catId, prev);
+        expenseMap.set(mapKey, prev);
       }
     }
 
@@ -583,20 +592,14 @@ export function TransactionsClientView({
             </select>
           </div>
 
-          {/* Filtro por Categoría */}
+          {/* Filtro por Categoría (Multi-Select unificado por nombre base) */}
           <div>
-            <select
-              value={selectedCategoryFilter}
-              onChange={(e) => setSelectedCategoryFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
-            >
-              <option value="all">Todas las categorías</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name} ({c.category_type === "income" ? "Ingreso" : "Gasto"})
-                </option>
-              ))}
-            </select>
+            <CategoryMultiSelect
+              categories={categories}
+              selectedCategoryNames={selectedCategoryNames}
+              onChange={setSelectedCategoryNames}
+              placeholder="Todas las categorías"
+            />
           </div>
 
           {/* Preset Temporal */}
@@ -704,18 +707,44 @@ export function TransactionsClientView({
             </Button>
           </div>
 
-          {/* Badge de Categoría activa si fue seleccionada */}
-          {selectedCategoryFilter !== "all" && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs text-[#8B5CF6] font-medium">
-              <Tag className="w-3.5 h-3.5" />
-              <span>Categoría: {categoriesMap.get(selectedCategoryFilter)?.name || "Seleccionada"}</span>
-              <button
-                onClick={() => setSelectedCategoryFilter("all")}
-                className="ml-1 hover:text-white font-bold"
-                title="Quitar filtro de categoría"
-              >
-                ✕
-              </button>
+          {/* Badges de Categorías seleccionadas (Multi-Select unificado) */}
+          {selectedCategoryNames.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Tag className="w-3 h-3 text-[#8B5CF6]" />
+                <span>Categorías ({selectedCategoryNames.length}):</span>
+              </span>
+              {selectedCategoryNames.map((catName) => (
+                <span
+                  key={`chip-${catName}`}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs font-semibold text-[#8B5CF6] transition-all hover:bg-[#8B5CF6]/20"
+                >
+                  <span>{catName}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSelectedCategoryNames((prev) =>
+                        prev.filter(
+                          (n) => n.trim().toLowerCase() !== catName.trim().toLowerCase()
+                        )
+                      )
+                    }
+                    className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                    title={`Quitar ${catName}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+              {selectedCategoryNames.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategoryNames([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar todas
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -841,22 +870,32 @@ export function TransactionsClientView({
                     ) : (
                       <div className="space-y-2.5">
                         {categorySummariesExpense.map((item) => {
-                          const isSelected = selectedCategoryFilter === item.id;
+                          const isSelected = selectedCategoryNames.some(
+                            (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                          );
                           return (
                             <div
                               key={`expense-${item.id}`}
                               onClick={() =>
-                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
+                                setSelectedCategoryNames((prev) =>
+                                  isSelected
+                                    ? prev.filter(
+                                        (n) =>
+                                          n.trim().toLowerCase() !==
+                                          item.name.trim().toLowerCase()
+                                      )
+                                    : [...prev, item.name]
+                                )
                               }
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
-                                  ? "bg-[#F43F5E]/10 border-[#F43F5E]/40 shadow-[0_0_15px_rgba(244,63,94,0.15)]"
+                                  ? "bg-[#F43F5E]/10 border-[#F43F5E]/50 shadow-[0_0_15px_rgba(244,63,94,0.18)]"
                                   : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#F43F5E]/30 hover:bg-[#F43F5E]/5"
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para quitar filtro"
-                                  : "Haz clic para filtrar solo por esta categoría"
+                                  ? "Haz clic para remover del filtro de categorías"
+                                  : "Haz clic para agregar o filtrar por esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -865,9 +904,16 @@ export function TransactionsClientView({
                                     {renderCategoryIcon(item.icon, "expense")}
                                   </div>
                                   <div className="min-w-0">
-                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#F43F5E] transition-colors">
-                                      {item.name}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#F43F5E] transition-colors">
+                                        {item.name}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#F43F5E] text-white">
+                                          ✓ Filtrada
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
                                       {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                                     </span>
@@ -921,22 +967,32 @@ export function TransactionsClientView({
                     ) : (
                       <div className="space-y-2.5">
                         {categorySummariesIncome.map((item) => {
-                          const isSelected = selectedCategoryFilter === item.id;
+                          const isSelected = selectedCategoryNames.some(
+                            (n) => n.trim().toLowerCase() === item.name.trim().toLowerCase()
+                          );
                           return (
                             <div
                               key={`income-${item.id}`}
                               onClick={() =>
-                                setSelectedCategoryFilter(isSelected ? "all" : item.id)
+                                setSelectedCategoryNames((prev) =>
+                                  isSelected
+                                    ? prev.filter(
+                                        (n) =>
+                                          n.trim().toLowerCase() !==
+                                          item.name.trim().toLowerCase()
+                                      )
+                                    : [...prev, item.name]
+                                )
                               }
                               className={`p-3 rounded-xl border transition-all cursor-pointer group ${
                                 isSelected
-                                  ? "bg-[#10B981]/10 border-[#10B981]/40 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
+                                  ? "bg-[#10B981]/10 border-[#10B981]/50 shadow-[0_0_15px_rgba(16,185,129,0.18)]"
                                   : "bg-slate-50/70 dark:bg-[#0B0F19]/60 border-slate-200/80 dark:border-white/[0.05] hover:border-[#10B981]/30 hover:bg-[#10B981]/5"
                               }`}
                               title={
                                 isSelected
-                                  ? "Haz clic para quitar filtro"
-                                  : "Haz clic para filtrar solo por esta categoría"
+                                  ? "Haz clic para remover del filtro de categorías"
+                                  : "Haz clic para agregar o filtrar por esta categoría"
                               }
                             >
                               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -945,9 +1001,16 @@ export function TransactionsClientView({
                                     {renderCategoryIcon(item.icon, "income")}
                                   </div>
                                   <div className="min-w-0">
-                                    <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#10B981] transition-colors">
-                                      {item.name}
-                                    </span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] truncate block group-hover:text-[#10B981] transition-colors">
+                                        {item.name}
+                                      </span>
+                                      {isSelected && (
+                                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-[#10B981] text-white">
+                                          ✓ Filtrada
+                                        </span>
+                                      )}
+                                    </div>
                                     <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
                                       {item.count} {item.count === 1 ? "movimiento" : "movimientos"}
                                     </span>
@@ -1020,9 +1083,9 @@ export function TransactionsClientView({
             <span className="font-semibold">
               Mostrando {filteredTransactions.length} de {transactions.length} transacciones
             </span>
-            {selectedCategoryFilter !== "all" && (
+            {selectedCategoryNames.length > 0 && (
               <span className="text-[#8B5CF6] font-bold">
-                Filtrado por: {categoriesMap.get(selectedCategoryFilter)?.name}
+                Filtrado por: {selectedCategoryNames.join(", ")}
               </span>
             )}
           </div>

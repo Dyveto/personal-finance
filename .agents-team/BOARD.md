@@ -348,6 +348,12 @@ Responsibilities:
   - Nuevas pestañas de filtrado: "Con Movimientos" (categorías protegidas) y "Libres para Borrar" (categorías con 0 movimientos para limpieza ágil).
   - Actualización de `ConfirmDeleteDialog.tsx` con soporte completo de tema claro y oscuro.
   - Adaptación de la página servidor `src/app/(dashboard)/categories/page.tsx` para precargar en paralelo `listCategories()` y `getCategoryUsageCounts()`.
+- [x] Sistema avanzado de filtrado por categorías unificado por nombre base y selección múltiple (Multi-Select) en Transacciones:
+  - Unificación por nombre base (`unifyCategoriesByBaseName`): Agrupa de forma case-insensitive categorías con el mismo nombre (ej. "Internado" sin separar en "Internado (Gasto)" e "Internado (Ingreso)"), asociando los IDs correspondientes de gasto e ingreso. Al seleccionar una categoría se filtran y consolidan simultáneamente tanto ingresos como gastos.
+  - Componente de Selección Múltiple (`CategoryMultiSelect.tsx`): Dropdown estilo popover/Shadcn con buscador interno en tiempo real, casillas de verificación, opciones rápidas "Todas" y "Limpiar", indicador de tipos admitidos (`[Gasto e Ingreso]`, `[Gasto]`, `[Ingreso]`), y cierre automático con Escape o clic fuera.
+  - Barra de chips interactivos: En `TransactionsClientView.tsx`, muestra las categorías seleccionadas con badges individuales removibles con un solo clic y botón "Limpiar todas".
+  - Desglose y Totales Reactivos: Los paneles de "Totales por Categoría" (gastos e ingresos) agrupan ahora por nombre base consolidado y permiten alternar/añadir categorías a la selección múltiple con un clic, mostrando el badge visual `✓ Filtrada`.
+  - Cobertura completa de pruebas unitarias en `tests/unit/category-multiselect.test.ts` (8 pruebas unitarias, 149/149 pruebas en total pasando al 100%).
 
 Expected deliverables:
 
@@ -366,6 +372,9 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/CategoryMultiSelect.tsx (Componente unificado de selección múltiple por nombre base con buscador, checkboxes, badges y cierre por evento)
+- src/features/transactions/components/TransactionsClientView.tsx (Integración de CategoryMultiSelect, filtrado por unión de categorías, chips interactivos, y consolidación por nombre base)
+- tests/unit/category-multiselect.test.ts (Pruebas unitarias de unificación por nombre base, filtrado multi-select y combinaciones de tipos)
 - src/features/dashboard/components/WelcomeHubDashboard.tsx (Dashboard interactivo tipo Welcome Hub con reordenamiento, visibilidad y persistencia)
 - src/features/dashboard/components/WelcomeHubBanner.tsx (Barra de control atmosférica para modo edición)
 - src/features/dashboard/components/WelcomeHubManagerModal.tsx (Modal de administración de visibilidad y orden de widgets)
@@ -396,7 +405,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (141/141 unit tests passing across 8 suites, 100%)
+- `npm run test:run` -> PASS (149/149 unit tests passing across 9 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
