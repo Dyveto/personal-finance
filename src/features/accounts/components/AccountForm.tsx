@@ -299,7 +299,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
 
       {/* Campos condicionales para Tarjeta de Crédito */}
       {selectedType === "credit_card" && (
-        <div className="pt-3 border-t border-white/[0.08] space-y-4">
+        <div className="pt-3 border-t border-slate-200 dark:border-white/[0.08] space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold tracking-wider text-[#8B5CF6] uppercase">
               Configuración de Tarjeta
@@ -364,7 +364,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
             variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
+            className="border-slate-300 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"
           >
             Cancelar
           </Button>

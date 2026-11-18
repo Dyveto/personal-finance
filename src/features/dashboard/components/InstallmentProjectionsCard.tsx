@@ -169,11 +169,11 @@ export function InstallmentProjectionsCard({
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-heading font-bold text-[#F8FAFC] flex items-center gap-2">
+          <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
             <CalendarClock className="w-5 h-5 text-[#8B5CF6]" />
             <span>Proyección de Cuotas y Próximos Pagos</span>
           </h3>
-          <p className="text-xs text-[#94A3B8] mt-0.5">
+          <p className="text-xs text-slate-600 dark:text-[#94A3B8] mt-0.5">
             Calendario de cuotas diferidas en tarjetas según fechas de corte y límites de pago.
           </p>
         </div>
@@ -186,12 +186,12 @@ export function InstallmentProjectionsCard({
 
       {/* SECCIÓN 1: EXTRACTOS PENDIENTES */}
       {groupedStatements.length === 0 ? (
-        <div className="p-8 border border-dashed border-white/[0.1] rounded-xl text-center">
-          <CreditCard className="w-8 h-8 text-[#94A3B8]/40 mx-auto mb-2" />
-          <p className="text-xs font-semibold text-[#F8FAFC]">
+        <div className="p-8 border border-dashed border-slate-300 dark:border-white/[0.1] rounded-xl text-center">
+          <CreditCard className="w-8 h-8 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-2" />
+          <p className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
             No tienes compras diferidas a cuotas activas
           </p>
-          <p className="text-[11px] text-[#94A3B8] mt-1 max-w-md mx-auto">
+          <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] mt-1 max-w-md mx-auto">
             Cuando registres una compra a cuotas en una tarjeta de crédito, sus extractos futuros
             se proyectarán matemáticamente aquí sin duplicar transacciones.
           </p>
@@ -201,10 +201,10 @@ export function InstallmentProjectionsCard({
           <div className="w-10 h-10 rounded-full bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25 mx-auto flex items-center justify-center">
             <Sparkles className="w-5 h-5" />
           </div>
-          <h4 className="text-sm font-heading font-bold text-[#F8FAFC]">
+          <h4 className="text-sm font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             ¡Estás al día! No tienes extractos pendientes de pago
           </h4>
-          <p className="text-xs text-[#94A3B8] max-w-md mx-auto">
+          <p className="text-xs text-slate-600 dark:text-[#94A3B8] max-w-md mx-auto">
             Todos los extractos proyectados hasta la fecha han sido liquidados. Puedes consultar el
             historial de extractos pagados a continuación.
           </p>
@@ -212,7 +212,7 @@ export function InstallmentProjectionsCard({
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-heading font-bold text-[#F8FAFC] uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider flex items-center gap-1.5">
               <span>Extractos Pendientes de Pago</span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 {pendingStatements.length}
@@ -272,7 +272,7 @@ export function InstallmentProjectionsCard({
                 </div>
 
                 {/* Botón interactivo de Pago */}
-                <div className="pt-3 mt-3 border-t border-white/[0.08]">
+                <div className="pt-3 mt-3 border-t border-slate-200 dark:border-white/[0.08]">
                   <Button
                     size="sm"
                     onClick={() => handleOpenPayDialog(group)}

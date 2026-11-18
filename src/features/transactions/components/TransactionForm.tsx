@@ -83,11 +83,15 @@ const TransactionFormSchema = z
 
 type TransactionFormValues = z.infer<typeof TransactionFormSchema>;
 
+export type TransactionCreatedResult =
+  | TransactionRow
+  | { transaction: TransactionRow; installments: string[] };
+
 interface TransactionFormProps {
   accounts: AccountRow[];
   categories: CategoryRow[];
   initialData?: TransactionRow;
-  onSuccess?: () => void;
+  onSuccess?: (result?: TransactionCreatedResult) => void;
   onCancel?: () => void;
 }
 
@@ -197,6 +201,8 @@ export function TransactionForm({
         ? values.category_id
         : undefined;
 
+      let createdOrUpdated: TransactionCreatedResult | undefined;
+
       if (initialData) {
         // Edición de transacción existente
         const payload = {
@@ -216,6 +222,7 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       } else if (isInstallmentActive) {
         // Compra diferida en Tarjeta de Crédito
         const payload = {
@@ -234,6 +241,7 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       } else {
         // Transacción estándar
         const payload = {
@@ -254,10 +262,11 @@ export function TransactionForm({
           setServerError(result.error);
           return;
         }
+        createdOrUpdated = result.data;
       }
 
       if (onSuccess) {
-        onSuccess();
+        onSuccess(createdOrUpdated);
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al procesar la transacción";
@@ -583,7 +592,7 @@ export function TransactionForm({
             variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="text-xs border-slate-200 dark:border-white/[0.1] text-slate-700 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"
+            className="text-xs border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl font-medium"
           >
             Cancelar
           </Button>

@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.0
+Version: 1.4.0
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
@@ -43,6 +43,7 @@ Allowed statuses:
 9. If a contract changes, notify every dependent agent.
 10. QA must verify the final repository state, not only the agent's own changes.
 11. Branching Strategy: Todos los desarrollos activos, commits y pruebas se realizan estrictamente en la rama `develop`. La rama `main` está protegida contra push directo y solo recibe cambios promovidos mediante Pull Request (`develop` -> `main`).
+12. Regla Inquebrantable de Aprobación de Calidad (Anti-Corrupción de Chunks y CSS): Antes de aprobar cualquier PR, commit o entrega de cambios visuales/frontend, es MANDATORIO ejecutar el ciclo estricto de 5 pasos en orden: (1) Limpieza de caché `rm -rf .next`, (2) Validación de tipado estricto `npx tsc --noEmit`, (3) Validación de linter `npm run lint`, (4) Ejecución de pruebas unitarias `npx vitest run`, y (5) Compilación de producción obligatoria `npm run build`. Si `npm run build` falla o genera fallos de chunks/CSS, el cambio NO se aprueba ni se entrega al usuario. Todos los comandos deben finalizar con código de salida 0.
 
 ---
 
@@ -348,6 +349,50 @@ Responsibilities:
   - Nuevas pestañas de filtrado: "Con Movimientos" (categorías protegidas) y "Libres para Borrar" (categorías con 0 movimientos para limpieza ágil).
   - Actualización de `ConfirmDeleteDialog.tsx` con soporte completo de tema claro y oscuro.
   - Adaptación de la página servidor `src/app/(dashboard)/categories/page.tsx` para precargar en paralelo `listCategories()` y `getCategoryUsageCounts()`.
+- [x] Sistema avanzado de filtrado por categorías unificado por nombre base y selección múltiple (Multi-Select) en Transacciones:
+  - Unificación por nombre base (`unifyCategoriesByBaseName`): Agrupa de forma case-insensitive categorías con el mismo nombre (ej. "Internado" sin separar en "Internado (Gasto)" e "Internado (Ingreso)"), asociando los IDs correspondientes de gasto e ingreso. Al seleccionar una categoría se filtran y consolidan simultáneamente tanto ingresos como gastos.
+  - Componente de Selección Múltiple (`CategoryMultiSelect.tsx`): Dropdown estilo popover/Shadcn con buscador interno en tiempo real, casillas de verificación, opciones rápidas "Todas" y "Limpiar", indicador de tipos admitidos (`[Gasto e Ingreso]`, `[Gasto]`, `[Ingreso]`), y cierre automático con Escape o clic fuera.
+  - Barra de chips interactivos: En `TransactionsClientView.tsx`, muestra las categorías seleccionadas con badges individuales removibles con un solo clic y botón "Limpiar todas".
+  - Desglose y Totales Reactivos: Los paneles de "Totales por Categoría" (gastos e ingresos) agrupan ahora por nombre base consolidado y permiten alternar/añadir categorías a la selección múltiple con un clic, mostrando el badge visual `✓ Filtrada`.
+  - Cobertura completa de pruebas unitarias en `tests/unit/category-multiselect.test.ts` (8 pruebas unitarias, 149/149 pruebas en total pasando al 100%).
+- [x] Corrección definitiva de maquetación y eliminación de scroll vertical fantasma / espacio en blanco en Transacciones:
+  - Reestructuración de la jerarquía envolvente de contenedores en `src/app/(dashboard)/transactions/page.tsx`, `TransactionsClientView.tsx` y `DashboardShell.tsx`.
+  - Eliminación de `min-height: 100vh;` en `globals.css` que competía con `html.h-full`, `body.h-full` y `DashboardShell.h-screen`, eliminando la doble barra de desplazamiento y el espacio vacío inferior.
+  - Configuración del contenedor principal con `w-full h-auto pb-12`, asegurando flujo natural sin desbordes verticales fantasma en resoluciones de escritorio y móviles (`h-[100dvh]`).
+- [x] Actualización Reactiva Inmediata al crear transacciones y cuentas (eliminación de recargas manuales F5):
+  - Retorno y propagación de la entidad creada en `TransactionForm.tsx` a través del callback `onSuccess(createdOrUpdated)`.
+  - Actualización optimista inmediata del estado local `transactions` en `TransactionsClientView.tsx`, recalculando en el mismo frame los KPIs superiores, los totales y porcentajes por categoría, y el listado ordenado.
+  - Sincronización reactiva con `useEffect` en `TransactionsClientView`, `AccountsClientView`, `CreditCardsClientView` y `CategoriesClientView` para reflejar instantáneamente las revalidaciones del servidor (`initialTransactions`, `initialAccounts`, `initialCreditCards`, etc.).
+  - Revalidación integral de rutas (`/`, `/transactions`, `/accounts`, `/credit-cards`, `/dashboard`) en las Server Actions `createTransaction`, `createInstallmentPurchase` y `createAccount`, garantizando que el Dashboard principal y las vistas dependientes queden sincronizadas sin requerir recargar la página.
+- [x] Persistencia del Estado Colapsable para la sección de "Totales por Categoría" en Transacciones:
+  - Creación del módulo utilitario `src/lib/transactions-preferences.ts` para lectura y escritura segura en `localStorage` con clave única `finances_category_totals_collapsed`.
+  - Restauración automática del estado expandido/colapsado al montar la vista en `TransactionsClientView.tsx` evitando problemas de hidratación SSR.
+  - Guardado instantáneo y automático ante cada interacción de alternancia (`handleToggleCategorySummary`).
+  - Cobertura de pruebas unitarias en `tests/unit/transactions-preferences.test.ts` (6 pruebas añadidas, 155/155 pruebas unitarias en total pasando al 100%).
+- [x] Conexión reactiva y funcional de pestañas en Totales por Categoría ("Ambos", "Gastos", "Ingresos"):
+  - Sincronización bi-direccional limpia entre el selector de pestañas interno de categorías (`categoryViewTab`) y el estado de filtrado global de movimientos (`typeFilter`).
+  - Ocultamiento reactivo: Al seleccionar "Gastos", se oculta el panel de ingresos y se expande el desglose de gastos a ancho completo con grid adaptativo (`grid-cols-1 sm:grid-cols-2 gap-2.5`); al seleccionar "Ingresos", se oculta el panel de gastos y se expande el de ingresos; al seleccionar "Ambos", se muestran ambos bloques en columnas paralelas (`grid-cols-1 lg:grid-cols-2`).
+  - Desacoplamiento de cálculo base (`categoryBaseTransactions`): Los contadores de pestañas `Ambos (X)`, `Gastos (Y)` e `Ingresos (Z)` se computan sobre el conjunto de movimientos que cumplen todos los criterios de cuenta, fecha, categoría y búsqueda, manteniendo los contadores reales y estables independientemente de la pestaña activa.
+  - Sincronización con botones globales de tipo ("Todos", "Ingresos", "Gastos") y con la acción de "Limpiar filtros", garantizando coherencia en toda la vista de transacciones sin alterar la base de datos.
+  - Cobertura de pruebas unitarias ampliada en `tests/unit/category-summary-interaction.test.ts` (9 pruebas unitarias, 183/183 en total pasando al 100%).
+- [x] Corrección integral del contraste visual en Modo Día (Tema Claro / Light Mode):
+  - Detección y reemplazo exhaustivo de clases de texto oscuras estáticas (`text-[#F8FAFC]`, `text-[#94A3B8]`) sin prefijo `dark:` en tarjetas, subtítulos, estados vacíos, modales y formularios.
+  - Aplicación de clases adaptativas duales: `text-slate-900 dark:text-[#F8FAFC]` para títulos y textos principales; `text-slate-600 dark:text-[#94A3B8]` para descripciones, subtítulos y leyendas.
+  - Corrección de estados vacíos (empty states) en `CreditCardsClientView.tsx` e `InstallmentProjectionsCard.tsx`: bordes adaptativos `border-slate-300 dark:border-white/[0.1]`, iconos `text-slate-400 dark:text-[#94A3B8]/40`, y textos de alta legibilidad sobre fondos blancos.
+  - Corrección de componentes de diálogo y modales (`PayStatementDialog.tsx`, `AccountForm.tsx`, modals de edición de cuentas y tarjetas) con fondos adaptativos `bg-white dark:bg-[#131B2E]` y bordes `border-slate-200 dark:border-white/[0.08]`.
+  - Ajuste de contraste para tokens globales en `src/app/globals.css`: `--muted-foreground: #475569;` en modo claro para cumplir estándares WCAG AA/AAA.
+  - Corrección de contraste en el popover flotante de notificaciones (`NotificationBell.tsx`) con fondos claros en modo día y tipografías nítidas en slate.
+- [x] Corrección de contraste en botones "Limpiar filtros" y variantes outline/secondary en Modo Día:
+  - Definición en `buttonVariants` (`src/components/ui/button.tsx`): bordes, fondos y colores de texto adaptativos de alto contraste (`outline` con `border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 hover:text-slate-900`, `secondary` con `bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100`).
+  - Botón "Limpiar filtros" de cabecera en `TransactionsClientView.tsx`: variante `outline` con `border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:text-rose-300 font-medium`.
+  - Botón "Limpiar filtros" de estado vacío en `TransactionsClientView.tsx`: `border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] font-semibold`.
+  - Botones secundarios/outline en modales (`WelcomeHubManagerModal.tsx`, `CategoriesClientView.tsx`, `TransactionForm.tsx`) adaptados con alto contraste y visibilidad garantizada.
+- [x] Visualización Elegante de Versión en Sidebar y Protocolo SemVer v1.4.0:
+  - Creación de `src/config/version.ts`: Constante centralizada `APP_VERSION = "1.4.0"`.
+  - Badge tipográfico minimalista en `src/components/layout/Sidebar.tsx` en la cabecera de la tarjeta inferior junto al indicador de seguridad RLS.
+  - Sincronización en `package.json` (`1.4.0`) y `CHANGELOG.md` con desglose detallado de releases.
+  - Protocolo SemVer obligatorio formalizado en `CHANGELOG.md` y `BOARD.md` para promociones de `develop` a `main`.
+  - Pruebas unitarias en `tests/unit/version.test.ts` (3 pruebas, 186/186 pruebas unitarias pasando al 100%).
 
 Expected deliverables:
 
@@ -366,6 +411,37 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/TransactionsClientView.tsx (Conexión funcional reactiva de pestañas Ambos / Gastos / Ingresos en Totales por Categoría; sincronización bi-direccional con typeFilter global; layout adaptativo en ancho completo cuando solo un panel está activo con grid sm:grid-cols-2; base de cálculo desacoplada categoryBaseTransactions)
+- tests/unit/category-summary-interaction.test.ts (Nuevas pruebas unitarias para alternancia reactiva de pestañas, sincronización con typeFilter y preservación de contadores)
+- src/features/credit-cards/components/CreditCardsClientView.tsx (Corrección de contraste en modo día: títulos text-slate-900 dark:text-[#F8FAFC], subtítulos text-slate-600 dark:text-[#94A3B8], KPIs, empty state visible sobre fondo blanco y modal de edición adaptativo)
+- src/features/accounts/components/AccountsClientView.tsx (Corrección de contraste en modo día: encabezados, KPIs, botones de pestañas, empty state, detalles de tarjeta y modales de creación/edición con bordes y tipografía adaptativa)
+- src/features/credit-cards/components/PayStatementDialog.tsx (Contraste adaptativo para diálogo de liquidación de extractos: fondo bg-white dark:bg-[#131B2E], textos legibles, inputs y selects estilizados para modo claro y oscuro)
+- src/features/dashboard/components/InstallmentProjectionsCard.tsx (Textos, subtítulos, empty states y divisores adaptativos en modo día)
+- src/components/layout/NotificationBell.tsx (Contraste nítido en el popover flotante de alertas y vencimientos de tarjetas para modo claro)
+- src/features/accounts/components/AccountForm.tsx (Bordes y botones secundarios adaptativos con slate-300 / slate-50)
+- src/app/globals.css (Ajuste de token --muted-foreground a #475569 para alto contraste WCAG en modo día)
+- src/features/transactions/components/TransactionsClientView.tsx (Acento rojo #F43F5E en iconos de transacciones de gasto; filtrado preciso e independiente al hacer clic en categorías de Gastos o Ingresos en "Totales por Categoría" con badges dinámicos)
+- src/features/dashboard/components/widgets/DashboardRecentTransactions.tsx (Acento rojo #F43F5E en contenedor de icono y texto de monto para transacciones de tipo gasto)
+- tests/unit/category-summary-interaction.test.ts (5 pruebas unitarias de interacción independiente por tipo de movimiento, alternancia de estado y restablecimiento)
+- src/features/transactions/components/CategoryMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
+- src/features/transactions/components/AccountMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
+- src/features/transactions/components/TransactionsClientView.tsx (Corrección de contexto de apilamiento: contenedor de filtros con relative z-30 y hover:transform-none; contenedor de Totales por Categoría y listado con relative z-10)
+- src/features/transactions/components/AccountMultiSelect.tsx (Selector desplegable de cuentas con selección múltiple mediante casillas/checkboxes, buscador interno, acciones Todas/Limpiar, selector minimalista y diseño idéntico al selector de categorías)
+- tests/unit/account-multiselect.test.ts (7 pruebas unitarias de filtrado multi-cuenta, toggle de selección, exclusión y búsqueda)
+- src/features/transactions/components/CategoryMultiSelect.tsx (Limpieza visual eliminando badges de tipo Gasto/Ingreso, logrando interfaz minimalista y limpia con solo icono y nombre de categoría)
+- src/features/transactions/components/TransactionsClientView.tsx (Integración de AccountMultiSelect con casillas, estado selectedAccountIds, chips interactivos de cuentas en azul #3B82F6, y resumen en cabecera de tabla)
+- src/lib/transactions-search.ts (Utilidades de filtrado multi-etiqueta con lógica OR inclusiva, agregación/remoción de tags case-insensitive)
+- tests/unit/search-multitag.test.ts (12 pruebas unitarias de búsqueda multi-etiqueta, OR inclusivo, case-insensitivity, notas, categorías y cuentas)
+- src/features/transactions/components/TransactionsClientView.tsx (Búsqueda multi-palabra con badges interactivos, botón Añadir/Enter, chips con botón [x], lógica OR en filtrado reactivo y resumen en cabecera de tabla)
+- src/lib/transactions-preferences.ts (Módulo utilitario de persistencia en localStorage para el estado colapsable de Totales por Categoría)
+- tests/unit/transactions-preferences.test.ts (Pruebas unitarias de persistencia, fallback y manejo seguro de Storage)
+- src/features/transactions/components/TransactionsClientView.tsx (Restauración al montar y guardado persistente del estado colapsable de Totales por Categoría; actualización optimista y reactiva inmediata en creación)
+- src/features/transactions/components/CategoryMultiSelect.tsx (Componente unificado de selección múltiple por nombre base con buscador, checkboxes, badges y cierre por evento)
+- src/app/(dashboard)/transactions/page.tsx (Contenedor estricto con w-full h-auto pb-12 para eliminar scroll fantasma)
+- src/features/transactions/components/TransactionsClientView.tsx (Ajuste del contenedor raíz a w-full h-auto space-y-8, integración de CategoryMultiSelect, filtrado por unión de categorías, chips interactivos, y consolidación por nombre base)
+- src/components/layout/DashboardShell.tsx (Soporte de h-[100dvh] y contenedor max-w con w-full h-auto)
+- src/app/globals.css (Eliminación de min-height: 100vh en body y adición de overflow-x: hidden)
+- tests/unit/category-multiselect.test.ts (Pruebas unitarias de unificación por nombre base, filtrado multi-select y combinaciones de tipos)
 - src/features/dashboard/components/WelcomeHubDashboard.tsx (Dashboard interactivo tipo Welcome Hub con reordenamiento, visibilidad y persistencia)
 - src/features/dashboard/components/WelcomeHubBanner.tsx (Barra de control atmosférica para modo edición)
 - src/features/dashboard/components/WelcomeHubManagerModal.tsx (Modal de administración de visibilidad y orden de widgets)
@@ -396,7 +472,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (141/141 unit tests passing across 8 suites, 100%)
+- `npm run test:run` -> PASS (179/179 unit tests passing across 13 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
@@ -507,6 +583,81 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 
 ---
 
+### QA INCIDENT REPORT & QUALITY AUDIT (POST-FILTERS & DEV RECOVERY)
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Audit Type: Dev Server Error 500 Incident Diagnosis & Full Quality Verification
+
+Diagnosis & Root Causes:
+1. Webpack Persistent Cache Corruption: Iterative modifications to client components and Server Actions created stale/missing chunk manifests in `.next` (e.g. `Cannot find module './682.js'`), causing Next.js dev server to fail with generalized 500 errors.
+2. Unsafe String Evaluation in Server Components: In `src/app/(dashboard)/**/page.tsx`, `result.error.includes("Unauthorized")` was invoked without ensuring `typeof result.error === "string"`. Under non-string error payloads, Node.js raised unhandled TypeErrors.
+3. Prop and Substring Guarding: Added defensive array assertions (`Array.isArray()`) in `CategoryMultiSelect`, `AccountMultiSelect`, and safe null coalescing in `matchesSearchKeywords`.
+
+Verification Results:
+- TypeScript (`npx tsc --noEmit`): PASS (Exit code: 0, 0 type errors, strict: true)
+- ESLint (`npm run lint`): PASS (Exit code: 0, 0 warnings, 0 errors)
+- Vitest (`npm run test:run`): PASS (Exit code: 0, 174/174 unit tests passed across 12 test suites, 100%)
+- Next.js Production Build (`npm run build`): PASS (Exit code: 0, 12 optimized routes generated + Edge Middleware)
+- Next.js Dev Server Verification: Tested HTTP responses on `http://localhost:3000/login` (200 OK) and protected dashboard redirects (307 Temporary Redirect).
+
+Final Verdict:
+ALL QUALITY CRITERIA MET - FULL PASS (CODE 0)
+
+---
+
+### QA INCIDENT REPORT: RESOLUCIÓN DE ERROR 500 EN CHUNKS ESTÁTICOS Y CSS
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Audit Type: Limpieza Profunda de Caché y Verificación Estricta de Integridad de Compilación
+
+Diagnóstico del Incidente:
+Se identificaron procesos secundarios huérfanos de Next.js ejecutándose en segundo plano (PID 17444 y 23800) manteniendo archivos bloqueados y corrompiendo la caché persistente de Webpack en `.next/cache`, provocando fallos HTTP 500 al servir los archivos CSS y fragmentos JS estáticos de la aplicación.
+
+Acciones de Mitigación y Limpieza:
+1. Detención forzada y aseguramiento de procesos: Terminación inmediata de todos los procesos Node/Next huérfanos asociados al espacio de trabajo.
+2. Limpieza total de caché `.next`: Eliminación física recursiva de `.next/` mediante PowerShell/rmdir, asegurando un entorno de compilación completamente prístino.
+
+Ciclo de Auditoría y Verificación Estricta (Comprobado):
+1. `npx tsc --noEmit` -> PASS (Código de salida: 0, 0 errores de tipado, strict: true).
+2. `npm run lint` -> PASS (Código de salida: 0, 0 advertencias, 0 errores).
+3. `npx vitest run` -> PASS (Código de salida: 0, 179/179 pruebas unitarias aprobadas al 100% en 13 suites).
+4. `npm run build` -> PASS (Código de salida: 0, 12 rutas estáticas y dinámicas compiladas limpiamente sin errores de serialización, CSS ni chunks).
+
+Regla Inquebrantable de Cierre (Ratificada):
+A partir de este momento, NINGÚN cambio de Frontend o Backend se considerará entregado si rompe el servidor local. El QA Verifier Agent auditará siempre la estabilidad de la compilación y de los chunks estáticos antes de emitir la aprobación final.
+
+Estado Final:
+APROBADO Y VERIFICADO - COMPILACIÓN Y CHUNKS 100% OPERATIVOS (CÓDIGO DE SALIDA 0)
+
+---
+
+### QA PROTOCOL AUDIT: PROTOCOLO OBLIGATORIO DE COMPILACIÓN Y CALIDAD PREVIA A APROBACIÓN
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Protocol: Protocolo Obligatorio Anti-Corrupción de Chunks y Recursos Estáticos (Regla Inquebrantable de Calidad)
+
+Mandated Protocol Pipeline:
+1. Limpieza total de caché local: `rm -rf .next`
+2. Validación de tipado TypeScript estricto: `npx tsc --noEmit`
+3. Validación de linting ESLint: `npm run lint`
+4. Ejecución completa de pruebas unitarias Vitest: `npx vitest run`
+5. Compilación de producción Next.js obligatoria: `npm run build`
+
+Execution Results (Audit en Vivo):
+1. Limpieza de caché (`rm -rf .next`): COMPLETADA (Directorio `.next` purgado satisfactoriamente).
+2. `npx tsc --noEmit`: PASS (Código de salida: 0, 0 errores de tipado, strict: true).
+3. `npm run lint`: PASS (Código de salida: 0, 0 advertencias, 0 errores).
+4. `npx vitest run`: PASS (Código de salida: 0, 183/183 tests pasados en 13 suites, 100%).
+5. `npm run build`: PASS (Código de salida: 0, 12/12 rutas estáticas y dinámicas compiladas limpiamente, middleware verificado, cero advertencias o fallos de chunks).
+
+Veredicto del Protocolo:
+RATIFICADO Y EN VIGOR. Todo cambio visual o funcional de Frontend/Backend debe aprobar obligatoriamente este ciclo con código de salida 0 antes de considerarse entregado al usuario o promovido a PR.
+
+---
+
 # 7. BUG TRACKER
 
 | ID | Severity | File | Description | Assigned to | Status |
@@ -514,6 +665,9 @@ APPROVED (Sprint 3, Auth Gateway & Complete System Release)
 | BUG-001 | CRITICAL | src/components/layout/Sidebar.tsx, layout.tsx | `TypeError: Cannot read properties of null (reading 'useContext')` caused by client layout wrapping server children and unsafe pathname handling. Resolved by creating DashboardShell client wrapper, converting layout.tsx to Server Component, safeguarding pathname with fallback, and adding 'use client' to button, card, input. | FRONTEND | RESOLVED |
 | BUG-002 | CRITICAL | src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts | Enlace de verificación de correo redirigía a localhost:3000 en producción. Resuelto implementando getBaseUrl() dinámica (con prioridad en NEXT_PUBLIC_SITE_URL y fallback en headers origin/host), pasando emailRedirectTo en signUp, creando Route Handler /auth/callback para intercambio PKCE/OTP y documentando configuración de Supabase URL Configuration. | BACKEND | RESOLVED |
 | BUG-003 | HIGH | src/features/auth/actions/auth-actions.ts | Error de compilación Next.js: 'Server actions must be async functions' por exportación síncrona de getBaseUrl() en archivo con directiva 'use server'. Resuelto convirtiendo getBaseUrl() en función asíncrona Promise<string> y utilizando await en signUp() y suites de prueba. | BACKEND | RESOLVED |
+| BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
+| BUG-005 | CRITICAL | .next, chunks estáticos, CSS global | Error 500 generalizado al servir chunks estáticos y CSS de Next.js provocado por colisión de procesos huérfanos de dev server (PIDs 17444, 23800) y corrupción de caché persistente de Webpack. Resuelto mediante detención forzada de procesos Node/Next bloqueantes, eliminación recursiva de `.next/` y ciclo estricto de auditoría (tsc, lint, vitest, build) completado con código de salida 0. | QA VERIFIER AGENT | RESOLVED |
+| BUG-006 | LOW | src/components/ui/button.tsx, TransactionsClientView.tsx | Defecto de contraste visual en botón "Limpiar filtros" y botones con variante outline en Modo Día (fondo y texto de baja visibilidad sin hover). Resuelto definiendo clases adaptativas de alto contraste en buttonVariants (outline y secondary) y clases explícitas en TransactionsClientView, WelcomeHubManagerModal, CategoriesClientView y TransactionForm. | FRONTEND / QA | RESOLVED |
 
 Severity:
 
@@ -797,6 +951,93 @@ Task: Implemented complete UI workflows for editing and deleting transactions, a
 Files created/modified: src/components/shared/ConfirmDeleteDialog.tsx, src/features/transactions/components/TransactionForm.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/accounts/components/AccountsClientView.tsx, src/features/credit-cards/components/CreditCardsClientView.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-18 - QA VERIFIER AGENT (Critical Recovery: Error 500 on Next.js Static Chunks & CSS Resolution)
+Task: Resolved critical production/dev server incident where static chunks and CSS were returning HTTP 500 errors:
+1. Deep Cache Clean: Terminated background rogue Node.js processes (PIDs 17444, 23800) locking Next.js build cache. Completely wiped `.next/` directory.
+2. Complete Strict Quality Audit:
+   - `npx tsc --noEmit` -> 0 errors (strict: true).
+   - `npm run lint` -> 0 warnings, 0 errors.
+   - `npx vitest run` -> 179/179 unit tests passed across 13 suites (100%).
+   - `npm run build` -> Clean production build passed, 12 static/dynamic routes + Edge Middleware generated without chunk errors.
+3. Ratified Unbreakable Quality Gate: Enforced that no frontend or backend change can be considered delivered if it breaks local build or server stability.
+Files modified: .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (179/179 passed), npm run build (0)
+Verdict: COMPLETED, VERIFIED & UNBLOCKED
+Handoff status: COMPLETED
+
+### 2026-11-18 - FRONTEND & QA VERIFIER AGENT (Visual Contrast Enhancement on "Limpiar filtros" & Outline/Secondary Buttons in Light Mode)
+Task: Resolved visual contrast defect on "Limpiar filtros" and outline/secondary buttons across the application in Light Mode:
+1. Updated `buttonVariants` in `src/components/ui/button.tsx`: `outline` now includes explicit `border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 hover:text-slate-900` ensuring guaranteed WCAG AA+ contrast globally without relying on ambiguous inherited text colors. `secondary` updated to `bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100`.
+2. Updated `TransactionsClientView.tsx`:
+   - Filter bar "Limpiar filtros" button: `border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-300` for crisp visibility.
+   - Empty state "Limpiar filtros" button: `border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] font-semibold`.
+3. Updated dialog and modal buttons in `WelcomeHubManagerModal.tsx`, `CategoriesClientView.tsx`, and `TransactionForm.tsx`.
+4. Strict Quality Audit:
+   - `npx tsc --noEmit` -> PASS (Code 0, strict: true).
+   - `npm run lint` -> PASS (Code 0, 0 warnings, 0 errors).
+   - `npx vitest run` -> PASS (Code 0, 183/183 unit tests passed across 13 suites, 100%).
+   - `npm run build` -> PASS (Code 0, all 12 routes + Edge Middleware compiled cleanly).
+Files modified: src/components/ui/button.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/categories/components/CategoriesClientView.tsx, src/features/dashboard/components/WelcomeHubManagerModal.tsx, src/features/transactions/components/TransactionForm.tsx, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - QA VERIFIER AGENT (Mandatory Quality Gate & Anti-Chunk Corruption Protocol Ratified)
+Task: Formalized and executed mandatory 5-step Quality Gate to eliminate chunk corruption and 404/500 static asset defects:
+1. Cache purge: Executed full wipe of `.next/` directory.
+2. Verified strict TypeScript: `npx tsc --noEmit` (0 errors, strict: true).
+3. Verified lint: `npm run lint` (0 warnings, 0 errors).
+4. Executed Vitest unit test suite: `npx vitest run` (183/183 passed across 13 test suites).
+5. Executed mandatory Next.js production build: `npm run build` (Exit code 0, 12 static/dynamic routes + Edge Middleware generated without chunk warnings or missing styles).
+6. Shared rule 12 added to `.agents-team/BOARD.md`: Every future frontend/visual change and PR must execute and pass this 5-step pipeline with code 0 before being approved.
+Files modified: .agents-team/BOARD.md
+Verification commands: powershell "Remove-Item -Recurse -Force .next" (0), npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
+Verdict: RATIFIED, VERIFIED & APPROVED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - FRONTEND & QA VERIFIER AGENT (Sidebar Version Display v1.4.0 & Strict SemVer Protocol Ratification)
+Task: Implemented elegant version display in Sidebar and established strict SemVer release protocol for develop -> main promotions:
+1. Created `src/config/version.ts`: Exported `APP_VERSION = "1.4.0"`.
+2. Updated `src/components/layout/Sidebar.tsx`: Integrated subtle, elegant version badge (`v1.4.0`) inside bottom status card next to RLS indicator with responsive high-contrast colors in light mode (`bg-slate-200/70 text-slate-600 border-slate-300/80`) and dark mode (`dark:bg-white/[0.06] dark:text-[#94A3B8] dark:border-white/[0.06]`).
+3. Updated `package.json` to `"version": "1.4.0"`.
+4. Enriched `CHANGELOG.md` with complete history and formalized SemVer Release Protocol (develop -> main gates).
+5. Added unit test suite `tests/unit/version.test.ts` checking SemVer regex, package.json synchronization and baseline versioning.
+6. Executed mandatory 5-step quality verification cycle:
+   - `rm -rf .next` -> Cache clean.
+   - `npx tsc --noEmit` -> PASS (0 errors, strict: true).
+   - `npm run lint` -> PASS (0 warnings, 0 errors).
+   - `npx vitest run` -> PASS (186/186 tests passed across 14 suites).
+   - `npm run build` -> PASS (Code 0, 12 routes + Edge Middleware generated cleanly).
+Files modified: src/config/version.ts, src/components/layout/Sidebar.tsx, package.json, CHANGELOG.md, tests/unit/version.test.ts, .agents-team/BOARD.md
+Verdict: COMPLETED, VERIFIED & APPROVED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - TECHNICAL ARCHITECT & LEAD AGENT (Environment Stabilization, Script Hardening & Automatic Cache Purge)
+Task: Hardened package.json lifecycle scripts with native cross-platform Node.js automation and verified build stability:
+1. Automated cache purge in `package.json`:
+   - `"dev"`: `node -e "fs.rmSync('.next', { recursive: true, force: true })" && next dev`
+   - `"build"`: `node -e "fs.rmSync('.next', { recursive: true, force: true })" && tsc --noEmit && next build`
+   - Multiplatform guarantee: Uses Node.js standard `fs.rmSync` natively supported across Windows, macOS, Linux, and Volta (Node v22.23.5), eliminating chunk corruption errors (like `./948.js`) automatically on every invocation.
+2. Verified ESLint Flat Config and test runner scripts:
+   - `"lint"`: `eslint .` (0 errors, 0 warnings across all files).
+   - `"test:run"`: `vitest run` (186/186 unit tests passing).
+3. Full verification execution:
+   - `npm run lint` -> PASS (Code 0).
+   - `npm run test:run` -> PASS (Code 0, 186/186 passed).
+   - `npm run build` -> PASS (Code 0, cache wiped, tsc validated, 12 production routes generated).
+Files modified: package.json, package-lock.json, .agents-team/BOARD.md
+Verdict: COMPLETED, VERIFIED & APPROVED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - GIT & RELEASE AGENT (Pull Request #3 Creation & Remote Tag v1.4.0 Publication)
+Task: Synchronized remote repository, verified tag v1.4.0, and generated formal Pull Request to main:
+1. Pushed develop branch and tag `v1.4.0` to remote origin: `git push origin develop`, `git push origin v1.4.0`.
+2. Created official GitHub Pull Request #3 (`develop` -> `main`):
+   - Title: "Release v1.4.0: Filtros avanzados, persistencia, soporte tema claro y blindaje de entorno"
+   - URL: https://github.com/Dyveto/personal-finance/pull/3
+3. Automated CI/CD execution: Triggered GitHub Actions pipeline `QA Gates & Netlify Deploy` and Netlify Deploy Preview.
 Handoff status: COMPLETED
 
 ---

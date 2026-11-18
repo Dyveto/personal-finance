@@ -52,8 +52,8 @@ export function DashboardRecentTransactions({
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
                         isIncome
-                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/20"
-                          : "bg-slate-100 dark:bg-white/[0.05] text-slate-600 dark:text-[#94A3B8] border border-slate-200 dark:border-white/[0.08]"
+                          ? "bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25"
+                          : "bg-[#F43F5E]/15 text-[#F43F5E] border border-[#F43F5E]/25"
                       }`}
                     >
                       {isIncome ? (
@@ -75,7 +75,7 @@ export function DashboardRecentTransactions({
 
                   <span
                     className={`text-sm font-heading font-bold flex-shrink-0 ${
-                      isIncome ? "text-[#10B981]" : "text-slate-900 dark:text-[#F8FAFC]"
+                      isIncome ? "text-[#10B981]" : "text-[#F43F5E]"
                     }`}
                   >
                     {isIncome ? "+" : "-"}
