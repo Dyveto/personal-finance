@@ -119,4 +119,71 @@ describe("Category Totales Section Interaction Logic", () => {
     expect(state.typeFilter).toBe("expense");
     expect(state.selectedCategoryNames).toEqual(["Internado", "Alimentación"]);
   });
+
+  describe("Category View Tab Switching & Filter Synchronization", () => {
+    interface ViewTabState {
+      typeFilter: "all" | "income" | "expense";
+      categoryViewTab: "all" | "income" | "expense";
+    }
+
+    function handleCategoryViewTabChange(
+      _state: ViewTabState,
+      tab: "all" | "expense" | "income"
+    ): ViewTabState {
+      return {
+        typeFilter: tab,
+        categoryViewTab: tab,
+      };
+    }
+
+    function handleTypeFilterChange(
+      _state: ViewTabState,
+      type: "all" | "income" | "expense"
+    ): ViewTabState {
+      return {
+        typeFilter: type,
+        categoryViewTab: type,
+      };
+    }
+
+    it("al seleccionar 'Gastos' en las pestañas de categorías, sincroniza typeFilter='expense' y categoryViewTab='expense'", () => {
+      let state: ViewTabState = { typeFilter: "all", categoryViewTab: "all" };
+      state = handleCategoryViewTabChange(state, "expense");
+
+      expect(state.categoryViewTab).toBe("expense");
+      expect(state.typeFilter).toBe("expense");
+    });
+
+    it("al seleccionar 'Ingresos' en las pestañas de categorías, sincroniza typeFilter='income' y categoryViewTab='income'", () => {
+      let state: ViewTabState = { typeFilter: "all", categoryViewTab: "all" };
+      state = handleCategoryViewTabChange(state, "income");
+
+      expect(state.categoryViewTab).toBe("income");
+      expect(state.typeFilter).toBe("income");
+    });
+
+    it("al seleccionar 'Ambos' en las pestañas de categorías, restablece typeFilter='all' y categoryViewTab='all'", () => {
+      let state: ViewTabState = { typeFilter: "expense", categoryViewTab: "expense" };
+      state = handleCategoryViewTabChange(state, "all");
+
+      expect(state.categoryViewTab).toBe("all");
+      expect(state.typeFilter).toBe("all");
+    });
+
+    it("al cambiar el filtro global de tipo en la barra superior, sincroniza categoryViewTab correspondientemente", () => {
+      let state: ViewTabState = { typeFilter: "all", categoryViewTab: "all" };
+
+      state = handleTypeFilterChange(state, "expense");
+      expect(state.typeFilter).toBe("expense");
+      expect(state.categoryViewTab).toBe("expense");
+
+      state = handleTypeFilterChange(state, "income");
+      expect(state.typeFilter).toBe("income");
+      expect(state.categoryViewTab).toBe("income");
+
+      state = handleTypeFilterChange(state, "all");
+      expect(state.typeFilter).toBe("all");
+      expect(state.categoryViewTab).toBe("all");
+    });
+  });
 });

@@ -180,6 +180,18 @@ export function TransactionsClientView({
     });
   };
 
+  // Cambio reactivo de pestaña de Totales por Categoría (sincronizado con typeFilter)
+  const handleCategoryViewTabChange = (tab: "all" | "expense" | "income") => {
+    setCategoryViewTab(tab);
+    setTypeFilter(tab);
+  };
+
+  // Cambio reactivo de filtro de tipo en barra de filtros (sincronizado con categoryViewTab)
+  const handleTypeFilterChange = (type: "all" | "income" | "expense") => {
+    setTypeFilter(type);
+    setCategoryViewTab(type);
+  };
+
   // Manejador para clic en tarjeta de gastos de una categoría en "Totales por Categoría"
   const handleToggleExpenseCategory = (categoryName: string) => {
     const norm = categoryName.trim().toLowerCase();
@@ -195,10 +207,12 @@ export function TransactionsClientView({
       setSelectedCategoryNames(remaining);
       if (remaining.length === 0) {
         setTypeFilter("all");
+        setCategoryViewTab("all");
       }
     } else {
       // Filtrar precisamente como gasto de esta categoría
       setTypeFilter("expense");
+      setCategoryViewTab("expense");
       setSelectedCategoryNames((prev) => {
         if (prev.some((n) => n.trim().toLowerCase() === norm)) {
           return prev;
@@ -223,10 +237,12 @@ export function TransactionsClientView({
       setSelectedCategoryNames(remaining);
       if (remaining.length === 0) {
         setTypeFilter("all");
+        setCategoryViewTab("all");
       }
     } else {
       // Filtrar precisamente como ingreso de esta categoría
       setTypeFilter("income");
+      setCategoryViewTab("income");
       setSelectedCategoryNames((prev) => {
         if (prev.some((n) => n.trim().toLowerCase() === norm)) {
           return prev;
@@ -278,6 +294,7 @@ export function TransactionsClientView({
     setSearchInput("");
     setSearchTags([]);
     setTypeFilter("all");
+    setCategoryViewTab("all");
     setSelectedAccountIds([]);
     setSelectedCategoryNames([]);
     setDatePreset("all");
@@ -294,8 +311,8 @@ export function TransactionsClientView({
     startDate !== "" ||
     endDate !== "";
 
-  // Filtrado reactivo de transacciones
-  const filteredTransactions = useMemo(() => {
+  // Transacciones base que cumplen con los filtros activos (cuentas, categorías, fechas, búsqueda)
+  const categoryBaseTransactions = useMemo(() => {
     // Palabras clave activas para búsqueda: tags confirmados + texto en edición
     const activeKeywords = [
       ...searchTags,
@@ -303,11 +320,6 @@ export function TransactionsClientView({
     ];
 
     return transactions.filter((tx) => {
-      // Filtro por tipo
-      if (typeFilter !== "all" && tx.transaction_type !== typeFilter) {
-        return false;
-      }
-
       // Filtro por cuentas (multi-select)
       if (selectedAccountIds.length > 0 && !selectedAccountIds.includes(tx.account_id)) {
         return false;
@@ -347,7 +359,6 @@ export function TransactionsClientView({
     });
   }, [
     transactions,
-    typeFilter,
     selectedAccountIds,
     selectedCategoryNames,
     startDate,
@@ -357,6 +368,14 @@ export function TransactionsClientView({
     categoriesMap,
     accountsMap,
   ]);
+
+  // Filtrado reactivo final de transacciones aplicando typeFilter
+  const filteredTransactions = useMemo(() => {
+    if (typeFilter === "all") {
+      return categoryBaseTransactions;
+    }
+    return categoryBaseTransactions.filter((tx) => tx.transaction_type === typeFilter);
+  }, [categoryBaseTransactions, typeFilter]);
 
   // Cálculos de métricas globales (históricas sin filtros)
   let overallIncome = "0.00";
@@ -393,7 +412,7 @@ export function TransactionsClientView({
     const expenseMap = new Map<string, CategoryAccumulator>();
     const incomeMap = new Map<string, CategoryAccumulator>();
 
-    for (const tx of filteredTransactions) {
+    for (const tx of categoryBaseTransactions) {
       const amtStr = roundMoney(tx.amount);
       const cat = categoriesMap.get(tx.category_id);
       const catId = tx.category_id || "uncategorized";
@@ -449,13 +468,18 @@ export function TransactionsClientView({
       .sort((a, b) => parseFloat(b.totalAmount) - parseFloat(a.totalAmount));
 
     return {
-      filteredIncome: fIncome,
-      filteredExpense: fExpense,
-      filteredNet: fNet,
+      filteredIncome: typeFilter === "expense" ? "0.00" : fIncome,
+      filteredExpense: typeFilter === "income" ? "0.00" : fExpense,
+      filteredNet:
+        typeFilter === "expense"
+          ? subtractMoney("0.00", fExpense)
+          : typeFilter === "income"
+          ? fIncome
+          : fNet,
       categorySummariesExpense: expenseList,
       categorySummariesIncome: incomeList,
     };
-  }, [filteredTransactions, categoriesMap]);
+  }, [categoryBaseTransactions, categoriesMap, typeFilter]);
 
   const handleTransactionCreated = (result?: TransactionCreatedResult) => {
     if (result) {
@@ -827,7 +851,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "all" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("all")}
+              onClick={() => handleTypeFilterChange("all")}
               className={
                 typeFilter === "all"
                   ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]"
@@ -839,7 +863,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "income" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("income")}
+              onClick={() => handleTypeFilterChange("income")}
               className={
                 typeFilter === "income"
                   ? "bg-[#10B981] text-white hover:bg-emerald-600 rounded-xl text-xs shadow-[0_0_12px_rgba(16,185,129,0.25)]"
@@ -851,7 +875,7 @@ export function TransactionsClientView({
             <Button
               variant={typeFilter === "expense" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setTypeFilter("expense")}
+              onClick={() => handleTypeFilterChange("expense")}
               className={
                 typeFilter === "expense"
                   ? "bg-[#F43F5E] text-white hover:bg-rose-600 rounded-xl text-xs shadow-[0_0_12px_rgba(244,63,94,0.25)]"
@@ -1010,30 +1034,33 @@ export function TransactionsClientView({
             {/* Selector de vista interna de categorías */}
             <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.08] text-xs">
               <button
-                onClick={() => setCategoryViewTab("all")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("all")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "all"
-                    ? "bg-white dark:bg-[#131B2E] text-slate-900 dark:text-[#F8FAFC] shadow-sm"
+                    ? "bg-white dark:bg-[#131B2E] text-slate-900 dark:text-[#F8FAFC] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
                 Ambos ({categorySummariesExpense.length + categorySummariesIncome.length})
               </button>
               <button
-                onClick={() => setCategoryViewTab("expense")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("expense")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "expense"
-                    ? "bg-[#F43F5E]/15 text-[#F43F5E] shadow-sm"
+                    ? "bg-[#F43F5E]/15 text-[#F43F5E] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
                 Gastos ({categorySummariesExpense.length})
               </button>
               <button
-                onClick={() => setCategoryViewTab("income")}
+                type="button"
+                onClick={() => handleCategoryViewTabChange("income")}
                 className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                   categoryViewTab === "income"
-                    ? "bg-[#10B981]/15 text-[#10B981] shadow-sm"
+                    ? "bg-[#10B981]/15 text-[#10B981] shadow-sm font-bold"
                     : "text-slate-500 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
                 }`}
               >
@@ -1076,7 +1103,7 @@ export function TransactionsClientView({
                 className={`grid gap-6 ${
                   categoryViewTab === "all"
                     ? "grid-cols-1 lg:grid-cols-2"
-                    : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+                    : "grid-cols-1"
                 }`}
               >
                 {/* Panel de Gastos por Categoría */}
@@ -1099,7 +1126,13 @@ export function TransactionsClientView({
                         Sin gastos registrados en el filtro
                       </p>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div
+                        className={
+                          categoryViewTab === "all"
+                            ? "space-y-2.5"
+                            : "grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+                        }
+                      >
                         {categorySummariesExpense.map((item) => {
                           const isSelected =
                             typeFilter !== "income" &&
@@ -1188,7 +1221,13 @@ export function TransactionsClientView({
                         Sin ingresos registrados en el filtro
                       </p>
                     ) : (
-                      <div className="space-y-2.5">
+                      <div
+                        className={
+                          categoryViewTab === "all"
+                            ? "space-y-2.5"
+                            : "grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+                        }
+                      >
                         {categorySummariesIncome.map((item) => {
                           const isSelected =
                             typeFilter !== "expense" &&

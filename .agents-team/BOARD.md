@@ -368,6 +368,12 @@ Responsibilities:
   - Restauración automática del estado expandido/colapsado al montar la vista en `TransactionsClientView.tsx` evitando problemas de hidratación SSR.
   - Guardado instantáneo y automático ante cada interacción de alternancia (`handleToggleCategorySummary`).
   - Cobertura de pruebas unitarias en `tests/unit/transactions-preferences.test.ts` (6 pruebas añadidas, 155/155 pruebas unitarias en total pasando al 100%).
+- [x] Conexión reactiva y funcional de pestañas en Totales por Categoría ("Ambos", "Gastos", "Ingresos"):
+  - Sincronización bi-direccional limpia entre el selector de pestañas interno de categorías (`categoryViewTab`) y el estado de filtrado global de movimientos (`typeFilter`).
+  - Ocultamiento reactivo: Al seleccionar "Gastos", se oculta el panel de ingresos y se expande el desglose de gastos a ancho completo con grid adaptativo (`grid-cols-1 sm:grid-cols-2 gap-2.5`); al seleccionar "Ingresos", se oculta el panel de gastos y se expande el de ingresos; al seleccionar "Ambos", se muestran ambos bloques en columnas paralelas (`grid-cols-1 lg:grid-cols-2`).
+  - Desacoplamiento de cálculo base (`categoryBaseTransactions`): Los contadores de pestañas `Ambos (X)`, `Gastos (Y)` e `Ingresos (Z)` se computan sobre el conjunto de movimientos que cumplen todos los criterios de cuenta, fecha, categoría y búsqueda, manteniendo los contadores reales y estables independientemente de la pestaña activa.
+  - Sincronización con botones globales de tipo ("Todos", "Ingresos", "Gastos") y con la acción de "Limpiar filtros", garantizando coherencia en toda la vista de transacciones sin alterar la base de datos.
+  - Cobertura de pruebas unitarias ampliada en `tests/unit/category-summary-interaction.test.ts` (9 pruebas unitarias, 183/183 en total pasando al 100%).
 - [x] Corrección integral del contraste visual en Modo Día (Tema Claro / Light Mode):
   - Detección y reemplazo exhaustivo de clases de texto oscuras estáticas (`text-[#F8FAFC]`, `text-[#94A3B8]`) sin prefijo `dark:` en tarjetas, subtítulos, estados vacíos, modales y formularios.
   - Aplicación de clases adaptativas duales: `text-slate-900 dark:text-[#F8FAFC]` para títulos y textos principales; `text-slate-600 dark:text-[#94A3B8]` para descripciones, subtítulos y leyendas.
@@ -393,6 +399,8 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/TransactionsClientView.tsx (Conexión funcional reactiva de pestañas Ambos / Gastos / Ingresos en Totales por Categoría; sincronización bi-direccional con typeFilter global; layout adaptativo en ancho completo cuando solo un panel está activo con grid sm:grid-cols-2; base de cálculo desacoplada categoryBaseTransactions)
+- tests/unit/category-summary-interaction.test.ts (Nuevas pruebas unitarias para alternancia reactiva de pestañas, sincronización con typeFilter y preservación de contadores)
 - src/features/credit-cards/components/CreditCardsClientView.tsx (Corrección de contraste en modo día: títulos text-slate-900 dark:text-[#F8FAFC], subtítulos text-slate-600 dark:text-[#94A3B8], KPIs, empty state visible sobre fondo blanco y modal de edición adaptativo)
 - src/features/accounts/components/AccountsClientView.tsx (Corrección de contraste en modo día: encabezados, KPIs, botones de pestañas, empty state, detalles de tarjeta y modales de creación/edición con bordes y tipografía adaptativa)
 - src/features/credit-cards/components/PayStatementDialog.tsx (Contraste adaptativo para diálogo de liquidación de extractos: fondo bg-white dark:bg-[#131B2E], textos legibles, inputs y selects estilizados para modo claro y oscuro)
