@@ -201,7 +201,10 @@ export function CategoryMultiSelect({
   }
 
   return (
-    <div ref={containerRef} className={cn("relative w-full", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative w-full", isOpen ? "z-50" : "z-auto", className)}
+    >
       {/* Botón Disparador del Selector */}
       <button
         type="button"
@@ -254,7 +257,15 @@ export function CategoryMultiSelect({
 
       {/* Menú Desplegable con Casillas de Verificación */}
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-full min-w-[280px] sm:min-w-[320px] max-w-sm rounded-2xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#131B2E] shadow-2xl p-3 z-50 animate-in fade-in-50 zoom-in-95 duration-150">
+        <>
+          {/* Overlay invisible para bloquear hover/click en capas inferiores */}
+          <div
+            className="fixed inset-0 z-40 bg-transparent"
+            aria-hidden="true"
+            onClick={() => setIsOpen(false)}
+          />
+
+          <div className="absolute left-0 top-full mt-1.5 w-full min-w-[280px] sm:min-w-[320px] max-w-sm rounded-2xl border border-slate-200 dark:border-white/[0.12] bg-white dark:bg-[#131B2E] shadow-2xl p-3 z-50 isolate animate-in fade-in-50 zoom-in-95 duration-150">
           {/* Cabecera interna del selector */}
           <div className="space-y-2 pb-2.5 border-b border-slate-100 dark:border-white/[0.06]">
             <div className="relative">
@@ -354,6 +365,7 @@ export function CategoryMultiSelect({
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );

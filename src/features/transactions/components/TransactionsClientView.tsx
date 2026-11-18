@@ -602,7 +602,7 @@ export function TransactionsClientView({
       </div>
 
       {/* Barra de Filtros Multicriterio */}
-      <div className="surface-card p-5 rounded-2xl space-y-4">
+      <div className="surface-card p-5 rounded-2xl space-y-4 relative z-30 hover:transform-none">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2 text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             <Filter className="w-4 h-4 text-[#8B5CF6]" />
@@ -628,7 +628,7 @@ export function TransactionsClientView({
         </div>
 
         {/* Fila 1: Búsqueda, Cuenta, Categoría y Selector de Fecha */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 relative z-30">
           {/* Búsqueda por texto con soporte multi-palabra (OR) */}
           <div className="space-y-1.5">
             <div className="relative flex items-center">
@@ -928,7 +928,7 @@ export function TransactionsClientView({
       {/* ------------------------------------------------------------------ */}
       {/* SECCIÓN DINÁMICA: TOTALES AGRUPADOS POR CATEGORÍA EN TIEMPO REAL   */}
       {/* ------------------------------------------------------------------ */}
-      <div className="surface-card p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-4">
+      <div className="surface-card p-5 rounded-2xl border border-slate-200 dark:border-white/[0.08] space-y-4 relative z-10">
         {/* Cabecera de la sección de categorías */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2.5">
@@ -1224,7 +1224,7 @@ export function TransactionsClientView({
 
       {/* Lista de Transacciones Filtradas */}
       {filteredTransactions.length === 0 ? (
-        <div className="surface-card p-12 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.1] text-center">
+        <div className="surface-card p-12 rounded-2xl border-dashed border-slate-300 dark:border-white/[0.1] text-center relative z-10">
           <Clock className="w-10 h-10 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-3" />
           <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             No hay transacciones que coincidan con los filtros
@@ -1253,7 +1253,7 @@ export function TransactionsClientView({
           </div>
         </div>
       ) : (
-        <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08]">
+        <div className="surface-card rounded-2xl overflow-hidden border border-slate-200 dark:border-white/[0.08] relative z-10">
           <div className="p-4 border-b border-slate-100 dark:border-white/[0.06] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 dark:text-[#94A3B8]">
             <span className="font-semibold">
               Mostrando {filteredTransactions.length} de {transactions.length} transacciones

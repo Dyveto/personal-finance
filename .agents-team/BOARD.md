@@ -386,6 +386,9 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/CategoryMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
+- src/features/transactions/components/AccountMultiSelect.tsx (Corrección de apilamiento: contenedor dinámico z-50 al abrir, overlay fijo transparente z-40 para bloquear eventos hover/click inferiores y menú isolate con z-50)
+- src/features/transactions/components/TransactionsClientView.tsx (Corrección de contexto de apilamiento: contenedor de filtros con relative z-30 y hover:transform-none; contenedor de Totales por Categoría y listado con relative z-10)
 - src/features/transactions/components/AccountMultiSelect.tsx (Selector desplegable de cuentas con selección múltiple mediante casillas/checkboxes, buscador interno, acciones Todas/Limpiar, selector minimalista y diseño idéntico al selector de categorías)
 - tests/unit/account-multiselect.test.ts (7 pruebas unitarias de filtrado multi-cuenta, toggle de selección, exclusión y búsqueda)
 - src/features/transactions/components/CategoryMultiSelect.tsx (Limpieza visual eliminando badges de tipo Gasto/Ingreso, logrando interfaz minimalista y limpia con solo icono y nombre de categoría)
