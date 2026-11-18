@@ -28,6 +28,8 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  cleanUnusedDefaultCategories,
+  getCategoryUsageCounts,
 } from "@/features/categories/actions/category-actions";
 import {
   createTransaction,
@@ -1182,7 +1184,7 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       }
     });
 
-    it("should reject deleteCategory if category has transactions and forceArchive is false", async () => {
+    it("should reject deleteCategory with integrity check error if category has associated transactions", async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: validUserId } },
         error: null,
@@ -1202,11 +1204,9 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
 
       // 2. Count referencing transactions (5)
       const mockSelectTxCount = vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValueOnce({
-            count: 5,
-            error: null,
-          }),
+        eq: vi.fn().mockResolvedValueOnce({
+          count: 5,
+          error: null,
         }),
       });
 
@@ -1217,7 +1217,103 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       const result = await deleteCategory(validCatId);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toContain("No es posible eliminar la categoría");
+        expect(result.error).toBe(
+          "No se puede eliminar esta categoría porque tiene transacciones asociadas. Reasigna o elimina las transacciones primero."
+        );
+      }
+    });
+
+    it("should handle cleanUnusedDefaultCategories when user is not authenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("Unauthorized"),
+      });
+
+      const result = await cleanUnusedDefaultCategories();
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should clean only unused default categories and keep active ones for authenticated user", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId, email: "test@example.com" } },
+        error: null,
+      });
+
+      const mockCategories = [
+        { id: "cat-1", name: "Alimentación", category_type: "expense", is_default: false },
+        { id: "cat-2", name: "Salary", category_type: "income", is_default: true },
+      ];
+
+      // 1. Fetch user categories
+      const mockSelectCategories = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({
+          data: mockCategories,
+          error: null,
+        }),
+      });
+
+      // 2. Count for cat-1 (has 10 tx)
+      const mockCountCat1 = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ count: 10, error: null }),
+      });
+
+      // 3. Count for cat-2 (has 0 tx)
+      const mockCountCat2 = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({ count: 0, error: null }),
+      });
+
+      // 4. Delete cat-2
+      const mockDeleteCat2 = vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          eq: vi.fn().mockResolvedValueOnce({ error: null }),
+        }),
+      });
+
+      mockFrom
+        .mockReturnValueOnce({ select: mockSelectCategories })
+        .mockReturnValueOnce({ select: mockCountCat1 })
+        .mockReturnValueOnce({ select: mockCountCat2 })
+        .mockReturnValueOnce({ delete: mockDeleteCat2 });
+
+      const result = await cleanUnusedDefaultCategories();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.totalDeleted).toBe(1);
+        expect(result.data.totalKept).toBe(1);
+        expect(result.data.deletedCategories[0].name).toBe("Salary");
+        expect(result.data.keptCategories[0].name).toBe("Alimentación");
+      }
+    });
+
+    it("should return category usage counts map for authenticated user", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: validUserId } },
+        error: null,
+      });
+
+      const mockTxs = [
+        { category_id: "cat-1" },
+        { category_id: "cat-1" },
+        { category_id: "cat-2" },
+      ];
+
+      const mockSelectTxs = vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValueOnce({
+          data: mockTxs,
+          error: null,
+        }),
+      });
+
+      mockFrom.mockReturnValueOnce({ select: mockSelectTxs });
+
+      const result = await getCategoryUsageCounts();
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data["cat-1"]).toBe(2);
+        expect(result.data["cat-2"]).toBe(1);
       }
     });
   });

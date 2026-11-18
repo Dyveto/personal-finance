@@ -79,7 +79,7 @@ export function DashboardShell({
       )}
 
       {/* Área principal de contenido */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-[#0B0F19]">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-300">
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">

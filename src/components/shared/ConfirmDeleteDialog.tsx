@@ -30,15 +30,15 @@ export function ConfirmDeleteDialog({
 }: ConfirmDeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(v) => !isDeleting && onOpenChange(v)}>
-      <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
         <DialogHeader className="gap-2">
           <div className="w-10 h-10 rounded-xl bg-[#F43F5E]/15 border border-[#F43F5E]/25 text-[#F43F5E] flex items-center justify-center">
             <AlertTriangle className="w-5 h-5" />
           </div>
-          <DialogTitle className="text-lg font-heading font-bold text-[#F8FAFC]">
+          <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
             {title}
           </DialogTitle>
-          <DialogDescription className="text-xs text-[#94A3B8]">
+          <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -50,7 +50,7 @@ export function ConfirmDeleteDialog({
             size="sm"
             onClick={() => onOpenChange(false)}
             disabled={isDeleting}
-            className="text-xs border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
+            className="text-xs border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-white/[0.05] rounded-xl"
           >
             Cancelar
           </Button>

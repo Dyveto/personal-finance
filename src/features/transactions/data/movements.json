@@ -1,0 +1,1492 @@
+[
+  {
+    "excel_row": 31,
+    "transaction_date": "2026-11-08",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "comida",
+    "account_name": "Efectivo",
+    "description": "sushi",
+    "amount": 44000.0
+  },
+  {
+    "excel_row": 32,
+    "transaction_date": "2026-11-13",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Nequi",
+    "description": "apple",
+    "amount": 21400.0
+  },
+  {
+    "excel_row": 33,
+    "transaction_date": "2026-11-12",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Parking moto en clínica",
+    "amount": 30000.0
+  },
+  {
+    "excel_row": 34,
+    "transaction_date": "2026-11-11",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "comida",
+    "account_name": "Bancolombia",
+    "description": "olimpica",
+    "amount": 22300.0
+  },
+  {
+    "excel_row": 35,
+    "transaction_date": "2026-11-11",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "comida",
+    "account_name": "Bancolombia",
+    "description": "Ara",
+    "amount": 99000.0
+  },
+  {
+    "excel_row": 36,
+    "transaction_date": "2026-11-07",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "ganchos",
+    "amount": 26125.0
+  },
+  {
+    "excel_row": 37,
+    "transaction_date": "2026-11-06",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Comida",
+    "account_name": "Bancolombia",
+    "description": "panaderia",
+    "amount": 36600.0
+  },
+  {
+    "excel_row": 38,
+    "transaction_date": "2026-11-06",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "hogar",
+    "amount": 219722.0
+  },
+  {
+    "excel_row": 39,
+    "transaction_date": "2026-11-05",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Nequi",
+    "description": "Perfume Jaime",
+    "amount": 29200.0
+  },
+  {
+    "excel_row": 40,
+    "transaction_date": "2026-11-05",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Comida",
+    "account_name": "Bancolombia",
+    "description": "pizza",
+    "amount": 60000.0
+  },
+  {
+    "excel_row": 41,
+    "transaction_date": "2026-11-04",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Comida",
+    "account_name": "Nequi",
+    "description": "kfc",
+    "amount": 52700.0
+  },
+  {
+    "excel_row": 42,
+    "transaction_date": "2026-11-02",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Taxis",
+    "amount": 8400.0
+  },
+  {
+    "excel_row": 43,
+    "transaction_date": "2026-10-31",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "bolsas",
+    "amount": 5500.0
+  },
+  {
+    "excel_row": 44,
+    "transaction_date": "2026-10-30",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "ganchos",
+    "amount": 40000.0
+  },
+  {
+    "excel_row": 45,
+    "transaction_date": "2026-10-30",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Spotify",
+    "amount": 10102.0
+  },
+  {
+    "excel_row": 46,
+    "transaction_date": "2026-10-28",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 15836.0
+  },
+  {
+    "excel_row": 47,
+    "transaction_date": "2026-10-27",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "camisa y orejas",
+    "amount": 34000.0
+  },
+  {
+    "excel_row": 48,
+    "transaction_date": "2026-10-25",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Ara",
+    "amount": 28800.0
+  },
+  {
+    "excel_row": 49,
+    "transaction_date": "2026-10-25",
+    "transaction_type": "expense",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 50,
+    "transaction_date": "2026-10-25",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "SOMA",
+    "amount": 190000.0
+  },
+  {
+    "excel_row": 51,
+    "transaction_date": "2026-10-22",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Malteada",
+    "amount": 25500.0
+  },
+  {
+    "excel_row": 52,
+    "transaction_date": "2026-10-21",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Chuzo",
+    "amount": 35000.0
+  },
+  {
+    "excel_row": 53,
+    "transaction_date": "2026-10-21",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 10500.0
+  },
+  {
+    "excel_row": 54,
+    "transaction_date": "2026-10-20",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 119900.0
+  },
+  {
+    "excel_row": 55,
+    "transaction_date": "2026-10-20",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "merienda clinica",
+    "amount": 8500.0
+  },
+  {
+    "excel_row": 56,
+    "transaction_date": "2026-10-18",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Almuerzo",
+    "amount": 24500.0
+  },
+  {
+    "excel_row": 57,
+    "transaction_date": "2026-10-16",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 58,
+    "transaction_date": "2026-10-16",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de Septiembre",
+    "amount": 1750905.0
+  },
+  {
+    "excel_row": 59,
+    "transaction_date": "2026-10-16",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "varios",
+    "amount": 84000.0
+  },
+  {
+    "excel_row": 60,
+    "transaction_date": "2026-10-16",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "malteada",
+    "amount": 9000.0
+  },
+  {
+    "excel_row": 61,
+    "transaction_date": "2026-10-14",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Comida",
+    "amount": 42500.0
+  },
+  {
+    "excel_row": 62,
+    "transaction_date": "2026-10-14",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "merienda clinica",
+    "amount": 8000.0
+  },
+  {
+    "excel_row": 63,
+    "transaction_date": "2026-10-11",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "D1",
+    "amount": 14800.0
+  },
+  {
+    "excel_row": 64,
+    "transaction_date": "2026-10-10",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Berlinas",
+    "amount": 60500.0
+  },
+  {
+    "excel_row": 65,
+    "transaction_date": "2026-10-09",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Taxis",
+    "amount": 18000.0
+  },
+  {
+    "excel_row": 66,
+    "transaction_date": "2026-10-09",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Regalo Lina",
+    "amount": 45000.0
+  },
+  {
+    "excel_row": 67,
+    "transaction_date": "2026-10-08",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 3500.0
+  },
+  {
+    "excel_row": 68,
+    "transaction_date": "2026-10-07",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 8000.0
+  },
+  {
+    "excel_row": 69,
+    "transaction_date": "2026-10-06",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 18988.0
+  },
+  {
+    "excel_row": 70,
+    "transaction_date": "2026-10-05",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 4500.0
+  },
+  {
+    "excel_row": 71,
+    "transaction_date": "2026-10-03",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Comida",
+    "amount": 47500.0
+  },
+  {
+    "excel_row": 72,
+    "transaction_date": "2026-10-03",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Granizado",
+    "amount": 14000.0
+  },
+  {
+    "excel_row": 73,
+    "transaction_date": "2026-10-02",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Parking moto en clínica",
+    "amount": 30000.0
+  },
+  {
+    "excel_row": 74,
+    "transaction_date": "2026-10-01",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 89000.0
+  },
+  {
+    "excel_row": 75,
+    "transaction_date": "2026-11-09",
+    "transaction_type": "expense",
+    "category_name": "Servicio",
+    "raw_category": "Servicio",
+    "account_name": "Bancolombia",
+    "description": "internet",
+    "amount": 107200.0
+  },
+  {
+    "excel_row": 76,
+    "transaction_date": "2026-11-09",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "antibiotico",
+    "amount": 95000.0
+  },
+  {
+    "excel_row": 77,
+    "transaction_date": "2026-11-10",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Dollarcity",
+    "amount": 164000.0
+  },
+  {
+    "excel_row": 78,
+    "transaction_date": "2026-09-29",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Greenfit",
+    "amount": 114300.0
+  },
+  {
+    "excel_row": 79,
+    "transaction_date": "2026-09-25",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Salida tacos",
+    "amount": 55000.0
+  },
+  {
+    "excel_row": 80,
+    "transaction_date": "2026-09-24",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Malteada",
+    "amount": 20400.0
+  },
+  {
+    "excel_row": 81,
+    "transaction_date": "2026-09-21",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Efectivo",
+    "description": "Pastillas",
+    "amount": 18000.0
+  },
+  {
+    "excel_row": 82,
+    "transaction_date": "2026-09-21",
+    "transaction_type": "expense",
+    "category_name": "Otros gastos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "regalo bb",
+    "amount": 222000.0
+  },
+  {
+    "excel_row": 83,
+    "transaction_date": "2026-09-21",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 119900.0
+  },
+  {
+    "excel_row": 84,
+    "transaction_date": "2026-09-19",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "mami Julio",
+    "amount": 700000.0
+  },
+  {
+    "excel_row": 85,
+    "transaction_date": "2026-09-15",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 86,
+    "transaction_date": "2026-09-15",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de Agosto",
+    "amount": 1750905.0
+  },
+  {
+    "excel_row": 87,
+    "transaction_date": "2026-09-11",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Pony",
+    "amount": 4500.0
+  },
+  {
+    "excel_row": 88,
+    "transaction_date": "2026-09-11",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 23000.0
+  },
+  {
+    "excel_row": 89,
+    "transaction_date": "2026-09-10",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Agua",
+    "amount": 4000.0
+  },
+  {
+    "excel_row": 90,
+    "transaction_date": "2026-09-10",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Nequi",
+    "description": "Spotify",
+    "amount": 10100.0
+  },
+  {
+    "excel_row": 91,
+    "transaction_date": "2026-09-08",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Efectivo",
+    "description": "Galleta de soda",
+    "amount": 8000.0
+  },
+  {
+    "excel_row": 92,
+    "transaction_date": "2026-09-08",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Préstamo Andrea",
+    "amount": 130000.0
+  },
+  {
+    "excel_row": 93,
+    "transaction_date": "2026-09-07",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Almuerzo",
+    "amount": 25000.0
+  },
+  {
+    "excel_row": 94,
+    "transaction_date": "2026-09-06",
+    "transaction_type": "expense",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 95,
+    "transaction_date": "2026-09-06",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Danny's",
+    "amount": 79000.0
+  },
+  {
+    "excel_row": 96,
+    "transaction_date": "2026-09-06",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "Sushi",
+    "amount": 40000.0
+  },
+  {
+    "excel_row": 97,
+    "transaction_date": "2026-09-05",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "taxis",
+    "amount": 35800.0
+  },
+  {
+    "excel_row": 98,
+    "transaction_date": "2026-09-04",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Parking moto en clínica",
+    "amount": 30000.0
+  },
+  {
+    "excel_row": 99,
+    "transaction_date": "2026-09-02",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Dollarcity",
+    "amount": 48000.0
+  },
+  {
+    "excel_row": 100,
+    "transaction_date": "2026-08-30",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Spotify",
+    "amount": 18832.0
+  },
+  {
+    "excel_row": 101,
+    "transaction_date": "2026-08-29",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Dollarcity",
+    "amount": 45000.0
+  },
+  {
+    "excel_row": 102,
+    "transaction_date": "2026-08-29",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "taxis",
+    "amount": 35000.0
+  },
+  {
+    "excel_row": 103,
+    "transaction_date": "2026-08-29",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Frappe",
+    "amount": 10000.0
+  },
+  {
+    "excel_row": 104,
+    "transaction_date": "2026-08-29",
+    "transaction_type": "expense",
+    "category_name": "Entretenimiento",
+    "raw_category": "Entretenimiento",
+    "account_name": "Efectivo",
+    "description": "Patinetas malecón",
+    "amount": 50000.0
+  },
+  {
+    "excel_row": 105,
+    "transaction_date": "2026-08-26",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Dollarcity",
+    "amount": 55000.0
+  },
+  {
+    "excel_row": 106,
+    "transaction_date": "2026-08-26",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "Retoque bordes dientes",
+    "amount": 250000.0
+  },
+  {
+    "excel_row": 107,
+    "transaction_date": "2026-08-24",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "Pastillas",
+    "amount": 21040.0
+  },
+  {
+    "excel_row": 108,
+    "transaction_date": "2026-08-23",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Ara",
+    "amount": 60500.0
+  },
+  {
+    "excel_row": 109,
+    "transaction_date": "2026-08-20",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 119900.0
+  },
+  {
+    "excel_row": 110,
+    "transaction_date": "2026-08-19",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Sushi",
+    "amount": 30600.0
+  },
+  {
+    "excel_row": 111,
+    "transaction_date": "2026-08-18",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 112,
+    "transaction_date": "2026-08-18",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Comida",
+    "account_name": "Nequi",
+    "description": "Arroz chino",
+    "amount": 11300.0
+  },
+  {
+    "excel_row": 113,
+    "transaction_date": "2026-08-17",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Ara",
+    "amount": 29770.0
+  },
+  {
+    "excel_row": 114,
+    "transaction_date": "2026-08-15",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "D1",
+    "amount": 24140.0
+  },
+  {
+    "excel_row": 115,
+    "transaction_date": "2026-08-14",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 18700.0
+  },
+  {
+    "excel_row": 116,
+    "transaction_date": "2026-08-09",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 2500.0
+  },
+  {
+    "excel_row": 117,
+    "transaction_date": "2026-08-07",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Greenfit",
+    "amount": 144200.0
+  },
+  {
+    "excel_row": 118,
+    "transaction_date": "2026-08-07",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Maicito Dannys",
+    "amount": 32600.0
+  },
+  {
+    "excel_row": 119,
+    "transaction_date": "2026-08-06",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago  de Julio",
+    "amount": 1750905.0
+  },
+  {
+    "excel_row": 120,
+    "transaction_date": "2026-08-05",
+    "transaction_type": "expense",
+    "category_name": "Otros gastos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Préstamo Andrea",
+    "amount": 100000.0
+  },
+  {
+    "excel_row": 121,
+    "transaction_date": "2026-08-05",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 122,
+    "transaction_date": "2026-08-03",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Productos personales (Rinse, cobija, etc)",
+    "amount": 73000.0
+  },
+  {
+    "excel_row": 123,
+    "transaction_date": "2026-08-03",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Parqueadero",
+    "amount": 1000.0
+  },
+  {
+    "excel_row": 124,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Taxis",
+    "amount": 26000.0
+  },
+  {
+    "excel_row": 125,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Popsy",
+    "amount": 19900.0
+  },
+  {
+    "excel_row": 126,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Spotify",
+    "amount": 18500.0
+  },
+  {
+    "excel_row": 127,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Wetsunday",
+    "amount": 27000.0
+  },
+  {
+    "excel_row": 128,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Cine crispetas",
+    "amount": 52500.0
+  },
+  {
+    "excel_row": 129,
+    "transaction_date": "2026-07-30",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Comida cena con Dylan",
+    "amount": 59000.0
+  },
+  {
+    "excel_row": 130,
+    "transaction_date": "2026-07-27",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Efectivo",
+    "description": "Pastillas",
+    "amount": 28000.0
+  },
+  {
+    "excel_row": 131,
+    "transaction_date": "2026-07-27",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Dylan Bolos",
+    "amount": 605000.0
+  },
+  {
+    "excel_row": 132,
+    "transaction_date": "2026-07-27",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Panamericana (powerbank, escarapela)",
+    "amount": 178000.0
+  },
+  {
+    "excel_row": 133,
+    "transaction_date": "2026-07-25",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "snacks D1",
+    "amount": 28000.0
+  },
+  {
+    "excel_row": 134,
+    "transaction_date": "2026-07-25",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 6500.0
+  },
+  {
+    "excel_row": 135,
+    "transaction_date": "2026-07-23",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 2500.0
+  },
+  {
+    "excel_row": 136,
+    "transaction_date": "2026-07-21",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 119900.0
+  },
+  {
+    "excel_row": 137,
+    "transaction_date": "2026-07-21",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 17505.0
+  },
+  {
+    "excel_row": 138,
+    "transaction_date": "2026-07-20",
+    "transaction_type": "expense",
+    "category_name": "Servicio",
+    "raw_category": "Servicio",
+    "account_name": "Nequi",
+    "description": "Claro datos celular",
+    "amount": 50000.0
+  },
+  {
+    "excel_row": 139,
+    "transaction_date": "2026-07-16",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 2500.0
+  },
+  {
+    "excel_row": 140,
+    "transaction_date": "2026-07-14",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 4000.0
+  },
+  {
+    "excel_row": 141,
+    "transaction_date": "2026-07-11",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Efectivo",
+    "description": "Geovany",
+    "amount": 600000.0
+  },
+  {
+    "excel_row": 142,
+    "transaction_date": "2026-07-10",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 2500.0
+  },
+  {
+    "excel_row": 143,
+    "transaction_date": "2026-07-06",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Nequi",
+    "description": "TEMU",
+    "amount": 180423.0
+  },
+  {
+    "excel_row": 144,
+    "transaction_date": "2026-07-06",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "merienda clinica",
+    "amount": 4000.0
+  },
+  {
+    "excel_row": 145,
+    "transaction_date": "2026-07-05",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Nequi",
+    "description": "TEMU",
+    "amount": 62396.0
+  },
+  {
+    "excel_row": 146,
+    "transaction_date": "2026-07-04",
+    "transaction_type": "expense",
+    "category_name": "Entretenimiento",
+    "raw_category": "Entretenimiento",
+    "account_name": "Nequi",
+    "description": "GTA VI",
+    "amount": 329220.0
+  },
+  {
+    "excel_row": 147,
+    "transaction_date": "2026-07-04",
+    "transaction_type": "income",
+    "category_name": "Entretenimiento",
+    "raw_category": "Entretenimiento",
+    "account_name": "Nequi",
+    "description": "Parte de Dylan GTAVI",
+    "amount": 160000.0
+  },
+  {
+    "excel_row": 148,
+    "transaction_date": "2026-07-03",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Parking moto en clínica",
+    "amount": 30000.0
+  },
+  {
+    "excel_row": 149,
+    "transaction_date": "2026-07-03",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "planilla",
+    "amount": 541800.0
+  },
+  {
+    "excel_row": 150,
+    "transaction_date": "2026-07-03",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "lo de planilla que me dio mamá",
+    "amount": 545000.0
+  },
+  {
+    "excel_row": 151,
+    "transaction_date": "2026-07-03",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "bigbites",
+    "amount": 149000.0
+  },
+  {
+    "excel_row": 152,
+    "transaction_date": "2026-07-03",
+    "transaction_type": "income",
+    "category_name": "Internado",
+    "raw_category": "Internado",
+    "account_name": "Bancolombia",
+    "description": "Pago de Junio",
+    "amount": 1750905.0
+  },
+  {
+    "excel_row": 153,
+    "transaction_date": "2026-06-30",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Spotify",
+    "amount": 10089.0
+  },
+  {
+    "excel_row": 154,
+    "transaction_date": "2026-06-28",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Dollarcity",
+    "amount": 53500.0
+  },
+  {
+    "excel_row": 155,
+    "transaction_date": "2026-06-27",
+    "transaction_type": "expense",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Bancolombia",
+    "description": "Cámara",
+    "amount": 500000.0
+  },
+  {
+    "excel_row": 156,
+    "transaction_date": "2026-06-24",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina moto",
+    "amount": 16373.0
+  },
+  {
+    "excel_row": 157,
+    "transaction_date": "2026-06-24",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "Pastillas",
+    "amount": 30465.0
+  },
+  {
+    "excel_row": 158,
+    "transaction_date": "2026-06-24",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Nequi",
+    "description": "Pago de prestamo MamiDubys",
+    "amount": 80000.0
+  },
+  {
+    "excel_row": 159,
+    "transaction_date": "2026-06-22",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 109900.0
+  },
+  {
+    "excel_row": 160,
+    "transaction_date": "2026-06-19",
+    "transaction_type": "expense",
+    "category_name": "Salud",
+    "raw_category": "Salud",
+    "account_name": "Bancolombia",
+    "description": "Planilla MAYO",
+    "amount": 90400.0
+  },
+  {
+    "excel_row": 161,
+    "transaction_date": "2026-06-19",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Mensual JUNIO",
+    "amount": 620000.0
+  },
+  {
+    "excel_row": 162,
+    "transaction_date": "2026-06-11",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "boliqueso hosp",
+    "amount": 2500.0
+  },
+  {
+    "excel_row": 163,
+    "transaction_date": "2026-06-08",
+    "transaction_type": "income",
+    "category_name": "Compras",
+    "raw_category": "Compras",
+    "account_name": "Nequi",
+    "description": "regalo bb",
+    "amount": 80000.0
+  },
+  {
+    "excel_row": 164,
+    "transaction_date": "2026-06-04",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Lo que me debía mi mamá de hace rato",
+    "amount": 635000.0
+  },
+  {
+    "excel_row": 165,
+    "transaction_date": "2026-06-03",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Nequi",
+    "description": "galletica y refrigerio hospi",
+    "amount": 12500.0
+  },
+  {
+    "excel_row": 166,
+    "transaction_date": "2026-06-03",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina y aire de llantas",
+    "amount": 17683.0
+  },
+  {
+    "excel_row": 167,
+    "transaction_date": "2026-06-01",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Parking moto en clínica",
+    "amount": 30000.0
+  },
+  {
+    "excel_row": 168,
+    "transaction_date": "2026-06-01",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Efectivo",
+    "description": "Puerta puerta Sm-Bq",
+    "amount": 70000.0
+  },
+  {
+    "excel_row": 169,
+    "transaction_date": "2026-06-01",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Bancolombia",
+    "description": "Dylan Bolos",
+    "amount": 50000.0
+  },
+  {
+    "excel_row": 170,
+    "transaction_date": "2026-05-31",
+    "transaction_type": "income",
+    "category_name": "Otros ingresos",
+    "raw_category": "",
+    "account_name": "Efectivo",
+    "description": "Me dio Geovany para Productos personales",
+    "amount": 500000.0
+  },
+  {
+    "excel_row": 171,
+    "transaction_date": "2026-05-31",
+    "transaction_type": "expense",
+    "category_name": "Entretenimiento",
+    "raw_category": "Entretenimiento",
+    "account_name": "Nequi",
+    "description": "Bolos",
+    "amount": 50000.0
+  },
+  {
+    "excel_row": 172,
+    "transaction_date": "2026-05-30",
+    "transaction_type": "expense",
+    "category_name": "Subscripciones",
+    "raw_category": "Subscripciones",
+    "account_name": "Bancolombia",
+    "description": "Spotify",
+    "amount": 10101.0
+  },
+  {
+    "excel_row": 173,
+    "transaction_date": "2026-05-28",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Helados McDonald",
+    "amount": 5800.0
+  },
+  {
+    "excel_row": 174,
+    "transaction_date": "2026-05-28",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "Gloriosa Bq",
+    "amount": 99000.0
+  },
+  {
+    "excel_row": 175,
+    "transaction_date": "2026-05-28",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Bancolombia",
+    "description": "Gasolina y peajes Bq inducción internado",
+    "amount": 170000.0
+  },
+  {
+    "excel_row": 176,
+    "transaction_date": "2026-05-27",
+    "transaction_type": "expense",
+    "category_name": "Educación",
+    "raw_category": "Educación",
+    "account_name": "Bancolombia",
+    "description": "Uniforme para internado",
+    "amount": 170000.0
+  },
+  {
+    "excel_row": 177,
+    "transaction_date": "2026-05-27",
+    "transaction_type": "expense",
+    "category_name": "Comida",
+    "raw_category": "Alimentación",
+    "account_name": "Bancolombia",
+    "description": "D1",
+    "amount": 14500.0
+  },
+  {
+    "excel_row": 178,
+    "transaction_date": "2026-05-26",
+    "transaction_type": "expense",
+    "category_name": "Transporte",
+    "raw_category": "Transporte",
+    "account_name": "Nequi",
+    "description": "Ida a Nueva eps",
+    "amount": 10000.0
+  },
+  {
+    "excel_row": 179,
+    "transaction_date": "2026-05-21",
+    "transaction_type": "expense",
+    "category_name": "Gym",
+    "raw_category": "Gym",
+    "account_name": "Bancolombia",
+    "description": "Smartfit",
+    "amount": 109900.0
+  }
+]

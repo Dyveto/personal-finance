@@ -149,8 +149,11 @@ Responsibilities:
 - [x] Implement Server Actions for Accounts, Transactions & Auth (account-actions.ts, transaction-actions.ts, auth-actions.ts).
 - [x] Implement CRUD operations with user isolation.
 - [x] Implement Category CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`, `listCategories`) with Zod schemas and user session enforcement.
+- [x] Implement Category Deletion Integrity Check ("Integrity Check") in `deleteCategory`: validates strictly in `public.transactions` (WHERE category_id = categoryId), rejecting with controlled error if transactions exist, and only allowing deletion when associated transaction count is exactly 0.
+- [x] Implement `cleanUnusedDefaultCategories` Server Action and utility CLI (`scripts/cleanup-unused-categories.ts`) to clean default categories with 0 transactions, executed successfully for `calderongoenaga2004@gmail.com` (11 unused deleted, 15 active preserved).
 - [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
 - [x] Implement Dashboard layout persistence and user preferences Server Actions (`getDashboardLayout`, `saveDashboardLayout`, `resetDashboardLayout`) with Zod schemas and user session enforcement.
+- [x] Implement Excel 149 movements migration Server Action (`migrateExcelTransactions`, `getExcelMigrationStatus`) with auto account creation (`Efectivo`, `Nequi`, `Bancolombia`), category normalization (`Comida`, `Otros gastos`, `Otros ingresos`), idempotent deduplication key, and automatic balance synchronization.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
@@ -180,16 +183,23 @@ Files created:
 - src/lib/validations/auth.ts
 - src/features/accounts/actions/account-actions.ts
 - src/features/transactions/actions/transaction-actions.ts
+- src/features/transactions/actions/migration-actions.ts
+- src/features/transactions/data/excel-movements.ts
+- src/features/transactions/data/movements.json
 - src/features/categories/actions/category-actions.ts
 - src/features/credit-cards/actions/statement-actions.ts
 - src/features/dashboard/actions/dashboard-actions.ts
 - src/features/auth/actions/auth-actions.ts
+- src/lib/supabase/admin.ts
+- scripts/execute-migration.ts
+- scripts/cleanup-unused-categories.ts
 - src/app/(auth)/layout.tsx
 - src/app/(auth)/login/page.tsx
 - src/app/(auth)/signup/page.tsx
 - tests/unit/finance.test.ts
 - tests/unit/validations.test.ts
 - tests/unit/actions.test.ts
+- tests/unit/migration-actions.test.ts
 - tests/unit/auth.test.ts
 
 Public contracts:
@@ -218,11 +228,15 @@ Public contracts:
   - `saveDashboardLayout(layoutConfig: unknown): Promise<ActionResult<DashboardLayoutConfig>>`
   - `resetDashboardLayout(): Promise<ActionResult<DashboardLayoutConfig>>`
   - `DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig`
+- `migration-actions.ts`:
+  - `migrateExcelTransactions(targetEmail?: string, customMovements?: ExcelMovementRecord[]): Promise<ActionResult<MigrationSummary>>`
+  - `getExcelMigrationStatus(targetEmail?: string): Promise<ActionResult<{ userId: string; totalExpected: number; totalImported: number; accountsPresent: string[]; isFullyMigrated: boolean }>>`
 - `category-actions.ts`:
   - `listCategories(type?: "income" | "expense"): Promise<ActionResult<CategoryRow[]>>`
   - `createCategory(rawInput: unknown): Promise<ActionResult<CategoryRow>>`
   - `updateCategory(categoryId: string, rawInput: unknown): Promise<ActionResult<CategoryRow>>`
-  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>`
+  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>` (seguro de integridad referencial: rechaza si tiene transacciones con error controlado; solo borra con count = 0)
+  - `cleanUnusedDefaultCategories(targetEmail?: string): Promise<ActionResult<CleanupCategoriesSummary>>` (limpieza idempotente de categorías predeterminadas con 0 transacciones)
 - `account-actions.ts`:
   - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
   - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`
@@ -255,7 +269,7 @@ Public contracts:
   - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-- `npm run test:run` -> PASS (113 unit tests passing, 100%)
+- `npm run test:run` -> PASS (130 unit tests passing, 100%)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
 - `npm run build` -> PASS (Optimized production build with middleware, dynamic dashboard actions and auth routes)
@@ -321,6 +335,19 @@ Responsibilities:
   - `WelcomeHubManagerModal`: modal dialog for bulk visibility toggle, reordering, and reset to defaults.
   - Modular widget components (`DashboardKpiWidget`, `DashboardActiveAccounts`, `DashboardRecentTransactions`, `WidgetWrapper`).
   - Persistence via `saveDashboardLayout()` Server Action with transition state, error handling, and visual feedback notification banner.
+- [x] Corrección integral de sincronización de Modo Día / Modo Noche y soporte de paleta visual clara:
+  - Eliminación de clase de fondo oscuro estática (`bg-[#0B0F19]`) en `DashboardShell.tsx`, permitiendo renderizado adaptativo `bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC]` con transición suave.
+  - Sincronización multi-instancia de `ThemeToggle.tsx` (sidebar de escritorio y drawer móvil) mediante eventos `theme-change` y `storage`.
+  - Módulo utilitario desacoplado `src/lib/theme.ts` para persistencia en `localStorage` y manipulación limpia de clases `dark`/`light` en `document.documentElement` y `document.body`.
+  - Adaptación de componentes `WelcomeHubBanner.tsx` e `InstallmentProjectionsCard.tsx` para modo claro/oscuro (bordes, gradientes y tipografías legibles).
+  - Cobertura de pruebas unitarias en `tests/unit/theme.test.ts` (8 pruebas unitarias añadidas, 100% pasadas).
+- [x] Actualización de la interfaz del panel de administración de categorías para reflejar el seguro de borrado y permitir una limpieza limpia:
+  - Indicadores visuales en tiempo real para categorías protegidas (`ShieldCheck` con conteo de movimientos) vs libres para borrar (`CheckCircle2` en verde esmeralda).
+  - Botón de papelera inteligente con icono de candado (`Lock`) para categorías protegidas, que al pulsarse abre un diálogo explicativo (`Dialog` de Categoría Protegida) informando que contiene movimientos activos y ofreciendo la opción de "Editar y Archivar".
+  - Manejo de excepciones de la Server Action: captura de rechazo del backend (`res.error`) con alerta en banner superior y modal emergente de error de seguridad.
+  - Nuevas pestañas de filtrado: "Con Movimientos" (categorías protegidas) y "Libres para Borrar" (categorías con 0 movimientos para limpieza ágil).
+  - Actualización de `ConfirmDeleteDialog.tsx` con soporte completo de tema claro y oscuro.
+  - Adaptación de la página servidor `src/app/(dashboard)/categories/page.tsx` para precargar en paralelo `listCategories()` y `getCategoryUsageCounts()`.
 
 Expected deliverables:
 
@@ -356,23 +383,27 @@ Files created/modified:
 - src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
 - src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
 - src/components/ui/switch.tsx
-- src/components/layout/ThemeToggle.tsx
+- src/components/layout/ThemeToggle.tsx (Sincronización reactiva entre instancias y persistencia en localStorage)
 - src/components/layout/Header.tsx
-- src/components/layout/DashboardShell.tsx
+- src/components/layout/DashboardShell.tsx (Corrección de clase background estática)
+- src/features/dashboard/components/WelcomeHubBanner.tsx (Gradientes claros/oscuros adaptativos)
+- src/features/dashboard/components/InstallmentProjectionsCard.tsx (Tarjetas y desgloses adaptativos para tema claro y oscuro)
+- src/lib/theme.ts (Módulo utilitario de sincronización y persistencia de temas)
+- tests/unit/theme.test.ts (Pruebas unitarias de manipulación de DOM, storage y eventos de tema)
 - src/app/layout.tsx
 - src/app/globals.css
 
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (122/122 unit tests passing, 100%)
+- `npm run test:run` -> PASS (141/141 unit tests passing across 8 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:
 - `getDashboardLayout()`, `saveDashboardLayout()`, `resetDashboardLayout()` de `@/features/dashboard/actions/dashboard-actions`
 - `createAccount()`, `updateAccount()`, `listAccounts()` de `@/features/accounts/actions/account-actions`
 - `createTransaction()`, `createInstallmentPurchase()`, `listTransactions()` de `@/features/transactions/actions/transaction-actions`
-- `listCategories()` de `@/features/categories/actions/category-actions`
+- `listCategories()`, `getCategoryUsageCounts()`, `deleteCategory()` de `@/features/categories/actions/category-actions`
 - `splitInstallments()`, `formatMoneyCOP()`, `addMoney()`, `subtractMoney()`, `roundMoney()` de `@/lib/finance/money`
 - `projectTransactionInstallments()` de `@/lib/finance/projections`
 

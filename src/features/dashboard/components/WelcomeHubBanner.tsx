@@ -35,7 +35,7 @@ export function WelcomeHubBanner({
       )}
 
       {/* Banner Principal PS5 Welcome Hub */}
-      <div className="surface-card p-5 rounded-2xl border border-[#8B5CF6]/40 bg-gradient-to-r from-slate-900/95 via-[#131B2E]/95 to-slate-900/95 dark:from-[#0E1526]/95 dark:via-[#131B2E]/95 dark:to-[#0E1526]/95 shadow-[0_0_30px_rgba(139,92,246,0.18)]">
+      <div className="surface-card p-5 rounded-2xl border border-[#8B5CF6]/40 bg-gradient-to-r from-purple-50/90 via-white to-purple-50/90 dark:from-[#0E1526]/95 dark:via-[#131B2E]/95 dark:to-[#0E1526]/95 shadow-[0_0_30px_rgba(139,92,246,0.18)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.4)] flex-shrink-0">
