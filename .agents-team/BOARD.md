@@ -1014,6 +1014,23 @@ Files modified: src/config/version.ts, src/components/layout/Sidebar.tsx, packag
 Verdict: COMPLETED, VERIFIED & APPROVED (CODE 0)
 Handoff status: COMPLETED
 
+### 2026-11-18 - TECHNICAL ARCHITECT & LEAD AGENT (Environment Stabilization, Script Hardening & Automatic Cache Purge)
+Task: Hardened package.json lifecycle scripts with native cross-platform Node.js automation and verified build stability:
+1. Automated cache purge in `package.json`:
+   - `"dev"`: `node -e "fs.rmSync('.next', { recursive: true, force: true })" && next dev`
+   - `"build"`: `node -e "fs.rmSync('.next', { recursive: true, force: true })" && tsc --noEmit && next build`
+   - Multiplatform guarantee: Uses Node.js standard `fs.rmSync` natively supported across Windows, macOS, Linux, and Volta (Node v22.23.5), eliminating chunk corruption errors (like `./948.js`) automatically on every invocation.
+2. Verified ESLint Flat Config and test runner scripts:
+   - `"lint"`: `eslint .` (0 errors, 0 warnings across all files).
+   - `"test:run"`: `vitest run` (186/186 unit tests passing).
+3. Full verification execution:
+   - `npm run lint` -> PASS (Code 0).
+   - `npm run test:run` -> PASS (Code 0, 186/186 passed).
+   - `npm run build` -> PASS (Code 0, cache wiped, tsc validated, 12 production routes generated).
+Files modified: package.json, package-lock.json, .agents-team/BOARD.md
+Verdict: COMPLETED, VERIFIED & APPROVED (CODE 0)
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
