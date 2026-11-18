@@ -149,6 +149,8 @@ Responsibilities:
 - [x] Implement Server Actions for Accounts, Transactions & Auth (account-actions.ts, transaction-actions.ts, auth-actions.ts).
 - [x] Implement CRUD operations with user isolation.
 - [x] Implement Category CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`, `listCategories`) with Zod schemas and user session enforcement.
+- [x] Implement Category Deletion Integrity Check ("Integrity Check") in `deleteCategory`: validates strictly in `public.transactions` (WHERE category_id = categoryId), rejecting with controlled error if transactions exist, and only allowing deletion when associated transaction count is exactly 0.
+- [x] Implement `cleanUnusedDefaultCategories` Server Action and utility CLI (`scripts/cleanup-unused-categories.ts`) to clean default categories with 0 transactions, executed successfully for `calderongoenaga2004@gmail.com` (11 unused deleted, 15 active preserved).
 - [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
 - [x] Implement Dashboard layout persistence and user preferences Server Actions (`getDashboardLayout`, `saveDashboardLayout`, `resetDashboardLayout`) with Zod schemas and user session enforcement.
 - [x] Implement Excel 149 movements migration Server Action (`migrateExcelTransactions`, `getExcelMigrationStatus`) with auto account creation (`Efectivo`, `Nequi`, `Bancolombia`), category normalization (`Comida`, `Otros gastos`, `Otros ingresos`), idempotent deduplication key, and automatic balance synchronization.
@@ -190,6 +192,7 @@ Files created:
 - src/features/auth/actions/auth-actions.ts
 - src/lib/supabase/admin.ts
 - scripts/execute-migration.ts
+- scripts/cleanup-unused-categories.ts
 - src/app/(auth)/layout.tsx
 - src/app/(auth)/login/page.tsx
 - src/app/(auth)/signup/page.tsx
@@ -232,7 +235,8 @@ Public contracts:
   - `listCategories(type?: "income" | "expense"): Promise<ActionResult<CategoryRow[]>>`
   - `createCategory(rawInput: unknown): Promise<ActionResult<CategoryRow>>`
   - `updateCategory(categoryId: string, rawInput: unknown): Promise<ActionResult<CategoryRow>>`
-  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>`
+  - `deleteCategory(categoryId: string, options?: { forceArchive?: boolean }): Promise<ActionResult<{ deleted: boolean; archived?: boolean }>>` (seguro de integridad referencial: rechaza si tiene transacciones con error controlado; solo borra con count = 0)
+  - `cleanUnusedDefaultCategories(targetEmail?: string): Promise<ActionResult<CleanupCategoriesSummary>>` (limpieza idempotente de categorías predeterminadas con 0 transacciones)
 - `account-actions.ts`:
   - `listAccounts(): Promise<ActionResult<AccountRow[]>>`
   - `getAccountById(accountId: string): Promise<ActionResult<AccountRow>>`

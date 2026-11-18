@@ -218,35 +218,24 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
     }
   };
 
-  // Confirmar eliminación o archivo
+  // Confirmar eliminación
   const handleConfirmDelete = async () => {
     if (!deletingCategory) return;
     try {
       setIsDeleting(true);
-      const res = await deleteCategory(deletingCategory.id, { forceArchive: true });
+      const res = await deleteCategory(deletingCategory.id);
 
       if (!res.success) {
         setFeedback({ type: "error", message: res.error });
+        setDeletingCategory(null);
         return;
       }
 
-      if (res.data.archived) {
-        setCategories((prev) =>
-          prev.map((c) =>
-            c.id === deletingCategory.id ? { ...c, is_active: false } : c
-          )
-        );
-        setFeedback({
-          type: "success",
-          message: `La categoría '${deletingCategory.name}' contiene transacciones y ha sido archivada para preservar el historial contable.`,
-        });
-      } else {
-        setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id));
-        setFeedback({
-          type: "success",
-          message: `Categoría '${deletingCategory.name}' eliminada definitivamente.`,
-        });
-      }
+      setCategories((prev) => prev.filter((c) => c.id !== deletingCategory.id));
+      setFeedback({
+        type: "success",
+        message: `Categoría '${deletingCategory.name}' eliminada definitivamente.`,
+      });
 
       setDeletingCategory(null);
       router.refresh();
@@ -736,12 +725,12 @@ export function CategoriesClientView({ initialCategories }: CategoriesClientView
         </DialogContent>
       </Dialog>
 
-      {/* Diálogo de Confirmación de Eliminación / Archivo */}
+      {/* Diálogo de Confirmación de Eliminación */}
       <ConfirmDeleteDialog
         open={Boolean(deletingCategory)}
         onOpenChange={(open) => !open && setDeletingCategory(null)}
-        title="¿Eliminar o archivar categoría?"
-        description={`¿Estás seguro de eliminar "${deletingCategory?.name}"? Si ya posee transacciones vinculadas, se archivará automáticamente para preservar la integridad de tu historial contable.`}
+        title="¿Eliminar categoría definitivamente?"
+        description={`¿Estás seguro de que deseas eliminar permanentemente la categoría "${deletingCategory?.name}"? Esta acción solo es posible si no tiene transacciones asociadas.`}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
       />

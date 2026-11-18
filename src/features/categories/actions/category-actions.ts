@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database.types";
 import type { ActionResult } from "@/types/actions";
 import {
@@ -327,7 +328,12 @@ export async function updateCategory(
 }
 
 /**
- * Elimina una categoría o la archiva si tiene transacciones registradas.
+ * Elimina una categoría asegurando la integridad referencial ("Integrity Check").
+ * Valida estrictamente antes de proceder si existen registros en la tabla public.transactions
+ * que utilicen ese category_id (WHERE category_id = categoryId).
+ * Si la categoría tiene transacciones asociadas, retorna un error controlado indicando:
+ * 'No se puede eliminar esta categoría porque tiene transacciones asociadas. Reasigna o elimina las transacciones primero.'
+ * Solo permite el borrado si el conteo de transacciones asociadas es exactamente 0.
  */
 export async function deleteCategory(
   categoryId: string,
@@ -350,7 +356,7 @@ export async function deleteCategory(
       return { success: false, error: "ID de categoría inválido" };
     }
 
-    // Verificar existencia y pertenencia
+    // Verificar existencia y pertenencia de la categoría al usuario
     const { data: existing, error: fetchError } = await supabase
       .from("categories")
       .select("id, name")
@@ -362,18 +368,21 @@ export async function deleteCategory(
       return { success: false, error: "Categoría no encontrada o acceso denegado" };
     }
 
-    // Verificar si existen transacciones asociadas
+    // Seguro de Eliminación de Categorías: validar en public.transactions WHERE category_id = categoryId
     const { count, error: txCountError } = await supabase
       .from("transactions")
       .select("id", { count: "exact", head: true })
-      .eq("category_id", categoryId)
-      .eq("user_id", user.id);
+      .eq("category_id", categoryId);
 
     if (txCountError) {
-      return { success: false, error: `Error comprobando transacciones de la categoría: ${txCountError.message}` };
+      return {
+        success: false,
+        error: `Error comprobando transacciones de la categoría: ${txCountError.message}`,
+      };
     }
 
-    if (count && count > 0) {
+    // Si tiene transacciones asociadas, bloquear la eliminación con error controlado
+    if (count !== null && count > 0) {
       if (options?.forceArchive) {
         const { error: archiveError } = await supabase
           .from("categories")
@@ -385,18 +394,23 @@ export async function deleteCategory(
           return { success: false, error: `Error al archivar la categoría: ${archiveError.message}` };
         }
 
-        revalidatePath("/transactions");
-        revalidatePath("/");
+        try {
+          revalidatePath("/categories");
+          revalidatePath("/transactions");
+          revalidatePath("/");
+        } catch {}
+
         return { success: true, data: { deleted: false, archived: true } };
       }
 
       return {
         success: false,
-        error: `No es posible eliminar la categoría '${existing.name}' porque contiene ${count} transacción(es) registrada(s). Puedes archivarla en su lugar.`,
+        error:
+          "No se puede eliminar esta categoría porque tiene transacciones asociadas. Reasigna o elimina las transacciones primero.",
       };
     }
 
-    // Si no tiene transacciones, se elimina de forma definitiva
+    // Solo permite el borrado si el conteo de transacciones asociadas es exactamente 0
     const { error: deleteError } = await supabase
       .from("categories")
       .delete()
@@ -407,12 +421,219 @@ export async function deleteCategory(
       return { success: false, error: `Error al eliminar la categoría: ${deleteError.message}` };
     }
 
-    revalidatePath("/transactions");
-    revalidatePath("/");
+    try {
+      revalidatePath("/categories");
+      revalidatePath("/transactions");
+      revalidatePath("/");
+    } catch {}
 
     return { success: true, data: { deleted: true } };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Error desconocido al eliminar la categoría";
+    return { success: false, error: message };
+  }
+}
+
+export interface CleanupCategoriesSummary {
+  userEmail: string;
+  userId: string;
+  deletedCategories: {
+    id: string;
+    name: string;
+    category_type: string;
+    is_default: boolean;
+  }[];
+  keptCategories: {
+    id: string;
+    name: string;
+    category_type: string;
+    transactionCount: number;
+    is_default: boolean;
+  }[];
+  totalDeleted: number;
+  totalKept: number;
+}
+
+/**
+ * Identifica y elimina las categorías predeterminadas que un usuario no esté utilizando
+ * (conteo de transacciones = 0), preservando estrictamente las que realmente usa en su día a día.
+ */
+export async function cleanUnusedDefaultCategories(
+  targetEmail?: string
+): Promise<ActionResult<CleanupCategoriesSummary>> {
+  try {
+    let client: ReturnType<typeof createClient> | ReturnType<typeof createAdminClient>;
+    let targetUserId: string;
+    let effectiveEmail: string;
+
+    if (targetEmail) {
+      const admin = createAdminClient();
+      client = admin;
+      effectiveEmail = targetEmail.trim().toLowerCase();
+
+      const { data: usersData, error: userListError } = await admin.auth.admin.listUsers();
+      if (userListError || !usersData?.users) {
+        return {
+          success: false,
+          error: `Error al listar usuarios administrativos: ${userListError?.message || "Sin datos"}`,
+        };
+      }
+
+      const foundUser = usersData.users.find(
+        (u) => u.email?.toLowerCase().trim() === effectiveEmail
+      );
+
+      if (!foundUser) {
+        return {
+          success: false,
+          error: `Usuario no encontrado para el correo: ${targetEmail}`,
+        };
+      }
+
+      targetUserId = foundUser.id;
+    } else {
+      const supabase = createClient();
+      client = supabase;
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        return { success: false, error: "Unauthorized: User is not authenticated" };
+      }
+
+      targetUserId = user.id;
+      effectiveEmail = user.email || "Usuario autenticado";
+    }
+
+    // Obtener todas las categorías del usuario objetivo
+    const { data: categories, error: catFetchError } = await client
+      .from("categories")
+      .select("*")
+      .eq("user_id", targetUserId);
+
+    if (catFetchError) {
+      return {
+        success: false,
+        error: `Error al consultar las categorías del usuario: ${catFetchError.message}`,
+      };
+    }
+
+    if (!categories || categories.length === 0) {
+      return {
+        success: true,
+        data: {
+          userEmail: effectiveEmail,
+          userId: targetUserId,
+          deletedCategories: [],
+          keptCategories: [],
+          totalDeleted: 0,
+          totalKept: 0,
+        },
+      };
+    }
+
+    const defaultNamesSet = new Set([
+      "food",
+      "transport",
+      "housing",
+      "health",
+      "entertainment",
+      "shopping",
+      "other expenses",
+      "other income",
+      "salary",
+      "freelance",
+      "investments",
+      "alimentación",
+      "transporte",
+      "vivienda",
+      "salud",
+      "entretenimiento",
+      "compras",
+      "educación",
+      "otros gastos",
+      "otros ingresos",
+      "salario",
+      "inversiones",
+    ]);
+
+    const deletedCategories: CleanupCategoriesSummary["deletedCategories"] = [];
+    const keptCategories: CleanupCategoriesSummary["keptCategories"] = [];
+
+    for (const cat of categories) {
+      // Conteo exacto de transacciones asociadas
+      const { count, error: txError } = await client
+        .from("transactions")
+        .select("id", { count: "exact", head: true })
+        .eq("category_id", cat.id);
+
+      if (txError) {
+        return {
+          success: false,
+          error: `Error al verificar transacciones para la categoría '${cat.name}': ${txError.message}`,
+        };
+      }
+
+      const txCount = count ?? 0;
+      const isDefaultCategory = cat.is_default || defaultNamesSet.has(cat.name.trim().toLowerCase());
+
+      // Si es una categoría predeterminada y tiene 0 transacciones, se elimina de forma segura
+      if (isDefaultCategory && txCount === 0) {
+        const { error: delError } = await client
+          .from("categories")
+          .delete()
+          .eq("id", cat.id)
+          .eq("user_id", targetUserId);
+
+        if (delError) {
+          return {
+            success: false,
+            error: `Error al eliminar la categoría no utilizada '${cat.name}': ${delError.message}`,
+          };
+        }
+
+        deletedCategories.push({
+          id: cat.id,
+          name: cat.name,
+          category_type: cat.category_type,
+          is_default: cat.is_default,
+        });
+      } else {
+        keptCategories.push({
+          id: cat.id,
+          name: cat.name,
+          category_type: cat.category_type,
+          transactionCount: txCount,
+          is_default: cat.is_default,
+        });
+      }
+    }
+
+    try {
+      revalidatePath("/categories");
+      revalidatePath("/transactions");
+      revalidatePath("/");
+    } catch {}
+
+    return {
+      success: true,
+      data: {
+        userEmail: effectiveEmail,
+        userId: targetUserId,
+        deletedCategories,
+        keptCategories,
+        totalDeleted: deletedCategories.length,
+        totalKept: keptCategories.length,
+      },
+    };
+  } catch (err) {
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Error desconocido al limpiar categorías predeterminadas";
     return { success: false, error: message };
   }
 }
