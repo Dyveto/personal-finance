@@ -586,6 +586,33 @@ ALL QUALITY CRITERIA MET - FULL PASS (CODE 0)
 
 ---
 
+### QA INCIDENT REPORT: RESOLUCIÓN DE ERROR 500 EN CHUNKS ESTÁTICOS Y CSS
+
+Date: 2026-11-18
+Agent: QA Verifier Agent
+Audit Type: Limpieza Profunda de Caché y Verificación Estricta de Integridad de Compilación
+
+Diagnóstico del Incidente:
+Se identificaron procesos secundarios huérfanos de Next.js ejecutándose en segundo plano (PID 17444 y 23800) manteniendo archivos bloqueados y corrompiendo la caché persistente de Webpack en `.next/cache`, provocando fallos HTTP 500 al servir los archivos CSS y fragmentos JS estáticos de la aplicación.
+
+Acciones de Mitigación y Limpieza:
+1. Detención forzada y aseguramiento de procesos: Terminación inmediata de todos los procesos Node/Next huérfanos asociados al espacio de trabajo.
+2. Limpieza total de caché `.next`: Eliminación física recursiva de `.next/` mediante PowerShell/rmdir, asegurando un entorno de compilación completamente prístino.
+
+Ciclo de Auditoría y Verificación Estricta (Comprobado):
+1. `npx tsc --noEmit` -> PASS (Código de salida: 0, 0 errores de tipado, strict: true).
+2. `npm run lint` -> PASS (Código de salida: 0, 0 advertencias, 0 errores).
+3. `npx vitest run` -> PASS (Código de salida: 0, 179/179 pruebas unitarias aprobadas al 100% en 13 suites).
+4. `npm run build` -> PASS (Código de salida: 0, 12 rutas estáticas y dinámicas compiladas limpiamente sin errores de serialización, CSS ni chunks).
+
+Regla Inquebrantable de Cierre (Ratificada):
+A partir de este momento, NINGÚN cambio de Frontend o Backend se considerará entregado si rompe el servidor local. El QA Verifier Agent auditará siempre la estabilidad de la compilación y de los chunks estáticos antes de emitir la aprobación final.
+
+Estado Final:
+APROBADO Y VERIFICADO - COMPILACIÓN Y CHUNKS 100% OPERATIVOS (CÓDIGO DE SALIDA 0)
+
+---
+
 # 7. BUG TRACKER
 
 | ID | Severity | File | Description | Assigned to | Status |
@@ -594,6 +621,7 @@ ALL QUALITY CRITERIA MET - FULL PASS (CODE 0)
 | BUG-002 | CRITICAL | src/features/auth/actions/auth-actions.ts, src/app/auth/callback/route.ts | Enlace de verificación de correo redirigía a localhost:3000 en producción. Resuelto implementando getBaseUrl() dinámica (con prioridad en NEXT_PUBLIC_SITE_URL y fallback en headers origin/host), pasando emailRedirectTo en signUp, creando Route Handler /auth/callback para intercambio PKCE/OTP y documentando configuración de Supabase URL Configuration. | BACKEND | RESOLVED |
 | BUG-003 | HIGH | src/features/auth/actions/auth-actions.ts | Error de compilación Next.js: 'Server actions must be async functions' por exportación síncrona de getBaseUrl() en archivo con directiva 'use server'. Resuelto convirtiendo getBaseUrl() en función asíncrona Promise<string> y utilizando await en signUp() y suites de prueba. | BACKEND | RESOLVED |
 | BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
+| BUG-005 | CRITICAL | .next, chunks estáticos, CSS global | Error 500 generalizado al servir chunks estáticos y CSS de Next.js provocado por colisión de procesos huérfanos de dev server (PIDs 17444, 23800) y corrupción de caché persistente de Webpack. Resuelto mediante detención forzada de procesos Node/Next bloqueantes, eliminación recursiva de `.next/` y ciclo estricto de auditoría (tsc, lint, vitest, build) completado con código de salida 0. | QA VERIFIER AGENT | RESOLVED |
 
 Severity:
 
@@ -877,6 +905,20 @@ Task: Implemented complete UI workflows for editing and deleting transactions, a
 Files created/modified: src/components/shared/ConfirmDeleteDialog.tsx, src/features/transactions/components/TransactionForm.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/accounts/components/AccountsClientView.tsx, src/features/credit-cards/components/CreditCardsClientView.tsx, .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npm run test:run (89/89 passed), npm run build (0)
 Verdict: COMPLETED & VERIFIED
+Handoff status: COMPLETED
+
+### 2026-11-18 - QA VERIFIER AGENT (Critical Recovery: Error 500 on Next.js Static Chunks & CSS Resolution)
+Task: Resolved critical production/dev server incident where static chunks and CSS were returning HTTP 500 errors:
+1. Deep Cache Clean: Terminated background rogue Node.js processes (PIDs 17444, 23800) locking Next.js build cache. Completely wiped `.next/` directory.
+2. Complete Strict Quality Audit:
+   - `npx tsc --noEmit` -> 0 errors (strict: true).
+   - `npm run lint` -> 0 warnings, 0 errors.
+   - `npx vitest run` -> 179/179 unit tests passed across 13 suites (100%).
+   - `npm run build` -> Clean production build passed, 12 static/dynamic routes + Edge Middleware generated without chunk errors.
+3. Ratified Unbreakable Quality Gate: Enforced that no frontend or backend change can be considered delivered if it breaks local build or server stability.
+Files modified: .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (179/179 passed), npm run build (0)
+Verdict: COMPLETED, VERIFIED & UNBLOCKED
 Handoff status: COMPLETED
 
 ---
