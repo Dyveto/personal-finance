@@ -151,6 +151,7 @@ Responsibilities:
 - [x] Implement Category CRUD Server Actions (`createCategory`, `updateCategory`, `deleteCategory`, `listCategories`) with Zod schemas and user session enforcement.
 - [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
 - [x] Implement Dashboard layout persistence and user preferences Server Actions (`getDashboardLayout`, `saveDashboardLayout`, `resetDashboardLayout`) with Zod schemas and user session enforcement.
+- [x] Implement Excel 149 movements migration Server Action (`migrateExcelTransactions`, `getExcelMigrationStatus`) with auto account creation (`Efectivo`, `Nequi`, `Bancolombia`), category normalization (`Comida`, `Otros gastos`, `Otros ingresos`), idempotent deduplication key, and automatic balance synchronization.
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
@@ -180,16 +181,22 @@ Files created:
 - src/lib/validations/auth.ts
 - src/features/accounts/actions/account-actions.ts
 - src/features/transactions/actions/transaction-actions.ts
+- src/features/transactions/actions/migration-actions.ts
+- src/features/transactions/data/excel-movements.ts
+- src/features/transactions/data/movements.json
 - src/features/categories/actions/category-actions.ts
 - src/features/credit-cards/actions/statement-actions.ts
 - src/features/dashboard/actions/dashboard-actions.ts
 - src/features/auth/actions/auth-actions.ts
+- src/lib/supabase/admin.ts
+- scripts/execute-migration.ts
 - src/app/(auth)/layout.tsx
 - src/app/(auth)/login/page.tsx
 - src/app/(auth)/signup/page.tsx
 - tests/unit/finance.test.ts
 - tests/unit/validations.test.ts
 - tests/unit/actions.test.ts
+- tests/unit/migration-actions.test.ts
 - tests/unit/auth.test.ts
 
 Public contracts:
@@ -218,6 +225,9 @@ Public contracts:
   - `saveDashboardLayout(layoutConfig: unknown): Promise<ActionResult<DashboardLayoutConfig>>`
   - `resetDashboardLayout(): Promise<ActionResult<DashboardLayoutConfig>>`
   - `DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig`
+- `migration-actions.ts`:
+  - `migrateExcelTransactions(targetEmail?: string, customMovements?: ExcelMovementRecord[]): Promise<ActionResult<MigrationSummary>>`
+  - `getExcelMigrationStatus(targetEmail?: string): Promise<ActionResult<{ userId: string; totalExpected: number; totalImported: number; accountsPresent: string[]; isFullyMigrated: boolean }>>`
 - `category-actions.ts`:
   - `listCategories(type?: "income" | "expense"): Promise<ActionResult<CategoryRow[]>>`
   - `createCategory(rawInput: unknown): Promise<ActionResult<CategoryRow>>`
@@ -255,7 +265,7 @@ Public contracts:
   - `calculatePaymentDueDate(closingDate: string, closingDay: number, paymentDueDay: number): string`
 
 Commands executed:
-- `npm run test:run` -> PASS (113 unit tests passing, 100%)
+- `npm run test:run` -> PASS (130 unit tests passing, 100%)
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
 - `npm run build` -> PASS (Optimized production build with middleware, dynamic dashboard actions and auth routes)
