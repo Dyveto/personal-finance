@@ -331,6 +331,12 @@ Responsibilities:
   - `WelcomeHubManagerModal`: modal dialog for bulk visibility toggle, reordering, and reset to defaults.
   - Modular widget components (`DashboardKpiWidget`, `DashboardActiveAccounts`, `DashboardRecentTransactions`, `WidgetWrapper`).
   - Persistence via `saveDashboardLayout()` Server Action with transition state, error handling, and visual feedback notification banner.
+- [x] Corrección integral de sincronización de Modo Día / Modo Noche y soporte de paleta visual clara:
+  - Eliminación de clase de fondo oscuro estática (`bg-[#0B0F19]`) en `DashboardShell.tsx`, permitiendo renderizado adaptativo `bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC]` con transición suave.
+  - Sincronización multi-instancia de `ThemeToggle.tsx` (sidebar de escritorio y drawer móvil) mediante eventos `theme-change` y `storage`.
+  - Módulo utilitario desacoplado `src/lib/theme.ts` para persistencia en `localStorage` y manipulación limpia de clases `dark`/`light` en `document.documentElement` y `document.body`.
+  - Adaptación de componentes `WelcomeHubBanner.tsx` e `InstallmentProjectionsCard.tsx` para modo claro/oscuro (bordes, gradientes y tipografías legibles).
+  - Cobertura de pruebas unitarias en `tests/unit/theme.test.ts` (8 pruebas unitarias añadidas, 100% pasadas).
 
 Expected deliverables:
 
@@ -366,16 +372,20 @@ Files created/modified:
 - src/features/transactions/components/TransactionsClientView.tsx (Cálculo y desglose dinámico de totales por categoría, filtros multicriterio, barras de progreso y KPIs reactivos)
 - src/features/dashboard/components/FinancialCharts.tsx (Filtros temporales: días, semanas, meses, años, custom; porcentajes en pastel/leyenda/tooltip; tooltip mejorado en barras)
 - src/components/ui/switch.tsx
-- src/components/layout/ThemeToggle.tsx
+- src/components/layout/ThemeToggle.tsx (Sincronización reactiva entre instancias y persistencia en localStorage)
 - src/components/layout/Header.tsx
-- src/components/layout/DashboardShell.tsx
+- src/components/layout/DashboardShell.tsx (Corrección de clase background estática)
+- src/features/dashboard/components/WelcomeHubBanner.tsx (Gradientes claros/oscuros adaptativos)
+- src/features/dashboard/components/InstallmentProjectionsCard.tsx (Tarjetas y desgloses adaptativos para tema claro y oscuro)
+- src/lib/theme.ts (Módulo utilitario de sincronización y persistencia de temas)
+- tests/unit/theme.test.ts (Pruebas unitarias de manipulación de DOM, storage y eventos de tema)
 - src/app/layout.tsx
 - src/app/globals.css
 
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (122/122 unit tests passing, 100%)
+- `npm run test:run` -> PASS (138/138 unit tests passing across 8 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:

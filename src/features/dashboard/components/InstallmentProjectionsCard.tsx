@@ -224,16 +224,16 @@ export function InstallmentProjectionsCard({
             {pendingStatements.map((group) => (
               <div
                 key={group.key}
-                className="p-4 rounded-xl border border-white/[0.08] bg-[#0B0F19]/50 flex flex-col justify-between transition-all hover:border-white/[0.18]"
+                className="p-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#0B0F19]/50 flex flex-col justify-between transition-all hover:border-[#8B5CF6]/30"
               >
                 <div>
                   {/* Encabezado del extracto pendiente */}
-                  <div className="flex items-center justify-between border-b border-white/[0.08] pb-2.5">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/[0.08] pb-2.5">
                     <div>
-                      <span className="text-xs font-heading font-bold text-[#F8FAFC] uppercase tracking-wider block">
+                      <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider block">
                         Extracto {group.month}
                       </span>
-                      <span className="text-[11px] text-[#94A3B8]">
+                      <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">
                         {group.accountName}
                       </span>
                     </div>
@@ -242,25 +242,25 @@ export function InstallmentProjectionsCard({
                       <span className="text-xs font-heading font-extrabold text-[#8B5CF6] block">
                         {formatMoneyCOP(group.total)}
                       </span>
-                      <span className="text-[10px] font-semibold text-amber-400">
+                      <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400">
                         Pendiente
                       </span>
                     </div>
                   </div>
 
                   {/* Listado de cuotas */}
-                  <div className="divide-y divide-white/[0.06] mt-2">
+                  <div className="divide-y divide-slate-100 dark:divide-white/[0.06] mt-2">
                     {group.items.map((item, idx) => (
                       <div key={`${item.transactionId}-${idx}`} className="py-2 text-xs">
                         <div className="flex justify-between items-start gap-2">
-                          <span className="font-semibold text-[#F8FAFC] truncate">
+                          <span className="font-semibold text-slate-800 dark:text-[#F8FAFC] truncate">
                             {item.description}
                           </span>
-                          <span className="font-heading font-bold text-[#F8FAFC] flex-shrink-0">
+                          <span className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex-shrink-0">
                             {formatMoneyCOP(item.amount)}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-[#94A3B8] mt-0.5">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
                           <span>
                             Cuota {item.installmentNumber}/{item.totalInstallments}
                           </span>
@@ -290,15 +290,15 @@ export function InstallmentProjectionsCard({
 
       {/* SECCIÓN 2: HISTORIAL DE EXTRACTOS PAGADOS (COLAPSABLE / ACORDEÓN) */}
       {paidStatements.length > 0 && (
-        <div className="pt-2 border-t border-white/[0.08]">
+        <div className="pt-2 border-t border-slate-200 dark:border-white/[0.08]">
           <button
             type="button"
             onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="w-full py-3 px-4 rounded-xl bg-[#0B0F19]/50 hover:bg-[#0B0F19]/80 border border-white/[0.08] flex items-center justify-between transition-colors text-left"
+            className="w-full py-3 px-4 rounded-xl bg-slate-50/80 hover:bg-slate-100 dark:bg-[#0B0F19]/50 dark:hover:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08] flex items-center justify-between transition-colors text-left"
           >
             <div className="flex items-center gap-2">
               <History className="w-4 h-4 text-[#10B981]" />
-              <span className="text-xs font-heading font-bold text-[#F8FAFC]">
+              <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
                 Historial de Extractos Pagados
               </span>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25">
@@ -306,7 +306,7 @@ export function InstallmentProjectionsCard({
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 text-xs text-[#94A3B8] font-medium">
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94A3B8] font-medium">
               <span>{isHistoryOpen ? "Contraer historial" : "Ver extractos liquidados"}</span>
               {isHistoryOpen ? (
                 <ChevronUp className="w-4 h-4" />
@@ -338,16 +338,16 @@ export function InstallmentProjectionsCard({
                         {/* Cabecera del extracto liquidado */}
                         <div className="flex items-center justify-between border-b border-[#10B981]/15 pb-2.5">
                           <div>
-                            <span className="text-xs font-heading font-bold text-[#F8FAFC] uppercase tracking-wider block">
+                            <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider block">
                               Extracto {group.month}
                             </span>
-                            <span className="text-[11px] text-[#94A3B8]">
+                            <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">
                               {group.accountName}
                             </span>
                           </div>
 
                           <div className="text-right">
-                            <span className="text-xs font-heading font-extrabold text-[#F8FAFC] block">
+                            <span className="text-xs font-heading font-extrabold text-slate-900 dark:text-[#F8FAFC] block">
                               {formatMoneyCOP(statementRecord?.total_amount || group.total)}
                             </span>
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#10B981]">
@@ -358,28 +358,28 @@ export function InstallmentProjectionsCard({
 
                         {/* Desglose interactivo de detalles de liquidación */}
                         {isExpanded ? (
-                          <div className="mt-3 space-y-3 pt-1 border-t border-white/[0.08]">
-                            <div className="p-3 rounded-xl bg-[#0B0F19]/80 border border-white/[0.08] space-y-2 text-xs">
-                              <div className="flex items-center gap-2 text-[#94A3B8]">
+                          <div className="mt-3 space-y-3 pt-1 border-t border-slate-200 dark:border-white/[0.08]">
+                            <div className="p-3 rounded-xl bg-slate-100/90 dark:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08] space-y-2 text-xs">
+                              <div className="flex items-center gap-2 text-slate-600 dark:text-[#94A3B8]">
                                 <CalendarCheck className="w-4 h-4 text-[#10B981] flex-shrink-0" />
                                 <span>
-                                  <strong className="text-[#F8FAFC]">Fecha de pago:</strong>{" "}
+                                  <strong className="text-slate-900 dark:text-[#F8FAFC]">Fecha de pago:</strong>{" "}
                                   {formatPaymentDateTime(statementRecord?.paid_at)}
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-2 text-[#94A3B8]">
+                              <div className="flex items-center gap-2 text-slate-600 dark:text-[#94A3B8]">
                                 <Wallet className="w-4 h-4 text-[#8B5CF6] flex-shrink-0" />
                                 <span>
-                                  <strong className="text-[#F8FAFC]">Medio / Origen:</strong>{" "}
+                                  <strong className="text-slate-900 dark:text-[#F8FAFC]">Medio / Origen:</strong>{" "}
                                   {statementRecord?.notes || "Pago registrado"}
                                 </span>
                               </div>
 
-                              <div className="flex items-center gap-2 text-[#94A3B8]">
-                                <Receipt className="w-4 h-4 text-[#94A3B8] flex-shrink-0" />
+                              <div className="flex items-center gap-2 text-slate-600 dark:text-[#94A3B8]">
+                                <Receipt className="w-4 h-4 text-slate-600 dark:text-[#94A3B8] flex-shrink-0" />
                                 <span>
-                                  <strong className="text-[#F8FAFC]">Monto liquidado:</strong>{" "}
+                                  <strong className="text-slate-900 dark:text-[#F8FAFC]">Monto liquidado:</strong>{" "}
                                   {formatMoneyCOP(statementRecord?.total_amount || group.total)}
                                 </span>
                               </div>
@@ -387,20 +387,20 @@ export function InstallmentProjectionsCard({
 
                             {/* Detalle de cuotas cubiertas */}
                             <div className="space-y-1.5">
-                              <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                              <p className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] uppercase tracking-wider">
                                 Cuotas incluidas ({group.items.length})
                               </p>
-                              <div className="divide-y divide-white/[0.06]">
+                              <div className="divide-y divide-slate-200 dark:divide-white/[0.06]">
                                 {group.items.map((item, idx) => (
                                   <div
                                     key={`${item.transactionId}-${idx}`}
                                     className="py-1.5 flex justify-between items-center text-xs"
                                   >
-                                    <span className="text-[#F8FAFC] truncate max-w-[170px]">
+                                    <span className="text-slate-800 dark:text-[#F8FAFC] truncate max-w-[170px]">
                                       {item.description} (Cuota {item.installmentNumber}/
                                       {item.totalInstallments})
                                     </span>
-                                    <span className="font-heading font-semibold text-[#F8FAFC]">
+                                    <span className="font-heading font-semibold text-slate-900 dark:text-[#F8FAFC]">
                                       {formatMoneyCOP(item.amount)}
                                     </span>
                                   </div>
@@ -414,14 +414,14 @@ export function InstallmentProjectionsCard({
                               variant="outline"
                               size="sm"
                               onClick={() => toggleDetail(group.key)}
-                              className="w-full text-xs h-7 mt-2 border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
+                              className="w-full text-xs h-7 mt-2 border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-white/[0.05] rounded-xl"
                             >
                               Contraer Detalle
                             </Button>
                           </div>
                         ) : (
                           <div className="mt-2.5">
-                            <p className="text-[11px] text-[#94A3B8] mb-2">
+                            <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mb-2">
                               {group.items.length} cuota{group.items.length > 1 ? "s" : ""}{" "}
                               liquidada{group.items.length > 1 ? "s" : ""}
                             </p>

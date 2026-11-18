@@ -71,6 +71,7 @@
   body {
     background-color: #F8FAFC;
     color: #0F172A;
+    background-image: none;
     font-family: 'Outfit', sans-serif;
     font-size: 0.9375rem;
     font-weight: 400;
