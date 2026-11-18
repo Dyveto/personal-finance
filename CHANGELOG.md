@@ -18,4 +18,3 @@ Todas las modificaciones notables de este sistema de finanzas personales serán 
 ### Correcciones
 - Solución definitiva al scroll vertical excesivo en la vista de transacciones.
 - Corrección de capas (*z-index*) y parpadeos en los menús desplegables flotantes.
-- Migración idempotente exitosa de los 149 movimientos financieros para `calderongoenaga2004@gmail.com`.
