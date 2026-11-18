@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  unifyCategoriesByBaseName,
-  type UniqueBaseCategory,
-} from "@/features/transactions/components/CategoryMultiSelect";
+import { unifyCategoriesByBaseName } from "@/features/transactions/components/CategoryMultiSelect";
 import type { CategoryRow } from "@/features/categories/actions/category-actions";
 
 describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic", () => {
@@ -15,7 +12,9 @@ describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic
       icon: "home",
       color: "#F43F5E",
       is_default: false,
+      is_active: true,
       created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
     },
     {
       id: "cat-int-inc",
@@ -25,7 +24,9 @@ describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic
       icon: "home",
       color: "#10B981",
       is_default: false,
+      is_active: true,
       created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
     },
     {
       id: "cat-comida",
@@ -35,7 +36,9 @@ describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic
       icon: "utensils",
       color: "#EF4444",
       is_default: true,
+      is_active: true,
       created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
     },
     {
       id: "cat-salud",
@@ -45,7 +48,9 @@ describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic
       icon: "heart",
       color: "#06B6D4",
       is_default: false,
+      is_active: true,
       created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
     },
     {
       id: "cat-nomina",
@@ -55,7 +60,9 @@ describe("CategoryMultiSelect - Category Unification & Multi-Select Filter Logic
       icon: "wallet",
       color: "#10B981",
       is_default: true,
+      is_active: true,
       created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
     },
   ];
 

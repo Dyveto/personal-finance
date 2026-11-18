@@ -354,6 +354,10 @@ Responsibilities:
   - Barra de chips interactivos: En `TransactionsClientView.tsx`, muestra las categorías seleccionadas con badges individuales removibles con un solo clic y botón "Limpiar todas".
   - Desglose y Totales Reactivos: Los paneles de "Totales por Categoría" (gastos e ingresos) agrupan ahora por nombre base consolidado y permiten alternar/añadir categorías a la selección múltiple con un clic, mostrando el badge visual `✓ Filtrada`.
   - Cobertura completa de pruebas unitarias en `tests/unit/category-multiselect.test.ts` (8 pruebas unitarias, 149/149 pruebas en total pasando al 100%).
+- [x] Corrección definitiva de maquetación y eliminación de scroll vertical fantasma / espacio en blanco en Transacciones:
+  - Reestructuración de la jerarquía envolvente de contenedores en `src/app/(dashboard)/transactions/page.tsx`, `TransactionsClientView.tsx` y `DashboardShell.tsx`.
+  - Eliminación de `min-height: 100vh;` en `globals.css` que competía con `html.h-full`, `body.h-full` y `DashboardShell.h-screen`, eliminando la doble barra de desplazamiento y el espacio vacío inferior.
+  - Configuración del contenedor principal con `w-full h-auto pb-12`, asegurando flujo natural sin desbordes verticales fantasma en resoluciones de escritorio y móviles (`h-[100dvh]`).
 
 Expected deliverables:
 
@@ -373,7 +377,10 @@ Handoff:
 
 Files created/modified:
 - src/features/transactions/components/CategoryMultiSelect.tsx (Componente unificado de selección múltiple por nombre base con buscador, checkboxes, badges y cierre por evento)
-- src/features/transactions/components/TransactionsClientView.tsx (Integración de CategoryMultiSelect, filtrado por unión de categorías, chips interactivos, y consolidación por nombre base)
+- src/app/(dashboard)/transactions/page.tsx (Contenedor estricto con w-full h-auto pb-12 para eliminar scroll fantasma)
+- src/features/transactions/components/TransactionsClientView.tsx (Ajuste del contenedor raíz a w-full h-auto space-y-8, integración de CategoryMultiSelect, filtrado por unión de categorías, chips interactivos, y consolidación por nombre base)
+- src/components/layout/DashboardShell.tsx (Soporte de h-[100dvh] y contenedor max-w con w-full h-auto)
+- src/app/globals.css (Eliminación de min-height: 100vh en body y adición de overflow-x: hidden)
 - tests/unit/category-multiselect.test.ts (Pruebas unitarias de unificación por nombre base, filtrado multi-select y combinaciones de tipos)
 - src/features/dashboard/components/WelcomeHubDashboard.tsx (Dashboard interactivo tipo Welcome Hub con reordenamiento, visibilidad y persistencia)
 - src/features/dashboard/components/WelcomeHubBanner.tsx (Barra de control atmosférica para modo edición)

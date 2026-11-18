@@ -26,12 +26,12 @@ export default async function TransactionsPage() {
 
   if (isAuthError) {
     return (
-      <div className="space-y-6">
+      <div className="w-full h-auto pb-12 space-y-6">
         <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+          <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
             Transacciones y Movimientos
           </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-slate-500 dark:text-[#94A3B8] mt-1">
             Registro de ingresos, gastos y compras diferidas a cuotas.
           </p>
         </div>
@@ -58,10 +58,12 @@ export default async function TransactionsPage() {
   }
 
   return (
-    <TransactionsClientView
-      initialTransactions={transactions}
-      accounts={accounts}
-      categories={categories}
-    />
+    <div className="w-full h-auto pb-12">
+      <TransactionsClientView
+        initialTransactions={transactions}
+        accounts={accounts}
+        categories={categories}
+      />
+    </div>
   );
 }

@@ -390,7 +390,7 @@ export function TransactionsClientView({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full h-auto space-y-8">
       {/* Alerta de Notificación / Feedback */}
       {feedback && (
         <div

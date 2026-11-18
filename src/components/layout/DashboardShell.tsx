@@ -37,7 +37,7 @@ export function DashboardShell({
   }, [mobileMenuOpen]);
 
   return (
-    <div className="flex h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen h-[100dvh] bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] overflow-hidden transition-colors duration-300">
       {/* Sidebar fijo en escritorio */}
       <div className="hidden md:flex md:flex-shrink-0">
         <Sidebar />
@@ -83,7 +83,7 @@ export function DashboardShell({
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
         <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">
-          <div className="max-w-7xl mx-auto">{children}</div>
+          <div className="w-full max-w-7xl mx-auto h-auto">{children}</div>
         </main>
       </div>
     </div>
