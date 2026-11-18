@@ -368,6 +368,13 @@ Responsibilities:
   - Restauración automática del estado expandido/colapsado al montar la vista en `TransactionsClientView.tsx` evitando problemas de hidratación SSR.
   - Guardado instantáneo y automático ante cada interacción de alternancia (`handleToggleCategorySummary`).
   - Cobertura de pruebas unitarias en `tests/unit/transactions-preferences.test.ts` (6 pruebas añadidas, 155/155 pruebas unitarias en total pasando al 100%).
+- [x] Corrección integral del contraste visual en Modo Día (Tema Claro / Light Mode):
+  - Detección y reemplazo exhaustivo de clases de texto oscuras estáticas (`text-[#F8FAFC]`, `text-[#94A3B8]`) sin prefijo `dark:` en tarjetas, subtítulos, estados vacíos, modales y formularios.
+  - Aplicación de clases adaptativas duales: `text-slate-900 dark:text-[#F8FAFC]` para títulos y textos principales; `text-slate-600 dark:text-[#94A3B8]` para descripciones, subtítulos y leyendas.
+  - Corrección de estados vacíos (empty states) en `CreditCardsClientView.tsx` e `InstallmentProjectionsCard.tsx`: bordes adaptativos `border-slate-300 dark:border-white/[0.1]`, iconos `text-slate-400 dark:text-[#94A3B8]/40`, y textos de alta legibilidad sobre fondos blancos.
+  - Corrección de componentes de diálogo y modales (`PayStatementDialog.tsx`, `AccountForm.tsx`, modals de edición de cuentas y tarjetas) con fondos adaptativos `bg-white dark:bg-[#131B2E]` y bordes `border-slate-200 dark:border-white/[0.08]`.
+  - Ajuste de contraste para tokens globales en `src/app/globals.css`: `--muted-foreground: #475569;` en modo claro para cumplir estándares WCAG AA/AAA.
+  - Corrección de contraste en el popover flotante de notificaciones (`NotificationBell.tsx`) con fondos claros en modo día y tipografías nítidas en slate.
 
 Expected deliverables:
 
@@ -386,6 +393,13 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/credit-cards/components/CreditCardsClientView.tsx (Corrección de contraste en modo día: títulos text-slate-900 dark:text-[#F8FAFC], subtítulos text-slate-600 dark:text-[#94A3B8], KPIs, empty state visible sobre fondo blanco y modal de edición adaptativo)
+- src/features/accounts/components/AccountsClientView.tsx (Corrección de contraste en modo día: encabezados, KPIs, botones de pestañas, empty state, detalles de tarjeta y modales de creación/edición con bordes y tipografía adaptativa)
+- src/features/credit-cards/components/PayStatementDialog.tsx (Contraste adaptativo para diálogo de liquidación de extractos: fondo bg-white dark:bg-[#131B2E], textos legibles, inputs y selects estilizados para modo claro y oscuro)
+- src/features/dashboard/components/InstallmentProjectionsCard.tsx (Textos, subtítulos, empty states y divisores adaptativos en modo día)
+- src/components/layout/NotificationBell.tsx (Contraste nítido en el popover flotante de alertas y vencimientos de tarjetas para modo claro)
+- src/features/accounts/components/AccountForm.tsx (Bordes y botones secundarios adaptativos con slate-300 / slate-50)
+- src/app/globals.css (Ajuste de token --muted-foreground a #475569 para alto contraste WCAG en modo día)
 - src/features/transactions/components/TransactionsClientView.tsx (Acento rojo #F43F5E en iconos de transacciones de gasto; filtrado preciso e independiente al hacer clic en categorías de Gastos o Ingresos en "Totales por Categoría" con badges dinámicos)
 - src/features/dashboard/components/widgets/DashboardRecentTransactions.tsx (Acento rojo #F43F5E en contenedor de icono y texto de monto para transacciones de tipo gasto)
 - tests/unit/category-summary-interaction.test.ts (5 pruebas unitarias de interacción independiente por tipo de movimiento, alternancia de estado y restablecimiento)

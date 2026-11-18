@@ -128,15 +128,15 @@ export function PayStatementDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-[#131B2E] border border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl text-[#F8FAFC]">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl text-slate-900 dark:text-[#F8FAFC]">
         <DialogHeader>
           <div className="flex items-center gap-2 text-[#8B5CF6]">
             <CreditCard className="w-5 h-5" />
-            <DialogTitle className="text-lg font-heading font-bold text-[#F8FAFC]">
+            <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
               Pagar Extracto de Tarjeta
             </DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-[#94A3B8]">
+          <DialogDescription className="text-xs text-slate-600 dark:text-[#94A3B8]">
             ¿Desde qué cuenta o medio de pago realizaste el pago de este extracto?
           </DialogDescription>
         </DialogHeader>
@@ -147,12 +147,12 @@ export function PayStatementDialog({
               <CheckCircle2 className="w-7 h-7" />
             </div>
             <div className="space-y-1">
-              <h4 className="text-base font-heading font-bold text-[#F8FAFC]">
+              <h4 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
                 ¡Pago Registrado con Éxito!
               </h4>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs text-slate-600 dark:text-[#94A3B8]">
                 El extracto {statementMonth} de {creditCardName} por valor de{" "}
-                <strong className="text-[#F8FAFC]">
+                <strong className="text-slate-900 dark:text-[#F8FAFC]">
                   {formatMoneyCOP(successData.amountPaid)}
                 </strong>{" "}
                 ha sido liquidado y los saldos fueron actualizados.
@@ -178,17 +178,17 @@ export function PayStatementDialog({
             )}
 
             {/* Resumen del Extracto */}
-            <div className="p-3.5 rounded-xl bg-[#0B0F19]/60 border border-white/[0.08] flex items-center justify-between">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0B0F19]/60 border border-slate-200 dark:border-white/[0.08] flex items-center justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                <p className="text-[11px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider">
                   Extracto {statementMonth}
                 </p>
-                <p className="text-sm font-heading font-bold text-[#F8FAFC]">
+                <p className="text-sm font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
                   {creditCardName}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-[11px] font-semibold text-[#94A3B8] uppercase tracking-wider">
+                <p className="text-[11px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider">
                   Total Cuotas
                 </p>
                 <p className="text-base font-heading font-extrabold text-[#8B5CF6]">
@@ -199,36 +199,36 @@ export function PayStatementDialog({
 
             {/* Selector de Cuenta de Pago */}
             <div className="space-y-1.5">
-              <Label htmlFor="payment_account" className="text-xs font-semibold text-[#F8FAFC]">
+              <Label htmlFor="payment_account" className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
                 Cuenta o medio de pago
               </Label>
               <Select
                 value={selectedAccountId}
                 onValueChange={(val) => setSelectedAccountId(val)}
               >
-                <SelectTrigger id="payment_account" className="w-full text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl">
+                <SelectTrigger id="payment_account" className="w-full text-xs bg-white dark:bg-[#0B0F19] border-slate-300 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl">
                   <SelectValue placeholder="Selecciona una cuenta de pago" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#131B2E] border-white/[0.08] text-[#F8FAFC]">
+                <SelectContent className="bg-white dark:bg-[#131B2E] border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC]">
                   {paymentAccounts.map((acc) => (
-                    <SelectItem key={acc.id} value={acc.id} className="text-xs text-[#F8FAFC] hover:bg-white/[0.05]">
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs text-slate-900 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05]">
                       {acc.name} ({acc.account_type === "bank" ? "Banco" : "Efectivo"} · Saldo:{" "}
                       {formatMoneyCOP(roundMoney(acc.current_balance))})
                     </SelectItem>
                   ))}
-                  <SelectItem value="none" className="text-xs text-[#94A3B8] hover:bg-white/[0.05]">
+                  <SelectItem value="none" className="text-xs text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.05]">
                     Solo marcar como pagado (sin descontar de ninguna cuenta)
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[11px] text-[#94A3B8]">
+              <p className="text-[11px] text-slate-600 dark:text-[#94A3B8]">
                 Se registrará la salida del dinero de la cuenta seleccionada.
               </p>
             </div>
 
             {/* Monto a Liquidar */}
             <div className="space-y-1.5">
-              <Label htmlFor="amount_input" className="text-xs font-semibold text-[#F8FAFC]">
+              <Label htmlFor="amount_input" className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
                 Monto del pago (COP)
               </Label>
               <Input
@@ -239,14 +239,14 @@ export function PayStatementDialog({
                 value={amountInput}
                 onChange={(e) => setAmountInput(e.target.value)}
                 placeholder="0.00"
-                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
+                className="text-xs bg-white dark:bg-[#0B0F19] border-slate-300 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl"
                 required
               />
             </div>
 
             {/* Fecha del Pago */}
             <div className="space-y-1.5">
-              <Label htmlFor="payment_date" className="text-xs font-semibold text-[#F8FAFC]">
+              <Label htmlFor="payment_date" className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
                 Fecha de pago
               </Label>
               <Input
@@ -254,15 +254,15 @@ export function PayStatementDialog({
                 type="date"
                 value={paymentDate}
                 onChange={(e) => setPaymentDate(e.target.value)}
-                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
+                className="text-xs bg-white dark:bg-[#0B0F19] border-slate-300 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl"
                 required
               />
             </div>
 
             {/* Notas opcionales */}
             <div className="space-y-1.5">
-              <Label htmlFor="notes" className="text-xs font-semibold text-[#F8FAFC]">
-                Notas <span className="text-[#94A3B8] font-normal">(Opcional)</span>
+              <Label htmlFor="notes" className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
+                Notas <span className="text-slate-500 dark:text-[#94A3B8] font-normal">(Opcional)</span>
               </Label>
               <Input
                 id="notes"
@@ -270,7 +270,7 @@ export function PayStatementDialog({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Ej. Pago PSE o débito automático"
-                className="text-xs bg-[#0B0F19] border-white/[0.1] text-[#F8FAFC] rounded-xl"
+                className="text-xs bg-white dark:bg-[#0B0F19] border-slate-300 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] rounded-xl"
               />
             </div>
 
@@ -281,7 +281,7 @@ export function PayStatementDialog({
                 size="sm"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="text-xs border-white/[0.08] bg-[#0B0F19] text-[#F8FAFC] hover:bg-white/[0.05] rounded-xl"
+                className="text-xs border-slate-300 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"
               >
                 Cancelar
               </Button>
