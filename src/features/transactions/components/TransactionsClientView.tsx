@@ -696,10 +696,10 @@ export function TransactionsClientView({
 
           {isFilterActive && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleClearFilters}
-              className="h-7 px-2.5 text-xs text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-1.5"
+              className="h-7 px-2.5 text-xs border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-300 rounded-lg flex items-center gap-1.5 font-medium transition-colors"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Limpiar filtros</span>
@@ -1317,7 +1317,7 @@ export function TransactionsClientView({
                 variant="outline"
                 size="sm"
                 onClick={handleClearFilters}
-                className="rounded-xl border-slate-200 dark:border-white/[0.1] text-xs"
+                className="rounded-xl border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] dark:hover:bg-white/[0.05] text-slate-800 dark:text-[#F8FAFC] text-xs font-semibold shadow-sm"
               >
                 Limpiar filtros
               </Button>

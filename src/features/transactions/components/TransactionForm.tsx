@@ -592,7 +592,7 @@ export function TransactionForm({
             variant="outline"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="text-xs border-slate-200 dark:border-white/[0.1] text-slate-700 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"
+            className="text-xs border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl font-medium"
           >
             Cancelar
           </Button>

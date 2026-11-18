@@ -205,7 +205,7 @@ export function WelcomeHubManagerModal({
               variant="outline"
               size="sm"
               onClick={onShowAll}
-              className="text-xs font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05]"
+              className="text-xs font-semibold rounded-xl border-slate-300 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-white/[0.1]"
             >
               Mostrar todas
             </Button>
@@ -214,7 +214,7 @@ export function WelcomeHubManagerModal({
               variant="outline"
               size="sm"
               onClick={onResetDefaults}
-              className="text-xs font-semibold rounded-xl border-slate-200 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.05]"
+              className="text-xs font-semibold rounded-xl border-slate-300 dark:border-white/[0.08] bg-slate-100 dark:bg-white/[0.05] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-white/[0.1]"
             >
               <RotateCcw className="w-3.5 h-3.5 mr-1" />
               Restablecer

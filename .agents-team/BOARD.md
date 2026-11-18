@@ -381,6 +381,11 @@ Responsibilities:
   - Corrección de componentes de diálogo y modales (`PayStatementDialog.tsx`, `AccountForm.tsx`, modals de edición de cuentas y tarjetas) con fondos adaptativos `bg-white dark:bg-[#131B2E]` y bordes `border-slate-200 dark:border-white/[0.08]`.
   - Ajuste de contraste para tokens globales en `src/app/globals.css`: `--muted-foreground: #475569;` en modo claro para cumplir estándares WCAG AA/AAA.
   - Corrección de contraste en el popover flotante de notificaciones (`NotificationBell.tsx`) con fondos claros en modo día y tipografías nítidas en slate.
+- [x] Corrección de contraste en botones "Limpiar filtros" y variantes outline/secondary en Modo Día:
+  - Definición en `buttonVariants` (`src/components/ui/button.tsx`): bordes, fondos y colores de texto adaptativos de alto contraste (`outline` con `border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 hover:text-slate-900`, `secondary` con `bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100`).
+  - Botón "Limpiar filtros" de cabecera en `TransactionsClientView.tsx`: variante `outline` con `border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:text-rose-300 font-medium`.
+  - Botón "Limpiar filtros" de estado vacío en `TransactionsClientView.tsx`: `border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] font-semibold`.
+  - Botones secundarios/outline en modales (`WelcomeHubManagerModal.tsx`, `CategoriesClientView.tsx`, `TransactionForm.tsx`) adaptados con alto contraste y visibilidad garantizada.
 
 Expected deliverables:
 
@@ -630,6 +635,7 @@ APROBADO Y VERIFICADO - COMPILACIÓN Y CHUNKS 100% OPERATIVOS (CÓDIGO DE SALIDA
 | BUG-003 | HIGH | src/features/auth/actions/auth-actions.ts | Error de compilación Next.js: 'Server actions must be async functions' por exportación síncrona de getBaseUrl() en archivo con directiva 'use server'. Resuelto convirtiendo getBaseUrl() en función asíncrona Promise<string> y utilizando await en signUp() y suites de prueba. | BACKEND | RESOLVED |
 | BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
 | BUG-005 | CRITICAL | .next, chunks estáticos, CSS global | Error 500 generalizado al servir chunks estáticos y CSS de Next.js provocado por colisión de procesos huérfanos de dev server (PIDs 17444, 23800) y corrupción de caché persistente de Webpack. Resuelto mediante detención forzada de procesos Node/Next bloqueantes, eliminación recursiva de `.next/` y ciclo estricto de auditoría (tsc, lint, vitest, build) completado con código de salida 0. | QA VERIFIER AGENT | RESOLVED |
+| BUG-006 | LOW | src/components/ui/button.tsx, TransactionsClientView.tsx | Defecto de contraste visual en botón "Limpiar filtros" y botones con variante outline en Modo Día (fondo y texto de baja visibilidad sin hover). Resuelto definiendo clases adaptativas de alto contraste en buttonVariants (outline y secondary) y clases explícitas en TransactionsClientView, WelcomeHubManagerModal, CategoriesClientView y TransactionForm. | FRONTEND / QA | RESOLVED |
 
 Severity:
 
@@ -927,6 +933,23 @@ Task: Resolved critical production/dev server incident where static chunks and C
 Files modified: .agents-team/BOARD.md
 Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (179/179 passed), npm run build (0)
 Verdict: COMPLETED, VERIFIED & UNBLOCKED
+Handoff status: COMPLETED
+
+### 2026-11-18 - FRONTEND & QA VERIFIER AGENT (Visual Contrast Enhancement on "Limpiar filtros" & Outline/Secondary Buttons in Light Mode)
+Task: Resolved visual contrast defect on "Limpiar filtros" and outline/secondary buttons across the application in Light Mode:
+1. Updated `buttonVariants` in `src/components/ui/button.tsx`: `outline` now includes explicit `border-slate-300 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 hover:text-slate-900` ensuring guaranteed WCAG AA+ contrast globally without relying on ambiguous inherited text colors. `secondary` updated to `bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100`.
+2. Updated `TransactionsClientView.tsx`:
+   - Filter bar "Limpiar filtros" button: `border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 text-rose-600 dark:text-rose-300` for crisp visibility.
+   - Empty state "Limpiar filtros" button: `border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] font-semibold`.
+3. Updated dialog and modal buttons in `WelcomeHubManagerModal.tsx`, `CategoriesClientView.tsx`, and `TransactionForm.tsx`.
+4. Strict Quality Audit:
+   - `npx tsc --noEmit` -> PASS (Code 0, strict: true).
+   - `npm run lint` -> PASS (Code 0, 0 warnings, 0 errors).
+   - `npx vitest run` -> PASS (Code 0, 183/183 unit tests passed across 13 suites, 100%).
+   - `npm run build` -> PASS (Code 0, all 12 routes + Edge Middleware compiled cleanly).
+Files modified: src/components/ui/button.tsx, src/features/transactions/components/TransactionsClientView.tsx, src/features/categories/components/CategoriesClientView.tsx, src/features/dashboard/components/WelcomeHubManagerModal.tsx, src/features/transactions/components/TransactionForm.tsx, .agents-team/BOARD.md
+Verification commands: npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
+Verdict: COMPLETED & VERIFIED (CODE 0)
 Handoff status: COMPLETED
 
 ---

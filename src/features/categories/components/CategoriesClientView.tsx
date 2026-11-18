@@ -865,7 +865,7 @@ export function CategoriesClientView({
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
-                className="text-xs border-slate-200 dark:border-white/[0.1] rounded-xl"
+                className="text-xs border-slate-300 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl font-medium"
               >
                 Cancelar
               </Button>
