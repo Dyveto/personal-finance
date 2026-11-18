@@ -363,6 +363,11 @@ Responsibilities:
   - Actualización optimista inmediata del estado local `transactions` en `TransactionsClientView.tsx`, recalculando en el mismo frame los KPIs superiores, los totales y porcentajes por categoría, y el listado ordenado.
   - Sincronización reactiva con `useEffect` en `TransactionsClientView`, `AccountsClientView`, `CreditCardsClientView` y `CategoriesClientView` para reflejar instantáneamente las revalidaciones del servidor (`initialTransactions`, `initialAccounts`, `initialCreditCards`, etc.).
   - Revalidación integral de rutas (`/`, `/transactions`, `/accounts`, `/credit-cards`, `/dashboard`) en las Server Actions `createTransaction`, `createInstallmentPurchase` y `createAccount`, garantizando que el Dashboard principal y las vistas dependientes queden sincronizadas sin requerir recargar la página.
+- [x] Persistencia del Estado Colapsable para la sección de "Totales por Categoría" en Transacciones:
+  - Creación del módulo utilitario `src/lib/transactions-preferences.ts` para lectura y escritura segura en `localStorage` con clave única `finances_category_totals_collapsed`.
+  - Restauración automática del estado expandido/colapsado al montar la vista en `TransactionsClientView.tsx` evitando problemas de hidratación SSR.
+  - Guardado instantáneo y automático ante cada interacción de alternancia (`handleToggleCategorySummary`).
+  - Cobertura de pruebas unitarias en `tests/unit/transactions-preferences.test.ts` (6 pruebas añadidas, 155/155 pruebas unitarias en total pasando al 100%).
 
 Expected deliverables:
 
@@ -381,6 +386,9 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/lib/transactions-preferences.ts (Módulo utilitario de persistencia en localStorage para el estado colapsable de Totales por Categoría)
+- tests/unit/transactions-preferences.test.ts (Pruebas unitarias de persistencia, fallback y manejo seguro de Storage)
+- src/features/transactions/components/TransactionsClientView.tsx (Restauración al montar y guardado persistente del estado colapsable de Totales por Categoría; actualización optimista y reactiva inmediata en creación)
 - src/features/transactions/components/CategoryMultiSelect.tsx (Componente unificado de selección múltiple por nombre base con buscador, checkboxes, badges y cierre por evento)
 - src/app/(dashboard)/transactions/page.tsx (Contenedor estricto con w-full h-auto pb-12 para eliminar scroll fantasma)
 - src/features/transactions/components/TransactionsClientView.tsx (Ajuste del contenedor raíz a w-full h-auto space-y-8, integración de CategoryMultiSelect, filtrado por unión de categorías, chips interactivos, y consolidación por nombre base)
@@ -417,7 +425,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (149/149 unit tests passing across 9 suites, 100%)
+- `npm run test:run` -> PASS (155/155 unit tests passing across 10 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:

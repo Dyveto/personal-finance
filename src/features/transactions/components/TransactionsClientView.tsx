@@ -56,6 +56,10 @@ import {
 import type { AccountRow } from "@/features/accounts/actions/account-actions";
 import type { CategoryRow } from "@/features/categories/actions/category-actions";
 import { formatMoneyCOP, addMoney, subtractMoney, roundMoney } from "@/lib/finance/money";
+import {
+  getCategoryTotalsCollapsedPreference,
+  setCategoryTotalsCollapsedPreference,
+} from "@/lib/transactions-preferences";
 
 interface TransactionsClientViewProps {
   initialTransactions: TransactionRow[];
@@ -140,6 +144,21 @@ export function TransactionsClientView({
   // Estados visuales de la sección de categorías
   const [isCategorySummaryOpen, setIsCategorySummaryOpen] = useState(true);
   const [categoryViewTab, setCategoryViewTab] = useState<"all" | "expense" | "income">("all");
+
+  // Restaurar preferencia guardada en localStorage para la sección de Totales por Categoría
+  useEffect(() => {
+    const isCollapsed = getCategoryTotalsCollapsedPreference();
+    setIsCategorySummaryOpen(!isCollapsed);
+  }, []);
+
+  // Alternar y persistir el estado de colapso
+  const handleToggleCategorySummary = () => {
+    setIsCategorySummaryOpen((prev) => {
+      const nextOpen = !prev;
+      setCategoryTotalsCollapsedPreference(!nextOpen);
+      return nextOpen;
+    });
+  };
 
   // Mapas auxiliares para búsqueda rápida de nombres de cuentas y categorías
   const accountsMap = useMemo(() => {
@@ -832,7 +851,7 @@ export function TransactionsClientView({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsCategorySummaryOpen((prev) => !prev)}
+              onClick={handleToggleCategorySummary}
               className="h-8 w-8 p-0 text-slate-500 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] rounded-lg"
               title={isCategorySummaryOpen ? "Ocultar desglose" : "Mostrar desglose"}
             >
