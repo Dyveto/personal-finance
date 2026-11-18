@@ -386,6 +386,10 @@ Expected deliverables:
 Handoff:
 
 Files created/modified:
+- src/features/transactions/components/AccountMultiSelect.tsx (Selector desplegable de cuentas con selección múltiple mediante casillas/checkboxes, buscador interno, acciones Todas/Limpiar, selector minimalista y diseño idéntico al selector de categorías)
+- tests/unit/account-multiselect.test.ts (7 pruebas unitarias de filtrado multi-cuenta, toggle de selección, exclusión y búsqueda)
+- src/features/transactions/components/CategoryMultiSelect.tsx (Limpieza visual eliminando badges de tipo Gasto/Ingreso, logrando interfaz minimalista y limpia con solo icono y nombre de categoría)
+- src/features/transactions/components/TransactionsClientView.tsx (Integración de AccountMultiSelect con casillas, estado selectedAccountIds, chips interactivos de cuentas en azul #3B82F6, y resumen en cabecera de tabla)
 - src/lib/transactions-search.ts (Utilidades de filtrado multi-etiqueta con lógica OR inclusiva, agregación/remoción de tags case-insensitive)
 - tests/unit/search-multitag.test.ts (12 pruebas unitarias de búsqueda multi-etiqueta, OR inclusivo, case-insensitivity, notas, categorías y cuentas)
 - src/features/transactions/components/TransactionsClientView.tsx (Búsqueda multi-palabra con badges interactivos, botón Añadir/Enter, chips con botón [x], lógica OR en filtrado reactivo y resumen en cabecera de tabla)
@@ -428,7 +432,7 @@ Files created/modified:
 Commands executed:
 - `npx tsc --noEmit` -> PASS (0 type errors, strict: true)
 - `npm run lint` -> PASS (0 lint warnings/errors)
-- `npm run test:run` -> PASS (167/167 unit tests passing across 11 suites, 100%)
+- `npm run test:run` -> PASS (174/174 unit tests passing across 12 suites, 100%)
 - `npm run build` -> PASS (Optimized production build, 12 static/dynamic routes + Edge Middleware)
 
 Backend functions consumed:

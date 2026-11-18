@@ -50,6 +50,7 @@ import {
   type TransactionCreatedResult,
 } from "@/features/transactions/components/TransactionForm";
 import { CategoryMultiSelect } from "@/features/transactions/components/CategoryMultiSelect";
+import { AccountMultiSelect } from "@/features/transactions/components/AccountMultiSelect";
 import {
   deleteTransaction,
   type TransactionRow,
@@ -142,7 +143,7 @@ export function TransactionsClientView({
   const [searchInput, setSearchInput] = useState("");
   const [searchTags, setSearchTags] = useState<string[]>([]);
   const [typeFilter, setTypeFilter] = useState<"all" | "income" | "expense">("all");
-  const [selectedAccountFilter, setSelectedAccountFilter] = useState<string>("all");
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>([]);
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [startDate, setStartDate] = useState<string>("");
@@ -221,7 +222,7 @@ export function TransactionsClientView({
     setSearchInput("");
     setSearchTags([]);
     setTypeFilter("all");
-    setSelectedAccountFilter("all");
+    setSelectedAccountIds([]);
     setSelectedCategoryNames([]);
     setDatePreset("all");
     setStartDate("");
@@ -232,7 +233,7 @@ export function TransactionsClientView({
     searchTags.length > 0 ||
     searchInput.trim() !== "" ||
     typeFilter !== "all" ||
-    selectedAccountFilter !== "all" ||
+    selectedAccountIds.length > 0 ||
     selectedCategoryNames.length > 0 ||
     startDate !== "" ||
     endDate !== "";
@@ -251,8 +252,8 @@ export function TransactionsClientView({
         return false;
       }
 
-      // Filtro por cuenta
-      if (selectedAccountFilter !== "all" && tx.account_id !== selectedAccountFilter) {
+      // Filtro por cuentas (multi-select)
+      if (selectedAccountIds.length > 0 && !selectedAccountIds.includes(tx.account_id)) {
         return false;
       }
 
@@ -291,7 +292,7 @@ export function TransactionsClientView({
   }, [
     transactions,
     typeFilter,
-    selectedAccountFilter,
+    selectedAccountIds,
     selectedCategoryNames,
     startDate,
     endDate,
@@ -680,20 +681,14 @@ export function TransactionsClientView({
             )}
           </div>
 
-          {/* Filtro por Cuenta */}
+          {/* Filtro por Cuentas (Multi-Select con Casillas) */}
           <div>
-            <select
-              value={selectedAccountFilter}
-              onChange={(e) => setSelectedAccountFilter(e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
-            >
-              <option value="all">Todas las cuentas</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name} ({a.account_type === "credit_card" ? "Tarjeta" : "Cuenta"})
-                </option>
-              ))}
-            </select>
+            <AccountMultiSelect
+              accounts={accounts}
+              selectedAccountIds={selectedAccountIds}
+              onChange={setSelectedAccountIds}
+              placeholder="Todas las cuentas"
+            />
           </div>
 
           {/* Filtro por Categoría (Multi-Select unificado por nombre base) */}
@@ -841,6 +836,47 @@ export function TransactionsClientView({
                   className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
                 >
                   Limpiar palabras
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Badges de Cuentas seleccionadas (Multi-Select) */}
+          {selectedAccountIds.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
+                <Wallet className="w-3 h-3 text-[#3B82F6]" />
+                <span>Cuentas ({selectedAccountIds.length}):</span>
+              </span>
+              {selectedAccountIds.map((accId) => {
+                const acc = accountsMap.get(accId);
+                const accName = acc?.name || "Cuenta";
+                return (
+                  <span
+                    key={`chip-acc-${accId}`}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#3B82F6]/15 border border-[#3B82F6]/30 text-xs font-semibold text-[#3B82F6] dark:text-[#60A5FA] transition-all hover:bg-[#3B82F6]/20"
+                  >
+                    <span>{accName}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedAccountIds((prev) => prev.filter((id) => id !== accId))
+                      }
+                      className="hover:text-rose-500 font-bold ml-0.5 text-xs leading-none"
+                      title={`Quitar ${accName}`}
+                    >
+                      ✕
+                    </button>
+                  </span>
+                );
+              })}
+              {selectedAccountIds.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedAccountIds([])}
+                  className="text-xs text-rose-500 hover:text-rose-600 font-semibold hover:underline px-1 py-0.5"
+                >
+                  Limpiar todas
                 </button>
               )}
             </div>
@@ -1226,6 +1262,11 @@ export function TransactionsClientView({
               {searchTags.length > 0 && (
                 <span className="text-cyan-600 dark:text-cyan-400 font-bold">
                   Búsqueda: {searchTags.map((t) => `"${t}"`).join(" ó ")}
+                </span>
+              )}
+              {selectedAccountIds.length > 0 && (
+                <span className="text-[#3B82F6] dark:text-[#60A5FA] font-bold">
+                  Cuentas: {selectedAccountIds.map((id) => accountsMap.get(id)?.name || id).join(", ")}
                 </span>
               )}
               {selectedCategoryNames.length > 0 && (
