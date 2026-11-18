@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.0
+Version: 1.4.0
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
@@ -387,6 +387,12 @@ Responsibilities:
   - Botón "Limpiar filtros" de cabecera en `TransactionsClientView.tsx`: variante `outline` con `border-rose-200 dark:border-rose-900/40 bg-rose-50 hover:bg-rose-100 text-rose-600 dark:text-rose-300 font-medium`.
   - Botón "Limpiar filtros" de estado vacío en `TransactionsClientView.tsx`: `border-slate-300 dark:border-white/[0.1] bg-slate-100 hover:bg-slate-200 dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] font-semibold`.
   - Botones secundarios/outline en modales (`WelcomeHubManagerModal.tsx`, `CategoriesClientView.tsx`, `TransactionForm.tsx`) adaptados con alto contraste y visibilidad garantizada.
+- [x] Visualización Elegante de Versión en Sidebar y Protocolo SemVer v1.4.0:
+  - Creación de `src/config/version.ts`: Constante centralizada `APP_VERSION = "1.4.0"`.
+  - Badge tipográfico minimalista en `src/components/layout/Sidebar.tsx` en la cabecera de la tarjeta inferior junto al indicador de seguridad RLS.
+  - Sincronización en `package.json` (`1.4.0`) y `CHANGELOG.md` con desglose detallado de releases.
+  - Protocolo SemVer obligatorio formalizado en `CHANGELOG.md` y `BOARD.md` para promociones de `develop` a `main`.
+  - Pruebas unitarias en `tests/unit/version.test.ts` (3 pruebas, 186/186 pruebas unitarias pasando al 100%).
 
 Expected deliverables:
 
@@ -989,6 +995,23 @@ Task: Formalized and executed mandatory 5-step Quality Gate to eliminate chunk c
 Files modified: .agents-team/BOARD.md
 Verification commands: powershell "Remove-Item -Recurse -Force .next" (0), npx tsc --noEmit (0), npm run lint (0), npx vitest run (183/183 passed), npm run build (0)
 Verdict: RATIFIED, VERIFIED & APPROVED (CODE 0)
+Handoff status: COMPLETED
+
+### 2026-11-18 - FRONTEND & QA VERIFIER AGENT (Sidebar Version Display v1.4.0 & Strict SemVer Protocol Ratification)
+Task: Implemented elegant version display in Sidebar and established strict SemVer release protocol for develop -> main promotions:
+1. Created `src/config/version.ts`: Exported `APP_VERSION = "1.4.0"`.
+2. Updated `src/components/layout/Sidebar.tsx`: Integrated subtle, elegant version badge (`v1.4.0`) inside bottom status card next to RLS indicator with responsive high-contrast colors in light mode (`bg-slate-200/70 text-slate-600 border-slate-300/80`) and dark mode (`dark:bg-white/[0.06] dark:text-[#94A3B8] dark:border-white/[0.06]`).
+3. Updated `package.json` to `"version": "1.4.0"`.
+4. Enriched `CHANGELOG.md` with complete history and formalized SemVer Release Protocol (develop -> main gates).
+5. Added unit test suite `tests/unit/version.test.ts` checking SemVer regex, package.json synchronization and baseline versioning.
+6. Executed mandatory 5-step quality verification cycle:
+   - `rm -rf .next` -> Cache clean.
+   - `npx tsc --noEmit` -> PASS (0 errors, strict: true).
+   - `npm run lint` -> PASS (0 warnings, 0 errors).
+   - `npx vitest run` -> PASS (186/186 tests passed across 14 suites).
+   - `npm run build` -> PASS (Code 0, 12 routes + Edge Middleware generated cleanly).
+Files modified: src/config/version.ts, src/components/layout/Sidebar.tsx, package.json, CHANGELOG.md, tests/unit/version.test.ts, .agents-team/BOARD.md
+Verdict: COMPLETED, VERIFIED & APPROVED (CODE 0)
 Handoff status: COMPLETED
 
 ---
