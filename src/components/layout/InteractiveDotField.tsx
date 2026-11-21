@@ -41,9 +41,10 @@ export function InteractiveDotField() {
     let dots: Dot[] = [];
     let isTouchOrMobile = false;
 
-    const interactionRadius = 130;
-    const maxPushDistance = 18;
-    const damping = 0.12;
+    // Rango amplio de influencia inspirado en antigravity.google
+    const interactionRadius = 250; // Ampliado de 130 a 250px para onda amplia
+    const maxPushDistance = 26; // Desplazamiento elástico orgánico
+    const damping = 0.10; // Amortiguación fluida
 
     const pointer = {
       x: -1000,
@@ -55,7 +56,7 @@ export function InteractiveDotField() {
     let animationFrameId: number | null = null;
     let isLoopRunning = false;
     let idleCounter = 0;
-    const MAX_DESKTOP_IDLE_FRAMES = 60; // En escritorio, dormir tras estabilizarse
+    const MAX_DESKTOP_IDLE_FRAMES = 75; // En escritorio, dormir tras estabilizarse
 
     // 2. Construir cuadrícula con densidad adaptativa (baja densidad en móvil)
     const buildDotsGrid = () => {
@@ -64,8 +65,9 @@ export function InteractiveDotField() {
         width < 768 ||
         (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches);
 
-      // Mayor espaciado en móviles (54px) para mantener un conteo muy ligero (~100 puntos)
-      const gridSpacing = isTouchOrMobile ? 54 : 38;
+      // Mayor espaciado en móviles (52px) para mantener un conteo ligero (~110 puntos)
+      // En escritorio espaciado a 38px
+      const gridSpacing = isTouchOrMobile ? 52 : 38;
 
       const cols = Math.floor(width / gridSpacing);
       const rows = Math.floor(height / gridSpacing);
@@ -119,30 +121,24 @@ export function InteractiveDotField() {
 
       const isDark = document.documentElement.classList.contains("dark");
       ctx.fillStyle = isDark
-        ? "rgba(139, 92, 246, 0.08)"
-        : "rgba(100, 116, 139, 0.12)";
+        ? "rgba(148, 163, 184, 0.20)"
+        : "rgba(100, 116, 139, 0.22)";
 
       for (let i = 0; i < dots.length; i++) {
         const dot = dots[i];
         ctx.beginPath();
-        ctx.arc(dot.originX, dot.originY, 1.2, 0, Math.PI * 2);
+        ctx.arc(dot.originX, dot.originY, 1.4, 0, Math.PI * 2);
         ctx.fill();
       }
     };
 
-    // 5. Bucle de renderizado animado con deriva ambiental y respuesta táctil
+    // 5. Bucle de renderizado animado con campo amplio y deriva ambiental
     const render = (time: number) => {
       if (!isLoopRunning) return;
 
       ctx.clearRect(0, 0, width, height);
 
       const isDark = document.documentElement.classList.contains("dark");
-      const baseColor = isDark
-        ? "rgba(148, 163, 184, 0.10)"
-        : "rgba(100, 116, 139, 0.14)";
-      const highlightColor = isDark
-        ? "rgba(139, 92, 246, 0.32)"
-        : "rgba(139, 92, 246, 0.35)";
 
       let hasActiveMovement = false;
 
@@ -157,12 +153,14 @@ export function InteractiveDotField() {
         let baseY = dot.originY;
 
         if (isAmbientActive) {
-          baseX += Math.sin(time * 0.0014 + dot.originY * 0.018) * 4.5;
-          baseY += Math.cos(time * 0.0011 + dot.originX * 0.018) * 4.5;
+          baseX += Math.sin(time * 0.0014 + dot.originY * 0.018) * 5.0;
+          baseY += Math.cos(time * 0.0011 + dot.originX * 0.018) * 5.0;
           hasActiveMovement = true;
         }
 
-        // Interacción concentrada al tocar la pantalla o mover el cursor
+        // Interacción concentrada en rango amplio (250px)
+        let proximity = 0;
+
         if (pointer.active) {
           const dx = pointer.x - baseX;
           const dy = pointer.y - baseY;
@@ -171,8 +169,9 @@ export function InteractiveDotField() {
 
           if (distSq < radiusSq) {
             const dist = Math.sqrt(distSq);
-            const factor = 1 - dist / interactionRadius;
-            const force = factor * factor * maxPushDistance;
+            proximity = 1 - dist / interactionRadius; // 0 (borde) a 1 (centro)
+            // Curva suave de caída de fuerza
+            const force = proximity * proximity * maxPushDistance;
             const angle = Math.atan2(dy, dx);
 
             dot.targetX = baseX - Math.cos(angle) * force;
@@ -192,24 +191,35 @@ export function InteractiveDotField() {
         dot.currentX += diffX * damping;
         dot.currentY += diffY * damping;
 
-        if (Math.abs(diffX) > 0.04 || Math.abs(diffY) > 0.04) {
+        if (Math.abs(diffX) > 0.03 || Math.abs(diffY) > 0.03) {
           hasActiveMovement = true;
         }
 
-        // Distancia del punto respecto a su ancla para resaltar interacción cercana
-        const distFromBase = Math.hypot(
-          dot.currentX - dot.originX,
-          dot.currentY - dot.originY
-        );
+        // Tamaño y opacidad dinámicos según proximidad al cursor
+        let dotRadius = 1.35;
+        let fillStyle = "";
+
+        if (proximity > 0) {
+          dotRadius = 1.35 + proximity * 0.9; // Crece sutilmente de 1.35px a 2.25px
+          if (isDark) {
+            // Modo noche: violeta vibrante con brillo gradual
+            const alpha = 0.20 + proximity * 0.45;
+            fillStyle = `rgba(167, 139, 250, ${alpha.toFixed(2)})`;
+          } else {
+            // Modo día: violeta eléctrico profundo con excelente contraste
+            const alpha = 0.22 + proximity * 0.43;
+            fillStyle = `rgba(124, 58, 237, ${alpha.toFixed(2)})`;
+          }
+        } else {
+          // Puntos en reposo: claramente visibles pero no invasivos
+          fillStyle = isDark
+            ? "rgba(148, 163, 184, 0.20)"
+            : "rgba(100, 116, 139, 0.22)";
+        }
 
         ctx.beginPath();
-        if (distFromBase > 3.0) {
-          ctx.fillStyle = highlightColor;
-          ctx.arc(dot.currentX, dot.currentY, 1.4, 0, Math.PI * 2);
-        } else {
-          ctx.fillStyle = baseColor;
-          ctx.arc(dot.currentX, dot.currentY, 1.1, 0, Math.PI * 2);
-        }
+        ctx.fillStyle = fillStyle;
+        ctx.arc(dot.currentX, dot.currentY, dotRadius, 0, Math.PI * 2);
         ctx.fill();
       }
 
@@ -274,10 +284,10 @@ export function InteractiveDotField() {
       } else {
         // En escritorio (mouse), responder al movimiento de proximidad
         if (
-          clientX >= -50 &&
-          clientX <= width + 50 &&
-          clientY >= -50 &&
-          clientY <= height + 50
+          clientX >= -100 &&
+          clientX <= width + 100 &&
+          clientY >= -100 &&
+          clientY <= height + 100
         ) {
           pointer.x = clientX;
           pointer.y = clientY;

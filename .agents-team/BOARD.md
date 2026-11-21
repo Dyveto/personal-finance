@@ -1102,22 +1102,23 @@ Task: Audited, tested, and verified end-to-end the "SMS de nueva transacción" f
    - `npm run lint` -> PASS (0 errors, 0 warnings).
    - `npx vitest run` -> PASS (237/237 tests passing across 17 test suites, 100%).
    - `npm run build` -> PASS (Next.js 14 optimized production build, 12 static/dynamic routes + Edge Middleware).
-### 2026-11-20 - FRONTEND AGENT (Interactive Dot Field: Mobile Ambient Drift & Touch Interaction Optimization)
-Task: Optimized interactive canvas dot field for mobile and touchscreen devices:
-1. Mobile Ambient Movement (`InteractiveDotField.tsx`):
-   - Implemented subtle, continuous organic wave/drift behind the interface on mobile screens (`width < 768px` or `pointer: coarse`).
-   - Adaptive density: spacing set to `54px` on mobile (maintaining ~100 lightweight dots) and `38px` on desktop.
-   - Preserved `devicePixelRatio` clamp to maximum `2` for OLED/Retina mobile screens.
-2. Touch-Only Concentrated Interaction:
-   - Configured `pointerdown`, `pointermove`, `pointerup`, and `pointercancel` with `{ passive: true }`: on mobile/touchscreens, concentrated dot deflection activates ONLY when the user is actively touching or dragging the screen.
-   - Upon release (`pointerup`/`pointercancel`), dots smoothly transition back to the ambient drift with spring damping.
-   - Guaranteed non-blocking UX: canvas container strictly `pointer-events-none z-0`, preserving 100% native smooth scrolling and full interactivity for buttons, cards, selects, modals, and the SMS 2-step wizard.
-3. Theme Contrast & Battery Conservation:
-   - Discreet colors in light mode (`rgba(100, 116, 139, 0.14)`) and dark mode (`rgba(148, 163, 184, 0.10)`), with highlight (`rgba(139, 92, 246, 0.32)`).
-   - Pauses on background tabs via `document.hidden` and renders static dots under `prefers-reduced-motion: reduce`.
-4. Tests and Verification:
-   - Updated `tests/unit/interactive-dot-field.test.ts` (5 tests covering DPR clamp, mobile density spacing 54px, ambient wave sine math, touch deflection activation, and passive pointer-events-none container).
-   - Quality gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx vitest run` (242/242 tests passing), and `npm run build` (clean production build).
+### 2026-11-20 - FRONTEND AGENT (Interactive Dot Field: Broad Aura Response & Enhanced Dynamic Visibility)
+Task: Amplified responsiveness, visibility, and dynamic broad aura in `InteractiveDotField.tsx` inspired by antigravity.google:
+1. Broad Aura & Dynamic Range:
+   - Expanded interaction radius from `130px` to `250px`, enabling a large, fluid zone of influence across screen sections.
+   - Organic displacement with maximum deflection up to `26px` and smoother spring damping (`damping = 0.10`).
+   - Dynamic proximity interpolation: dots dynamically scale in radius from `1.35px` up to `2.25px` and intensify in brightness/opacity as the cursor moves closer.
+2. High-Contrast Aesthetic & Mode Clarity:
+   - Modo Noche: Base dots crisp slate (`rgba(148, 163, 184, 0.20)`), glowing electric violet highlight (`rgba(167, 139, 250, 0.65)`).
+   - Modo Día: Base dots cool slate (`rgba(100, 116, 139, 0.22)`), glowing deep violet highlight (`rgba(124, 58, 237, 0.65)`).
+   - Static fallback under `prefers-reduced-motion` rendered with crisp `1.4px` dots.
+3. Mobile & Architecture Preservation:
+   - Low density spacing maintained on mobile (`52px`), with organic ambient sine wave drift (`5px` amplitude) behind content.
+   - Touch-only concentrated interaction activated during active screen touch.
+   - Strictly non-blocking: canvas container remains `pointer-events-none z-0` below `main` and dialog portals.
+4. Quality & Tests:
+   - Updated `tests/unit/interactive-dot-field.test.ts` (6 tests covering broad 250px aura, proximity radius scaling, equilibrium return, and DPR limits).
+   - Validation gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx vitest run` (243/243 tests passing, 100%), and `npm run build` (clean production build).
 Handoff status: COMPLETED
 
 ---
