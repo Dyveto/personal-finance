@@ -1171,6 +1171,22 @@ Task: Audited, tested, and verified end-to-end the SMS parser and 2-step wizard 
 Verdict: APPROVED & VERIFIED
 Handoff status: COMPLETED
 
+### 2026-11-20 - BACKEND AGENT (SMS Parser Hardening: Real-World Banking Formats & Precision)
+Task: Enhanced `src/lib/sms-transaction-parser.ts` to support diverse production SMS formats from Bancolombia and Nequi:
+1. Production Formats Supported:
+   - Case 1: Received payments in savings accounts (`"Recibiste un pago por $1,750,905.00 de ADRES... a tu cuenta AHORROS, el 10:17 a las 19/11/2026"` -> `type: 'income'`, `amount: '1750905.00'`, `date: '2026-11-19'`, `detectedAccountRef: 'AHORROS'`).
+   - Case 2: Debit card purchases with European/mixed thousands and decimals (`"Compraste $164.000,00... con tu T.Deb *4741, el 10/11/2026 a las 16:37"` -> `type: 'expense'`, `amount: '164000.00'`, `date: '2026-11-10'`, `detectedAccountRef: '*4741'`).
+   - Case 3: Nequi transactions without currency sign and fractional cents (`"NEQUI: Pagaste 329.220,12 en PlayStation Network"` -> `type: 'expense'`, `amount: '329220.12'`, `date: null`).
+   - Case 4: Payments from numeric products (`"Pagaste $26,125.00... desde tu producto 3980 el 07/11/2026 21:13:33"` -> `type: 'expense'`, `amount: '26125.00'`, `date: '2026-11-07'`, `detectedAccountRef: '3980'`).
+2. Numerical & Support Line Normalization:
+   - Hardened `normalizeMonetaryAmount` for comma-thousands and dot-thousands disambiguation preserving exact cents.
+   - Enhanced `sanitizeCustomerServiceNumbers` to sanitize 10-digit Colombian fixed lines (`60[1-8]\d{7}`) and `018000` lines without spaces (`aqui:018000...`).
+   - Maintained `suggestedDescription: ""` across all flows.
+3. Tests & Quality Gates:
+   - Added unit tests for all 4 real cases in `tests/unit/qa-sms-audit.test.ts`. Total tests expanded to 252.
+   - Verification gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx vitest run` (252/252 tests pass).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

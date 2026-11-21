@@ -155,17 +155,16 @@ function normalizeMonetaryAmount(rawAmount: string): string | null {
       const lastComma = clean.lastIndexOf(",");
       const lastDot = clean.lastIndexOf(".");
       if (lastComma > lastDot) {
-        // Ej: 20.400,50 -> punto miles, coma decimales
+        // Ej: 164.000,00 o 329.220,12 -> punto miles, coma decimales
         clean = clean.replace(/\./g, "").replace(",", ".");
       } else {
-        // Ej: 20,400.50 -> coma miles, punto decimales
+        // Ej: 1,750,905.00 o 26,125.00 -> coma miles, punto decimales
         clean = clean.replace(/,/g, "");
       }
     } else if (clean.includes(",")) {
       const parts = clean.split(",");
-      // Si después de la coma hay exactamente 3 dígitos y es la única coma (ej. 20,400),
-      // en Colombia es separador de miles.
-      if (parts.length === 2 && parts[1].length === 3) {
+      // Si después de la(s) coma(s) todos los bloques tienen exactamente 3 dígitos (ej: 20,400 o 1,500,000), son miles
+      if (parts.length > 1 && parts.every((p, idx) => idx === 0 || p.length === 3)) {
         clean = clean.replace(/,/g, "");
       } else {
         // Decimal con coma (ej. 20400,50 o 20,5)
@@ -207,13 +206,16 @@ function normalizeMonetaryAmount(rawAmount: string): string | null {
  */
 function sanitizeCustomerServiceNumbers(text: string): string {
   let result = text;
-  // Líneas 018000 (ej: 018000912345, 01 8000 912345, 01-8000-912345)
-  result = result.replace(/(?:tel[ée]fono|l[íi]nea|dudas\s+al|inquietudes\s+al|comun[íi]cate\s+(?:ya\s+)?al|soporte\s+al)?\s*01\s*[-.]?\s*8000\s*[-.]?\d{5,8}/gi, " [TELEFONO_SOPORTE] ");
+  // Líneas 018000 (ej: 018000931987, 018000912345, aqui:018000931987, 01-8000-912345)
+  result = result.replace(/(?:aqui:?|al:?|contacto:?)?\s*01\s*[-.]?\s*8000\s*[-.]?\d{5,8}\b/gi, " [TELEFONO_SOPORTE] ");
   
-  // Teléfonos móviles o fijos con palabras clave de contacto o paréntesis
-  result = result.replace(/(?:al|llamando\s+al|contacto:?)\s*(?:\(?\+?57\)?\s*)?(?:\(?60\d\)?|\b3\d{2})\s*[-.]?\d{7}\b/gi, " [TELEFONO_SOPORTE] ");
-  result = result.replace(/\(\s*3\d{2}\d{7}\s*\)/gi, " [TELEFONO_SOPORTE] ");
-  
+  // Teléfonos fijos colombianos (10 dígitos iniciando en 601 a 608, ej: 6045109095)
+  result = result.replace(/(?:al|llamanos\s+al|encuentranos\s+aqui:?|linea|dudas\s+al|telefono:?|contacto:?)?\s*(?:\(?\+?57\)?\s*)?\b60[1-8]\d{7}\b/gi, " [TELEFONO_SOPORTE] ");
+
+  // Teléfonos móviles colombianos (10 dígitos iniciando en 3XX, ej: 3006000100, 3101234567)
+  result = result.replace(/(?:al|llamando\s+al|contacto:?)\s*(?:\(?\+?57\)?\s*)?\b3\d{9}\b/gi, " [TELEFONO_SOPORTE] ");
+  result = result.replace(/\(\s*3\d{9}\s*\)/gi, " [TELEFONO_SOPORTE] ");
+
   return result;
 }
 
@@ -223,7 +225,7 @@ function sanitizeCustomerServiceNumbers(text: string): string {
 function extractAmount(text: string): string | null {
   const sanitized = sanitizeCustomerServiceNumbers(text);
 
-  // 1. Patrón prioritario: con signo $ o código COP (ej. $20,400.00, $25000, $ 25.000, COP 50.000)
+  // 1. Patrón prioritario: con signo $ o código COP (ej. $20,400.00, $1,750,905.00, $164.000,00, $26,125.00)
   const currencyRegex = /(?:[\$]|COP\s*)\s*([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)/gi;
   let match: RegExpExecArray | null;
 
@@ -235,9 +237,19 @@ function extractAmount(text: string): string | null {
     }
   }
 
-  // 2. Patrón secundario: precedido de palabras clave de importe (por, valor de, monto de, transfieres, etc.)
-  const keywordAmountRegex = /(?:por\s+valor\s+de|por\s+un\s+valor\s+de|por|valor|monto|transfieres|transferiste|enviaste|recibiste|abono\s+de)\s+([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)/gi;
+  // 2. Patrón secundario: precedido de palabras clave de importe (por, valor de, pagaste, compraste, etc.)
+  const keywordAmountRegex = /(?:por\s+valor\s+de|por\s+un\s+valor\s+de|por|valor|monto|transfieres|transferiste|enviaste|recibiste(?:\s+un\s+pago)?|abono\s+de|pagaste|compraste|sacaste|pag[oó]\s+de|pag[oó]|recarga\s+de|recarga)\s+([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{1,2})?|[0-9]+(?:[.,][0-9]{1,2})?)/gi;
   while ((match = keywordAmountRegex.exec(sanitized)) !== null) {
+    const rawVal = match[1];
+    const normalized = normalizeMonetaryAmount(rawVal);
+    if (normalized !== null) {
+      return normalized;
+    }
+  }
+
+  // 3. Patrón terciario: montos numéricos explícitamente formateados con miles y decimales
+  const formattedAmountRegex = /\b([0-9]{1,3}(?:\.[0-9]{3})+,\d{2}|[0-9]{1,3}(?:,[0-9]{3})+\.\d{2})\b/g;
+  while ((match = formattedAmountRegex.exec(sanitized)) !== null) {
     const rawVal = match[1];
     const normalized = normalizeMonetaryAmount(rawVal);
     if (normalized !== null) {
@@ -322,21 +334,30 @@ function extractBank(text: string): string | null {
 }
 
 /**
- * Extrae la referencia de cuenta o tarjeta (ej: "*9266").
+ * Extrae la referencia de cuenta o tarjeta (ej: "*9266", "*4741", "3980", "AHORROS").
  */
 function extractAccountRef(text: string): string | null {
-  // Patrones comunes: cta *9266, t.deb *9266, t.cred *1234, tarjeta *4321, *9266, cta 9266
-  const patterns = [
-    /(?:cta|cuenta|t\.deb|t\.cred|tarjeta|t\.|debito|credito|débito|crédito)\s*[*xX]*\s*[*xX](\d{4})\b/i,
-    /(?:cta|cuenta|tarjeta)\s*(?:de\s+ahorros\s+)?(?:terminada\s+en\s+)?(\d{4})\b/i,
-    /[*xX]{1,4}(\d{4})\b/,
-  ];
+  // 1. Patrones numéricos de tarjeta o producto con asterisco explícito (ej: *4741, *9266, **1234)
+  const asteriskMatch = /(?:[*xX]{1,4})(\d{4})\b/.exec(text);
+  if (asteriskMatch) {
+    return `*${asteriskMatch[1]}`;
+  }
 
-  for (const pat of patterns) {
-    const match = pat.exec(text);
-    if (match && match[1]) {
-      return `*${match[1]}`;
-    }
+  // 2. Patrones con prefijo bancario seguidos de 4 dígitos (con o sin asterisco)
+  // Ej: "producto 3980", "t.deb *4741", "cuenta 9266", "tarjeta 1234"
+  const prefixNumericPattern =
+    /(?:cta|cuenta|producto|t\.deb|t\.cred|tarjeta|t\.|debito|credito|débito|crédito)\s*(?:terminad[ao]\s+en\s+)?(?:de\s+ahorros\s+)?(?:[*xX]{1,4})?(\d{4})\b/i;
+  const prefixMatch = prefixNumericPattern.exec(text);
+  if (prefixMatch) {
+    const fullMatch = prefixMatch[0];
+    return fullMatch.includes("*") ? `*${prefixMatch[1]}` : prefixMatch[1];
+  }
+
+  // 3. Patrones textuales de tipo de cuenta sin dígitos (ej: "cuenta AHORROS", "cuenta CORRIENTE")
+  const typeTextMatch =
+    /(?:a\s+tu\s+cuenta|en\s+tu\s+cuenta|cuenta|cta)\s+(ahorros|corriente)\b/i.exec(text);
+  if (typeTextMatch) {
+    return typeTextMatch[1].toUpperCase();
   }
 
   return null;
@@ -350,8 +371,9 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
 
   // Señales de Bancolombia específicas de dirección
   if (detectedBank === "Bancolombia") {
-    // "transferencia por $X en su cta" / "recibiste ... en tu cta" -> ingreso
+    // "recibiste un pago", "transferencia por $X en su cta", "abono a tu cta", etc. -> ingreso
     if (
+      /recibiste(?:\s+un)?\s+pago/i.test(lower) ||
       /transferencia\s+por\s+[$0-9.,\s]+en\s+(?:su|tu)\s+cta/i.test(lower) ||
       /recibiste\b/i.test(lower) ||
       /te\s+transfirieron\b/i.test(lower) ||
@@ -361,13 +383,13 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
       return "income";
     }
 
-    // "transferencia por $X desde cta" / "compra" / "pago" / "retiro" / "transferiste" -> gasto
+    // "transferencia por $X desde cta" / "compraste" / "compra" / "pagaste" / "pago" / "retiro" / "transferiste" -> gasto
     if (
       /transferencia\s+por\s+[$0-9.,\s]+desde\s+(?:su|tu|cta)/i.test(lower) ||
       /transferiste\b/i.test(lower) ||
       /enviaste\b/i.test(lower) ||
-      /compra\b/i.test(lower) ||
-      /pago\b/i.test(lower) ||
+      /compr(?:a|aste)\b/i.test(lower) ||
+      /pag(?:aste|o)\b/i.test(lower) ||
       /retiro\b/i.test(lower)
     ) {
       return "expense";
@@ -399,13 +421,13 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
 
   // Señales de entrada / ingreso generales
   const isIncome =
-    /\b(abono\s+a\s+tu\s+cuenta|abono\s+recibido|transferencia\s+recibida|consignaci[oó]n|te\s+transfirieron|te\s+enviaron|te\s+lleg[oó]|recibiste|recibi[oó]\s+un\s+abono)\b/i.test(
+    /\b(abono\s+a\s+tu\s+cuenta|abono\s+recibido|transferencia\s+recibida|consignaci[oó]n|te\s+transfirieron|te\s+enviaron|te\s+lleg[oó]|recibiste(?:\s+un\s+pago)?|pago\s+recibido|recibi[oó]\s+un\s+abono)\b/i.test(
       lower
     );
 
   // Señales de salida / gasto generales
   const isExpense =
-    /\b(compra\b|pago\s+por|pagaste|transferiste|enviaste|transferencia\s+enviada|transferencia\s+realizada|retiro\s+por|sacaste|d[eé]bito)\b/i.test(
+    /\b(compr(?:a|aste)\b|pago\s+por|pagaste|realizaste\s+un\s+pago|transferiste|enviaste|transferencia\s+enviada|transferencia\s+realizada|retiro\s+por|sacaste|d[eé]bito)\b/i.test(
       lower
     );
 
@@ -416,8 +438,13 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
     return "expense";
   }
 
+  // Si ambos coinciden (ej. "recibiste un pago por $..."), desempatar con prioridad para recibiste
+  if (isIncome && /recibiste/i.test(lower)) {
+    return "income";
+  }
+
   // Si hay ambigüedad o ambos, analizar el contexto "desde" vs "a / en"
-  if (/desde\s+(?:tu|su|cta|cuenta|tarjeta)/i.test(lower)) {
+  if (/desde\s+(?:tu|su|cta|cuenta|tarjeta|producto)/i.test(lower)) {
     return "expense";
   }
   if (/en\s+(?:tu|su|cta|cuenta)/i.test(lower) && /desde\s+(?:cta|cuenta)\s+de/i.test(lower)) {
@@ -486,10 +513,21 @@ function matchUserAccount(
     const bankRule = KNOWN_BANKS.find((b) => b.name === detectedBank);
     const aliases = bankRule ? bankRule.aliases : [detectedBank.toLowerCase()];
 
-    const matchedByBank = accounts.filter((acc) => {
+    let matchedByBank = accounts.filter((acc) => {
       const accLower = acc.name.toLowerCase();
       return aliases.some((alias) => accLower.includes(alias));
     });
+
+    // Si hay referencia textual de cuenta (ej. "AHORROS" o "CORRIENTE") y varias cuentas del banco
+    if (detectedAccountRef && matchedByBank.length > 1) {
+      const refLower = detectedAccountRef.toLowerCase();
+      const typeFiltered = matchedByBank.filter((acc) =>
+        acc.name.toLowerCase().includes(refLower)
+      );
+      if (typeFiltered.length === 1) {
+        matchedByBank = typeFiltered;
+      }
+    }
 
     if (matchedByBank.length === 1) {
       return { matchedAccountId: matchedByBank[0].id, accountMatched: true };

@@ -348,4 +348,71 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(standardModalConfig.prefillData).toBeUndefined();
     });
   });
+
+  describe("8. Real-World Production Cases & Colombian Number Normalization", () => {
+    const realAccounts: UserAccount[] = [
+      { id: "acc-bancolombia-ahorros", name: "Bancolombia Ahorros", lastFour: null },
+      { id: "acc-bancolombia-4741", name: "Bancolombia T.Deb *4741", lastFour: "4741" },
+      { id: "acc-bancolombia-3980", name: "Bancolombia Producto *3980", lastFour: "3980" },
+      { id: "acc-nequi-main", name: "Cuenta Nequi Principal", lastFour: null },
+    ];
+
+    it("parses received payment in savings account (Case 1: Income with HH:MM a las DD/MM/YYYY and 018000)", () => {
+      const sms =
+        "Bancolombia: Recibiste un pago por $1,750,905.00 de ADRES   URA a tu cuenta AHORROS, el 10:17 a las 19/11/2026. ¿Tienes dudas? Encuentranos aqui:018000931987. Estamos cerca";
+      const result = parseSmsTransaction(sms, realAccounts);
+
+      expect(result.type).toBe("income");
+      expect(result.amount).toBe("1750905.00");
+      expect(result.date).toBe("2026-11-19");
+      expect(result.detectedBank).toBe("Bancolombia");
+      expect(result.detectedAccountRef).toBe("AHORROS");
+      expect(result.suggestedDescription).toBe("");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-bancolombia-ahorros");
+    });
+
+    it("parses debit card purchase with European/mixed thousands and decimals (Case 2: Expense with $164.000,00 and 604 line)", () => {
+      const sms =
+        "Bancolombia: Compraste $164.000,00 en DOLLARCITY PRADO CL con tu T.Deb *4741, el 10/11/2026 a las 16:37. Si tienes dudas, encuentranos aqui: 6045109095 o 018000931987. Estamos cerca.";
+      const result = parseSmsTransaction(sms, realAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("164000.00");
+      expect(result.date).toBe("2026-11-10");
+      expect(result.detectedBank).toBe("Bancolombia");
+      expect(result.detectedAccountRef).toBe("*4741");
+      expect(result.suggestedDescription).toBe("");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-bancolombia-4741");
+    });
+
+    it("parses Nequi expense without $ symbol, preserving .12 cents and null date (Case 3: Expense with 329.220,12)", () => {
+      const sms = "NEQUI: Pagaste 329.220,12 en PlayStation Network";
+      const result = parseSmsTransaction(sms, realAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("329220.12");
+      expect(result.date).toBeNull();
+      expect(result.detectedBank).toBe("Nequi");
+      expect(result.suggestedDescription).toBe("");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-nequi-main");
+    });
+
+    it("parses payment from numeric product (Case 4: Expense from producto 3980 with HH:MM:SS and 604 line)", () => {
+      const sms =
+        "Bancolombia: Pagaste $26,125.00 a MERCADOPAGO COLOMBIA LTDA desde tu producto 3980 el 07/11/2026 21:13:33. ¿Dudas? Llamanos al 6045109095. Estamos cerca";
+      const result = parseSmsTransaction(sms, realAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("26125.00");
+      expect(result.date).toBe("2026-11-07");
+      expect(result.detectedBank).toBe("Bancolombia");
+      expect(result.detectedAccountRef).toBe("3980");
+      expect(result.suggestedDescription).toBe("");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-bancolombia-3980");
+    });
+  });
 });
