@@ -1063,7 +1063,32 @@ Task: Implemented pure, deterministic TypeScript parser and normalizer for Colom
 4. Added 25 unit tests in `tests/unit/sms-transaction-parser.test.ts` (211/211 tests passing across 15 test suites).
 5. Executed verification: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings).
 Handoff status: COMPLETED
-Next agent: FRONTEND (Ready to build SMS paste modal & transaction pre-fill UI).
+
+### 2026-11-20 - FRONTEND AGENT (2-Step SMS Wizard Flow Integration & Auto-Focus)
+Task: Integrated guided 2-step "SMS de nueva transacción" wizard modal and form pre-fill into TransactionsClientView:
+1. Created `src/features/transactions/components/SmsTransactionModal.tsx` with Step 1 (50% progress bar, SMS textarea, bank guidance) and Step 2 (100% progress bar, 'Volver al texto' button, detected bank/account badges, pre-filled TransactionForm).
+2. Updated `src/features/transactions/components/TransactionForm.tsx` with `TransactionPrefillData` interface, form state synchronization, and auto-focus hook on `#account_id` when `autoFocusAccount === true`.
+3. Added high-contrast 'SMS de nueva transacción' button in `TransactionsClientView.tsx` with `MessageSquareText` icon. Guaranteed complete isolation so the standard 'Nueva Transacción' button remains 100% clean without step badges or progress bars.
+4. Added 5 unit tests in `tests/unit/sms-transaction-wizard.test.ts`.
+Handoff status: COMPLETED
+
+### 2026-11-20 - QA VERIFIER AGENT (End-to-End SMS Transaction Wizard & Parser Audit)
+Task: Audited, tested, and verified end-to-end the "SMS de nueva transacción" feature (parser, wizard modal, auto-focus, decimal precision, resilient fallbacks, and standard flow isolation):
+1. Created comprehensive Vitest suite in `tests/unit/qa-sms-audit.test.ts` (12 tests) covering:
+   - Bancolombia outgoing transfer (`Transferiste $20,400.00 desde tu cuenta *9266 a la cuenta *3023568257 el 16/11/26...`): Expense type, exact amount 20400.00, civil date 2026-11-16, matched to account *9266 / Bancolombia.
+   - Bancolombia incoming transfer (`...recibiste una transferencia de OLGA MATILDE TORRES por $25,000.00 en tu cuenta *9266 conectada a la llave @dylan531 el 08/11/26...`): Income type, exact amount 25000.00, civil date 2026-11-08, matched to account *9266.
+   - Nu, Nequi, and BBVA income and expense notifications preserving cents without rounding error or decimal loss (e.g. 45200.75, 18500.25, 350000.50, 65400.99).
+   - Unrecognized account handling (`accountMatched: false`): correctly retains extracted amount, date, and type while setting `autoFocusAccount: true` with empty `account_id`.
+   - Resiliency & error safety: partial and random non-banking text handled without crashes or unhandled exceptions, returning confidence `none` or `partial`.
+   - 2-Step wizard behavior: verifies Step 1 (50% progress) -> Step 2 (100% progress) transition, and total isolation of standard "Nueva Transacción" modal (no step badges or progress bars).
+2. Bug fix in `src/lib/sms-transaction-parser.ts`: Enhanced `isExpense` regex pattern with `\bcompra\b` to robustly capture informal purchase phrases (`Tu compra fue de $55.000`, `compra exitosa`, etc.).
+3. Executed mandatory QA verification gate:
+   - `npx tsc --noEmit` -> PASS (0 errors, strict: true).
+   - `npm run lint` -> PASS (0 errors, 0 warnings).
+   - `npx vitest run` -> PASS (228/228 tests passing across 17 test suites, 100%).
+   - `npm run build` -> PASS (Next.js 14 optimized production build, 12 static/dynamic routes + Edge Middleware).
+Verdict: APPROVED & VERIFIED (Zero defects, 100% test pass rate, production build clean).
+Handoff status: COMPLETED
 
 ---
 

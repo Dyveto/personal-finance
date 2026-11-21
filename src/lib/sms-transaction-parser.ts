@@ -405,7 +405,7 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
 
   // Señales de salida / gasto generales
   const isExpense =
-    /\b(compra\s+aprobada|compra\s+con\s+tarjeta|compra\s+por|compra\s+en|pago\s+por|pagaste|transferiste|enviaste|transferencia\s+enviada|transferencia\s+realizada|retiro\s+por|sacaste|d[eé]bito)\b/i.test(
+    /\b(compra\b|pago\s+por|pagaste|transferiste|enviaste|transferencia\s+enviada|transferencia\s+realizada|retiro\s+por|sacaste|d[eé]bito)\b/i.test(
       lower
     );
 
