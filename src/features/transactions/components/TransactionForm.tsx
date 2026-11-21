@@ -22,6 +22,7 @@ import {
   updateTransaction,
   type TransactionRow,
 } from "@/features/transactions/actions/transaction-actions";
+import type { ActionResult } from "@/types/actions";
 import { formatMoneyCOP, splitInstallments, roundMoney } from "@/lib/finance/money";
 import { AlertCircle, CreditCard, Loader2, Sparkles } from "lucide-react";
 
@@ -269,9 +270,23 @@ export function TransactionForm({
           notes: values.notes || null,
         };
 
-        const result = await updateTransaction(initialData.id, payload);
-        if (!result.success) {
-          setServerError(result.error);
+        let result: ActionResult<TransactionRow> | undefined;
+        try {
+          result = await updateTransaction(initialData.id, payload);
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al actualizar la transacción.";
+          setServerError(msg);
+          return;
+        }
+
+        if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se recibió una confirmación válida del servidor al actualizar la transacción.";
+          setServerError(errorMsg);
           return;
         }
         createdOrUpdated = result.data;
@@ -288,9 +303,23 @@ export function TransactionForm({
           notes: values.notes || null,
         };
 
-        const result = await createInstallmentPurchase(payload);
-        if (!result.success) {
-          setServerError(result.error);
+        let result: ActionResult<{ transaction: TransactionRow; installments: string[] }> | undefined;
+        try {
+          result = await createInstallmentPurchase(payload);
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al procesar la compra a cuotas.";
+          setServerError(msg);
+          return;
+        }
+
+        if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se recibió una confirmación válida del servidor al crear la compra diferida.";
+          setServerError(errorMsg);
           return;
         }
         createdOrUpdated = result.data;
@@ -309,9 +338,23 @@ export function TransactionForm({
           notes: values.notes || null,
         };
 
-        const result = await createTransaction(payload);
-        if (!result.success) {
-          setServerError(result.error);
+        let result: ActionResult<TransactionRow> | undefined;
+        try {
+          result = await createTransaction(payload);
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al registrar la transacción.";
+          setServerError(msg);
+          return;
+        }
+
+        if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se recibió respuesta válida del servidor al registrar la transacción. Por favor verifica tu conexión e intenta de nuevo.";
+          setServerError(errorMsg);
           return;
         }
         createdOrUpdated = result.data;
@@ -321,7 +364,16 @@ export function TransactionForm({
         onSuccess(createdOrUpdated);
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al procesar la transacción";
+      let msg = err instanceof Error ? err.message : "Error al procesar la transacción";
+      if (
+        typeof msg === "string" &&
+        (msg.includes("undefined is not an object") ||
+          msg.includes("Cannot read properties of undefined") ||
+          msg.includes("evaluating 's.success'") ||
+          msg.includes("success"))
+      ) {
+        msg = "No se pudo completar la operación en el servidor. Por favor verifica tu conexión e intenta nuevamente.";
+      }
       setServerError(msg);
     }
   };

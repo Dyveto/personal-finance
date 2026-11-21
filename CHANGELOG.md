@@ -30,6 +30,17 @@ Antes de fusionar o promover cualquier cambio desde la rama `develop` a `main`, 
 
 ---
 
+## [v1.5.1] - 2026-11-21
+### Correcciones (Hotfix de Estabilidad en Safari / iOS)
+- **Blindaje Defensivo contra `undefined is not an object (evaluating 's.success')`**:
+  - Corrección de validación en `TransactionForm` y modales del flujo SMS (`Paso 2 de 2`), verificando defensivamente `if (!result || typeof result !== "object" || !result.success)` antes de acceder a propiedades de respuesta.
+  - Aislamiento de llamadas de revalidación (`revalidatePath`) en `transaction-actions.ts` dentro de bloques `try...catch` independientes, garantizando que un fallo o advertencia de caché en Server Components nunca aborte el retorno de `{ success: true, data: ... }` al cliente.
+  - Sanitización de mensajes de error de tiempo de ejecución para evitar que TypeErrors crípticos de WebKit/Safari se muestren al usuario en banners de error.
+  - Preservación total e intacta de los datos ya parseados del SMS (`monto`, `fecha`, `cuenta`, `tipo`, `categoría`, `descripción` y `notas`) en caso de errores de red o sesión, permitiendo reintentar la confirmación sin pérdida de información.
+  - Aplicación extensiva de comprobaciones defensivas en formularios y vistas de clientes (`AccountForm`, `PayStatementDialog`, `CategoriesClientView`, `CreditCardsClientView`, `AccountsClientView`, `TransactionsClientView`, `NotificationBell`, `WelcomeHubDashboard`).
+
+---
+
 ## [v1.5.0] - 2026-11-20
 ### Añadido
 - **Campo de Micro-trazos Dinámico estilo Antigravity (`InteractiveDotField`)**:

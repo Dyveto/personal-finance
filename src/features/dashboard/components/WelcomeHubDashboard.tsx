@@ -212,7 +212,7 @@ export function WelcomeHubDashboard({
         };
 
         const result = await saveDashboardLayout(payload);
-        if (result.success) {
+        if (result && typeof result === "object" && "success" in result && result.success) {
           setSavedSnapshot(payload);
           setSaveFeedback("¡Diseño del Dashboard guardado exitosamente!");
           setIsEditing(false);
@@ -220,7 +220,11 @@ export function WelcomeHubDashboard({
             setSaveFeedback(null);
           }, 4000);
         } else {
-          setErrorMessage(result.error);
+          setErrorMessage(
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se pudo guardar la personalización del dashboard."
+          );
         }
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Error desconocido al guardar";

@@ -13,11 +13,14 @@ describe("Version Consistency and SemVer Protocol", () => {
     expect(packageJson.version).toMatch(semVerRegex);
   });
 
-  it("should be at least version 1.5.0", () => {
-    const [major, minor] = APP_VERSION.split(".").map(Number);
+  it("should be at least version 1.5.1", () => {
+    const [major, minor, patch] = APP_VERSION.split(".").map(Number);
     expect(major).toBeGreaterThanOrEqual(1);
     if (major === 1) {
       expect(minor).toBeGreaterThanOrEqual(5);
+      if (minor === 5) {
+        expect(patch).toBeGreaterThanOrEqual(1);
+      }
     }
   });
 });

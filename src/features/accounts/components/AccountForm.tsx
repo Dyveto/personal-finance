@@ -19,6 +19,7 @@ import {
   updateAccount,
   type AccountRow,
 } from "@/features/accounts/actions/account-actions";
+import type { ActionResult } from "@/types/actions";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 const AccountFormValidationSchema = z
@@ -156,10 +157,23 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 color: values.color || null,
               };
 
-        const result = await updateAccount(account.id, payload);
+        let result: ActionResult<AccountRow> | undefined;
+        try {
+          result = await updateAccount(account.id, payload);
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al actualizar la cuenta.";
+          setServerError(msg);
+          return;
+        }
 
-        if (!result.success) {
-          setServerError(result.error);
+        if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se recibió una confirmación válida del servidor al actualizar la cuenta.";
+          setServerError(errorMsg);
           return;
         }
 
@@ -193,10 +207,23 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 color: values.color || null,
               };
 
-        const result = await createAccount(payload);
+        let result: ActionResult<AccountRow> | undefined;
+        try {
+          result = await createAccount(payload);
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al registrar la cuenta.";
+          setServerError(msg);
+          return;
+        }
 
-        if (!result.success) {
-          setServerError(result.error);
+        if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof result.error === "string"
+              ? result.error
+              : "No se recibió respuesta válida del servidor al registrar la cuenta.";
+          setServerError(errorMsg);
           return;
         }
 
@@ -205,7 +232,16 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
         }
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error inesperado al guardar la cuenta";
+      let msg = err instanceof Error ? err.message : "Error inesperado al guardar la cuenta";
+      if (
+        typeof msg === "string" &&
+        (msg.includes("undefined is not an object") ||
+          msg.includes("Cannot read properties of undefined") ||
+          msg.includes("evaluating 's.success'") ||
+          msg.includes("success"))
+      ) {
+        msg = "No se pudo completar la operación en el servidor. Por favor verifica tu conexión e intenta nuevamente.";
+      }
       setServerError(msg);
     }
   };

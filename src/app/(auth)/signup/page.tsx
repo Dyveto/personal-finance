@@ -48,8 +48,12 @@ export default function SignUpPage() {
     try {
       const result = await signUp(values);
 
-      if (!result.success) {
-        setFormError(result.error);
+      if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+        setFormError(
+          result && typeof result === "object" && "error" in result && typeof result.error === "string"
+            ? result.error
+            : "No se recibió respuesta válida del servidor al registrar la cuenta."
+        );
         setIsPending(false);
         return;
       }

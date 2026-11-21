@@ -485,9 +485,11 @@ export function TransactionsClientView({
   }, [categoryBaseTransactions, categoriesMap, typeFilter]);
 
   const handleTransactionCreated = (result?: TransactionCreatedResult) => {
-    if (result) {
-      const newTx = "transaction" in result ? result.transaction : result;
-      setTransactions((prev) => [newTx, ...prev.filter((t) => t.id !== newTx.id)]);
+    if (result && typeof result === "object") {
+      const newTx = "transaction" in result && result.transaction ? result.transaction : result;
+      if (newTx && "id" in newTx && typeof newTx.id === "string") {
+        setTransactions((prev) => [newTx, ...prev.filter((t) => t.id !== newTx.id)]);
+      }
     }
     setIsDialogOpen(false);
     setFeedback({
@@ -498,11 +500,13 @@ export function TransactionsClientView({
   };
 
   const handleTransactionUpdated = (result?: TransactionCreatedResult) => {
-    if (result) {
-      const updatedTx = "transaction" in result ? result.transaction : result;
-      setTransactions((prev) =>
-        prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))
-      );
+    if (result && typeof result === "object") {
+      const updatedTx = "transaction" in result && result.transaction ? result.transaction : result;
+      if (updatedTx && "id" in updatedTx && typeof updatedTx.id === "string") {
+        setTransactions((prev) =>
+          prev.map((t) => (t.id === updatedTx.id ? updatedTx : t))
+        );
+      }
     }
     setEditingTransaction(null);
     setFeedback({
@@ -517,8 +521,14 @@ export function TransactionsClientView({
     try {
       setIsDeleting(true);
       const res = await deleteTransaction(deletingTransaction.id);
-      if (!res.success) {
-        setFeedback({ type: "error", message: res.error });
+      if (!res || typeof res !== "object" || !("success" in res) || !res.success) {
+        setFeedback({
+          type: "error",
+          message:
+            res && typeof res === "object" && "error" in res && typeof res.error === "string"
+              ? res.error
+              : "No se pudo eliminar la transacción por un error inesperado del servidor.",
+        });
         return;
       }
       setTransactions((prev) => prev.filter((t) => t.id !== deletingTransaction.id));

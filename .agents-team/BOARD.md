@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.5.0
+Version: 1.5.1
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
@@ -1216,11 +1216,27 @@ Task: Bumped version to v1.5.0 (Minor Release) and synchronized all documentatio
 5. Prepared Pull Request from `develop` to `main`.
 Handoff status: COMPLETED
 
+### 2026-11-21 - BACKEND & FRONTEND AGENT (Hotfix v1.5.1: Safari iOS Stability & Defensive Action Response Handling)
+Diagnosis:
+1. Issue: On Safari iOS (iPhone), confirming a transaction from SMS Flow Step 2 (or standard form) intermittently displayed `undefined is not an object (evaluating 's.success')`.
+2. Root Cause: In client components (`TransactionForm`, etc.), results of Server Actions (`await createTransaction(...)`) were evaluated directly via `if (!result.success)` without checking whether `result` was an object. If the Server Action request encountered an interrupted connection, mobile sleep/backgrounding, or if `revalidatePath` failed during RSC cache revalidation, the client promise resolved to `undefined`. Accessing `.success` caused a JavaScript TypeError (`undefined is not an object (evaluating 's.success')`), which was caught and displayed literally in the error banner.
+3. Fix & Mitigation:
+   - Backend (`src/features/transactions/actions/transaction-actions.ts`):
+     - Isolated all `revalidatePath` calls inside independent `try...catch` blocks (`createTransaction`, `createInstallmentPurchase`, `updateTransaction`, `deleteTransaction`), preventing cache revalidation issues from corrupting action response payloads.
+     - Strictly guaranteed that all paths return typed `ActionResult` (`{ success: true, data: ... }` or `{ success: false, error: ... }`) and never `undefined` or `null`.
+   - Frontend (`src/features/transactions/components/TransactionForm.tsx`, etc.):
+     - Validated action responses defensively: `if (!result || typeof result !== "object" || !("success" in result) || !result.success)`.
+     - Preserved all parsed form fields (`amount`, `date`, `account`, `type`, `category`, `description`, `notes`) and SMS text so the user can retry without losing input data.
+     - Sanitized runtime error messages to replace technical TypeErrors with user-friendly Spanish explanations.
+     - Applied defensive validation across `TransactionsClientView`, `AccountForm`, `PayStatementDialog`, `CategoriesClientView`, `CreditCardsClientView`, `AccountsClientView`, `NotificationBell`, `WelcomeHubDashboard`, `login` and `signup`.
+   - Version: Bumped to `v1.5.1` (Patch / Hotfix) across `package.json`, `package-lock.json`, `src/config/version.ts`, `tests/unit/version.test.ts`, `CHANGELOG.md`.
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED FOR SPRINT 3 (FULL SYSTEM RELEASE - v1.5.0)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1)
 
 - [x] All implementation agents are COMPLETED.
 - [x] All critical bugs are resolved.
@@ -1229,4 +1245,4 @@ Release Status: UNBLOCKED / APPROVED FOR SPRINT 3 (FULL SYSTEM RELEASE - v1.5.0)
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Sprint 3 Milestone and Full System (v1.5.0) are officially verified, released, and approved.
+Sprint 3 Milestone and Full System (v1.5.1 Hotfix) are officially verified, released, and approved.
