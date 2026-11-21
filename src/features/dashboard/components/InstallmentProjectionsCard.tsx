@@ -170,7 +170,7 @@ export function InstallmentProjectionsCard({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-            <CalendarClock className="w-5 h-5 text-[#8B5CF6]" />
+            <CalendarClock className="w-5 h-5 text-amber-600 dark:text-[#D4AF37]" />
             <span>Proyección de Cuotas y Próximos Pagos</span>
           </h3>
           <p className="text-xs text-slate-600 dark:text-[#94A3B8] mt-0.5">
@@ -224,7 +224,7 @@ export function InstallmentProjectionsCard({
             {pendingStatements.map((group) => (
               <div
                 key={group.key}
-                className="p-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#0B0F19]/50 flex flex-col justify-between transition-all hover:border-[#8B5CF6]/30"
+                className="p-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#0B0F19]/50 flex flex-col justify-between transition-all hover:border-amber-500/30 dark:hover:border-[#D4AF37]/30"
               >
                 <div>
                   {/* Encabezado del extracto pendiente */}
@@ -239,7 +239,7 @@ export function InstallmentProjectionsCard({
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs font-heading font-extrabold text-[#8B5CF6] block">
+                      <span className="text-xs font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] block">
                         {formatMoneyCOP(group.total)}
                       </span>
                       <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400">
@@ -276,7 +276,7 @@ export function InstallmentProjectionsCard({
                   <Button
                     size="sm"
                     onClick={() => handleOpenPayDialog(group)}
-                    className="w-full h-8 text-xs font-semibold bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(139,92,246,0.25)] transition-all hover:scale-[1.01] active:scale-[0.99]"
+                    className="w-full h-8 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(217,119,6,0.25)] dark:shadow-[0_0_15px_rgba(212,175,55,0.25)] transition-all hover:scale-[1.01] active:scale-[0.99]"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
                     <span>Marcar como Pagado</span>
@@ -369,7 +369,7 @@ export function InstallmentProjectionsCard({
                               </div>
 
                               <div className="flex items-center gap-2 text-slate-600 dark:text-[#94A3B8]">
-                                <Wallet className="w-4 h-4 text-[#8B5CF6] flex-shrink-0" />
+                                <Wallet className="w-4 h-4 text-amber-600 dark:text-[#D4AF37] flex-shrink-0" />
                                 <span>
                                   <strong className="text-slate-900 dark:text-[#F8FAFC]">Medio / Origen:</strong>{" "}
                                   {statementRecord?.notes || "Pago registrado"}

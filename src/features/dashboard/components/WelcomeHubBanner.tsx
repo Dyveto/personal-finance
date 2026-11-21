@@ -35,10 +35,10 @@ export function WelcomeHubBanner({
       )}
 
       {/* Banner Principal PS5 Welcome Hub */}
-      <div className="surface-card p-5 rounded-2xl border border-[#8B5CF6]/40 bg-gradient-to-r from-purple-50/90 via-white to-purple-50/90 dark:from-[#0E1526]/95 dark:via-[#131B2E]/95 dark:to-[#0E1526]/95 shadow-[0_0_30px_rgba(139,92,246,0.18)]">
+      <div className="surface-card p-5 rounded-2xl border border-amber-500/40 bg-gradient-to-r from-amber-50/90 via-white to-amber-50/90 dark:from-[#0E1526]/95 dark:via-[#131B2E]/95 dark:to-[#0E1526]/95 shadow-[0_0_30px_rgba(217,119,6,0.18)]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 flex items-center justify-center text-[#8B5CF6] shadow-[0_0_15px_rgba(139,92,246,0.4)] flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-600 dark:text-[#D4AF37] shadow-[0_0_15px_rgba(217,119,6,0.4)] flex-shrink-0">
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
@@ -46,7 +46,7 @@ export function WelcomeHubBanner({
                 <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
                   Modo Personalización (Welcome Hub)
                 </h3>
-                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/20 text-[#8B5CF6] dark:text-[#A78BFA] border border-[#8B5CF6]/30">
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-[#D4AF37] border border-amber-500/30">
                   {visibleCount} de {totalCount} visibles
                 </span>
               </div>
@@ -64,7 +64,7 @@ export function WelcomeHubBanner({
               onClick={onOpenManager}
               className="rounded-xl border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.05] hover:bg-slate-100 dark:hover:bg-white/[0.1] text-xs font-semibold text-slate-800 dark:text-[#F8FAFC]"
             >
-              <Layers className="w-3.5 h-3.5 mr-1.5 text-[#8B5CF6]" />
+              <Layers className="w-3.5 h-3.5 mr-1.5 text-amber-600 dark:text-[#D4AF37]" />
               Gestionar Secciones
             </Button>
 
@@ -95,7 +95,7 @@ export function WelcomeHubBanner({
               size="sm"
               disabled={isSaving}
               onClick={onSave}
-              className="rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-semibold shadow-[0_0_20px_rgba(139,92,246,0.35)] flex items-center gap-1.5"
+              className="rounded-xl bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold text-xs font-semibold shadow-[0_0_20px_rgba(217,119,6,0.35)] flex items-center gap-1.5"
             >
               {isSaving ? (
                 <>

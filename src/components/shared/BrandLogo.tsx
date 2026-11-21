@@ -15,22 +15,22 @@ export interface BrandLogoProps {
 
 const sizeConfig = {
   sm: {
-    container: "w-9 h-9",
-    dimension: 36,
+    container: "w-10 h-10",
+    dimension: 40,
     title: "text-sm",
     subtitle: "text-[10px]",
     gap: "gap-2.5",
   },
   md: {
-    container: "w-10 h-10",
-    dimension: 40,
+    container: "w-12 h-12",
+    dimension: 48,
     title: "text-base",
     subtitle: "text-[11px]",
     gap: "gap-3",
   },
   lg: {
-    container: "w-12 h-12",
-    dimension: 48,
+    container: "w-14 h-14",
+    dimension: 56,
     title: "text-lg",
     subtitle: "text-xs",
     gap: "gap-3.5",
@@ -66,14 +66,14 @@ export function BrandLogo({
       <div
         className={cn(
           "relative flex-shrink-0 flex items-center justify-center rounded-xl overflow-hidden shadow-sm transition-all duration-300",
-          "border border-amber-500/30 dark:border-amber-400/30",
-          "shadow-[0_2px_10px_rgba(212,175,55,0.18)] dark:shadow-[0_0_15px_rgba(212,175,55,0.22)]",
+          "border border-amber-500/30 dark:border-amber-400/40",
+          "shadow-[0_2px_12px_rgba(212,175,55,0.2)] dark:shadow-[0_0_18px_rgba(212,175,55,0.28)]",
           "bg-[#0B132B]",
           currentSize.container
         )}
       >
         <Image
-          src="/brand/app-icon.jpg"
+          src="/brand/app-icon-cropped.png"
           alt="Personal Finance Logo"
           width={currentSize.dimension}
           height={currentSize.dimension}
@@ -81,7 +81,7 @@ export function BrandLogo({
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {/* Borde sutil de brillo dorado sobre la superficie */}
-        <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-amber-400/20 pointer-events-none" />
+        <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-amber-400/25 pointer-events-none" />
       </div>
 
       {/* Tipografía de Identidad Oficial */}
@@ -98,7 +98,7 @@ export function BrandLogo({
           {showSubtext && (
             <span
               className={cn(
-                "font-semibold tracking-wider uppercase -mt-0.5",
+                "font-bold tracking-wider uppercase -mt-0.5",
                 "text-amber-700 dark:text-[#D4AF37]",
                 currentSize.subtitle
               )}
@@ -113,7 +113,7 @@ export function BrandLogo({
 
   if (href) {
     return (
-      <Link href={href} className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8B5CF6] rounded-xl">
+      <Link href={href} className="inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:focus-visible:ring-[#D4AF37] rounded-xl">
         {content}
       </Link>
     );

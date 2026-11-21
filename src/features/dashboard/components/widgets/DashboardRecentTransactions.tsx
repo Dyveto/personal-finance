@@ -25,7 +25,7 @@ export function DashboardRecentTransactions({
         </div>
         <Link
           href="/transactions"
-          className="text-xs font-semibold text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
+          className="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-[#D4AF37] dark:hover:text-[#F3E5AB] transition-colors"
         >
           Ver historial
         </Link>

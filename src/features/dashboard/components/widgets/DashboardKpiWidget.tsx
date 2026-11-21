@@ -57,12 +57,12 @@ export function DashboardKpiWidget({
       </div>
 
       {/* 3. Cupo Total de Crédito */}
-      <div className="surface-card p-6 rounded-2xl animate-stagger-3 relative overflow-hidden sm:col-span-2 lg:col-span-1 transition-all hover:border-[#8B5CF6]/30">
+      <div className="surface-card p-6 rounded-2xl animate-stagger-3 relative overflow-hidden sm:col-span-2 lg:col-span-1 transition-all hover:border-amber-500/30 dark:hover:border-[#D4AF37]/30">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold tracking-wider text-slate-500 dark:text-[#94A3B8] uppercase">
             Cupo de Crédito Total
           </span>
-          <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+          <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
             <PiggyBank className="w-5 h-5" />
           </div>
         </div>

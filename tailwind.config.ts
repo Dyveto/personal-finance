@@ -33,9 +33,9 @@ const config: Config = {
           border: "rgba(255, 255, 255, 0.08)",
         },
         accent: {
-          DEFAULT: "#8B5CF6",
-          hover: "#7C3AED",
-          glow: "rgba(139, 92, 246, 0.25)",
+          DEFAULT: "#D4AF37",
+          hover: "#C5A059",
+          glow: "rgba(212, 175, 55, 0.25)",
         },
         income: {
           DEFAULT: "#10B981",
@@ -47,12 +47,12 @@ const config: Config = {
         },
         border: "rgba(255, 255, 255, 0.08)",
         input: "rgba(255, 255, 255, 0.08)",
-        ring: "#8B5CF6",
+        ring: "#D4AF37",
         background: "#0B0F19",
         foreground: "#F8FAFC",
         primary: {
-          DEFAULT: "#8B5CF6",
-          foreground: "#F8FAFC",
+          DEFAULT: "#D4AF37",
+          foreground: "#0B0F19",
         },
         secondary: {
           DEFAULT: "#131B2E",

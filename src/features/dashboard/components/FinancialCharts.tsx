@@ -200,7 +200,7 @@ function CustomPieTooltip({ active, payload }: CustomPieTooltipProps) {
 
       <div className="flex items-center justify-between text-[11px] pt-1 border-t border-slate-100 dark:border-white/[0.08]">
         <span className="text-slate-500 dark:text-[#94A3B8]">Participación:</span>
-        <span className="font-heading font-bold text-[#8B5CF6] bg-[#8B5CF6]/15 px-2 py-0.5 rounded-md border border-[#8B5CF6]/25">
+        <span className="font-heading font-bold text-amber-700 dark:text-[#D4AF37] bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/25">
           {data.percentage.toFixed(1)}% del total
         </span>
       </div>
@@ -509,7 +509,7 @@ export function FinancialCharts({
       {/* ---------------------------------------------------------------- */}
       <div className="surface-card p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
             <CalendarRange className="w-4 h-4" />
           </div>
           <div>
@@ -531,7 +531,7 @@ export function FinancialCharts({
             onClick={() => setTimeFilter("days")}
             className={`h-7 px-3 text-xs rounded-lg transition-all ${
               timeFilter === "days"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
+                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
                 : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
             }`}
           >
@@ -545,7 +545,7 @@ export function FinancialCharts({
             onClick={() => setTimeFilter("weeks")}
             className={`h-7 px-3 text-xs rounded-lg transition-all ${
               timeFilter === "weeks"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
+                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
                 : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
             }`}
           >
@@ -559,7 +559,7 @@ export function FinancialCharts({
             onClick={() => setTimeFilter("months")}
             className={`h-7 px-3 text-xs rounded-lg transition-all ${
               timeFilter === "months"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
+                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
                 : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
             }`}
           >
@@ -573,7 +573,7 @@ export function FinancialCharts({
             onClick={() => setTimeFilter("years")}
             className={`h-7 px-3 text-xs rounded-lg transition-all ${
               timeFilter === "years"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
+                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
                 : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
             }`}
           >
@@ -587,7 +587,7 @@ export function FinancialCharts({
             onClick={() => setTimeFilter("custom")}
             className={`h-7 px-3 text-xs rounded-lg flex items-center gap-1 transition-all ${
               timeFilter === "custom"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.3)] font-semibold"
+                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
                 : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
             }`}
           >
@@ -601,7 +601,7 @@ export function FinancialCharts({
       {timeFilter === "custom" && (
         <div className="surface-card p-4 rounded-2xl flex flex-col sm:flex-row items-center gap-3 animate-in fade-in-50 duration-150">
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-[#94A3B8] flex-shrink-0">
-            <Layers className="w-4 h-4 text-[#8B5CF6]" />
+            <Layers className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
             <span>Rango Custom:</span>
           </div>
 
@@ -714,7 +714,7 @@ export function FinancialCharts({
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-                <PieIcon className="w-5 h-5 text-[#8B5CF6]" />
+                <PieIcon className="w-5 h-5 text-amber-600 dark:text-[#D4AF37]" />
                 <span>Gastos por Categoría</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-[#94A3B8] mt-0.5">
@@ -766,7 +766,7 @@ export function FinancialCharts({
                         <span className="text-[11px] text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] transition-colors">
                           <strong className="text-slate-800 dark:text-[#F8FAFC] font-semibold">{value}</strong>
                           {pct && (
-                            <span className="ml-1 text-[#8B5CF6] font-bold">
+                            <span className="ml-1 text-amber-600 dark:text-[#D4AF37] font-bold">
                               ({pct})
                             </span>
                           )}

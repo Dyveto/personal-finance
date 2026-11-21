@@ -156,7 +156,7 @@ export function CategoriesClientView({
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState<"income" | "expense">("expense");
   const [formIcon, setFormIcon] = useState("tag");
-  const [formColor, setFormColor] = useState("#8B5CF6");
+  const [formColor, setFormColor] = useState("#D4AF37");
   const [formActive, setFormActive] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(
@@ -169,7 +169,7 @@ export function CategoriesClientView({
     setFormName("");
     setFormType("expense");
     setFormIcon("utensils");
-    setFormColor("#8B5CF6");
+    setFormColor("#D4AF37");
     setFormActive(true);
     setFormError(null);
     setIsDialogOpen(true);
@@ -397,7 +397,7 @@ export function CategoriesClientView({
             <h2 className="text-2xl md:text-3xl font-heading font-bold text-slate-900 dark:text-[#F8FAFC] tracking-tight">
               Administración de Categorías
             </h2>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25">
               {totalActive} activas · {categories.length} totales
             </span>
           </div>
@@ -408,7 +408,7 @@ export function CategoriesClientView({
 
         <Button
           onClick={handleOpenCreateDialog}
-          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all"
+          className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Nueva Categoría</span>
@@ -456,11 +456,11 @@ export function CategoriesClientView({
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-[#94A3B8]">
               Protegidas (En Uso)
             </span>
-            <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
               <ShieldCheck className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-heading font-extrabold text-[#8B5CF6] mt-2">
+          <div className="text-2xl font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] mt-2">
             {totalProtected}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
@@ -506,7 +506,7 @@ export function CategoriesClientView({
               onClick={() => setTypeFilter("all")}
               className={`rounded-xl text-xs h-9 ${
                 typeFilter === "all"
-                  ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED]"
+                  ? "bg-amber-600 text-white hover:bg-amber-700 dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold"
                   : "text-slate-600 dark:text-[#94A3B8]"
               }`}
             >
@@ -542,7 +542,7 @@ export function CategoriesClientView({
               onClick={() => setTypeFilter("protected")}
               className={`rounded-xl text-xs h-9 ${
                 typeFilter === "protected"
-                  ? "bg-[#8B5CF6]/90 text-white hover:bg-[#8B5CF6]"
+                  ? "bg-amber-500/20 text-amber-800 dark:text-[#D4AF37] hover:bg-amber-500/30"
                   : "text-slate-600 dark:text-[#94A3B8]"
               }`}
             >
@@ -592,7 +592,7 @@ export function CategoriesClientView({
             <Button
               onClick={handleOpenCreateDialog}
               size="sm"
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl text-xs"
+              className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl text-xs"
             >
               Crear Categoría
             </Button>
@@ -613,7 +613,7 @@ export function CategoriesClientView({
                 className={`surface-card p-4 rounded-2xl border transition-all flex flex-col justify-between group ${
                   isInactive
                     ? "opacity-60 bg-slate-100/50 dark:bg-white/[0.02]"
-                    : "hover:border-[#8B5CF6]/30"
+                    : "hover:border-amber-500/30 dark:hover:border-[#D4AF37]/30"
                 }`}
               >
                 <div>
@@ -650,7 +650,7 @@ export function CategoriesClientView({
                               Predeterminada
                             </span>
                           ) : (
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25">
                               Personalizada
                             </span>
                           )}
@@ -711,7 +711,7 @@ export function CategoriesClientView({
                       className="inline-flex items-center gap-1.5 text-slate-600 dark:text-[#94A3B8] bg-slate-100 dark:bg-white/[0.04] px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/[0.06]"
                       title={`Categoría con ${txCount} transacciones registradas. Protegida contra borrado accidental.`}
                     >
-                      <ShieldCheck className="w-3 h-3 text-[#8B5CF6]" />
+                      <ShieldCheck className="w-3 h-3 text-amber-600 dark:text-[#D4AF37]" />
                       <span className="font-semibold text-slate-800 dark:text-[#F8FAFC]">
                         {txCount} movimiento{txCount > 1 ? "s" : ""}
                       </span>
@@ -817,7 +817,7 @@ export function CategoriesClientView({
                       type="button"
                       onClick={() => setFormColor(c)}
                       className={`w-6 h-6 rounded-full transition-transform ${
-                        isSelected ? "scale-125 ring-2 ring-offset-2 ring-[#8B5CF6]" : "hover:scale-110"
+                        isSelected ? "scale-125 ring-2 ring-offset-2 ring-amber-500 dark:ring-[#D4AF37]" : "hover:scale-110"
                       }`}
                       style={{ backgroundColor: c }}
                       title={c}
@@ -841,7 +841,7 @@ export function CategoriesClientView({
                       onClick={() => setFormIcon(item.id)}
                       className={`p-2 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${
                         isSelected
-                          ? "bg-[#8B5CF6] text-white shadow-sm scale-105"
+                          ? "bg-amber-600 dark:bg-[#D4AF37] text-white dark:text-slate-950 shadow-sm scale-105"
                           : "text-slate-600 dark:text-[#94A3B8] hover:bg-slate-200/60 dark:hover:bg-white/[0.08]"
                       }`}
                       title={item.label}
@@ -868,7 +868,7 @@ export function CategoriesClientView({
                 type="checkbox"
                 checked={formActive}
                 onChange={(e) => setFormActive(e.target.checked)}
-                className="w-4 h-4 rounded text-[#8B5CF6] focus:ring-[#8B5CF6] accent-[#8B5CF6]"
+                className="w-4 h-4 rounded text-amber-600 dark:text-[#D4AF37] focus:ring-amber-500 accent-amber-600 dark:accent-[#D4AF37]"
               />
             </div>
 
@@ -884,7 +884,7 @@ export function CategoriesClientView({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl"
+                className="text-xs bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl"
               >
                 {isSubmitting
                   ? "Guardando..."
@@ -960,7 +960,7 @@ export function CategoriesClientView({
                   handleOpenEditDialog(target);
                 }
               }}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
+              className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold text-xs flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
             >
               <Pencil className="w-3.5 h-3.5" />
               <span>Editar o Archivar</span>
@@ -993,7 +993,7 @@ export function CategoriesClientView({
               variant="default"
               size="sm"
               onClick={() => setDeleteErrorAlert(null)}
-              className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
+              className="text-xs bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl"
             >
               Cerrar
             </Button>

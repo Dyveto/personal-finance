@@ -15,6 +15,7 @@ describe("Official Brand Identity, Assets & PWA Verification", () => {
     "public/favicon-16x16.png",
     "public/brand/logo.jpg",
     "public/brand/app-icon.jpg",
+    "public/brand/app-icon-cropped.png",
     "public/manifest.json",
     "src/app/icon.png",
     "src/app/apple-icon.png",

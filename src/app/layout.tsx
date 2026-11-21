@@ -55,7 +55,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="h-full bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] antialiased font-sans selection:bg-[#8B5CF6]/30 selection:text-white transition-colors duration-300">
+      <body className="h-full bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] antialiased font-sans selection:bg-amber-500/30 dark:selection:bg-[#D4AF37]/30 selection:text-amber-950 dark:selection:text-amber-100 transition-colors duration-300">
         {children}
       </body>
     </html>

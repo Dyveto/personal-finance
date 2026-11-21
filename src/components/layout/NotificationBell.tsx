@@ -109,7 +109,7 @@ export function NotificationBell() {
           {/* Cabecera del Popover */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-white/[0.08] bg-slate-50/80 dark:bg-[#0B0F19]/40">
             <div className="flex items-center gap-2">
-              <Bell className="w-4 h-4 text-[#8B5CF6]" />
+              <Bell className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
               <h3 className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider">
                 Notificaciones / Próximos Pagos
               </h3>
@@ -135,7 +135,7 @@ export function NotificationBell() {
           <div className="max-h-80 overflow-y-auto p-3 space-y-2">
             {isLoading && !hasLoaded ? (
               <div className="py-8 text-center text-slate-500 dark:text-[#94A3B8] space-y-2">
-                <Loader2 className="w-5 h-5 animate-spin mx-auto text-[#8B5CF6]" />
+                <Loader2 className="w-5 h-5 animate-spin mx-auto text-amber-600 dark:text-[#D4AF37]" />
                 <p className="text-xs">Consultando fechas de corte y pagos...</p>
               </div>
             ) : alertCount === 0 ? (
@@ -175,7 +175,7 @@ export function NotificationBell() {
                                 ? "bg-[#F43F5E]/20 text-[#F43F5E]"
                                 : isDueToday
                                 ? "bg-amber-500/20 text-amber-400"
-                                : "bg-[#8B5CF6]/15 text-[#8B5CF6]"
+                                : "bg-amber-500/15 text-amber-600 dark:text-[#D4AF37]"
                             }`}
                           >
                             <CreditCard className="w-3.5 h-3.5" />
@@ -203,7 +203,7 @@ export function NotificationBell() {
                               ¡Vence hoy!
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25">
                               <Calendar className="w-3 h-3" />
                               En {alert.daysRemaining} días
                             </span>
@@ -225,7 +225,7 @@ export function NotificationBell() {
             <Link
               href="/credit-cards"
               onClick={() => setIsOpen(false)}
-              className="text-xs font-semibold text-[#8B5CF6] hover:text-[#A78BFA] inline-flex items-center gap-1 transition-colors"
+              className="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-[#D4AF37] dark:hover:text-[#F3E5AB] inline-flex items-center gap-1 transition-colors"
             >
               <span>Ver y gestionar todas las tarjetas</span>
               <ArrowRight className="w-3.5 h-3.5" />

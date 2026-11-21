@@ -24,7 +24,7 @@ export function DashboardActiveAccounts({ accounts }: DashboardActiveAccountsPro
         </div>
         <Link
           href="/accounts"
-          className="text-xs font-semibold text-[#8B5CF6] hover:text-[#A78BFA] transition-colors"
+          className="text-xs font-semibold text-amber-600 hover:text-amber-700 dark:text-[#D4AF37] dark:hover:text-[#F3E5AB] transition-colors"
         >
           Ver todas ({accounts.length})
         </Link>
@@ -58,7 +58,7 @@ export function DashboardActiveAccounts({ accounts }: DashboardActiveAccountsPro
             return (
               <div
                 key={acc.id}
-                className="surface-card p-5 rounded-2xl flex flex-col justify-between transition-all hover:border-[#8B5CF6]/30"
+                className="surface-card p-5 rounded-2xl flex flex-col justify-between transition-all hover:border-amber-500/30 dark:hover:border-[#D4AF37]/30"
               >
                 <div className="flex items-start justify-between">
                   <div>

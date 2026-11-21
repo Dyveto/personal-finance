@@ -337,7 +337,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
       {selectedType === "credit_card" && (
         <div className="pt-3 border-t border-slate-200 dark:border-white/[0.08] space-y-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold tracking-wider text-[#8B5CF6] uppercase">
+            <span className="text-xs font-semibold tracking-wider text-amber-700 dark:text-[#D4AF37] uppercase">
               Configuración de Tarjeta
             </span>
           </div>
@@ -408,7 +408,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl transition-all"
+          className="bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl transition-all"
         >
           {isSubmitting ? (
             <>

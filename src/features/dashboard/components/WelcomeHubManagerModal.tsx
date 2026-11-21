@@ -68,7 +68,7 @@ function renderWidgetIcon(icon: WidgetMeta["icon"]) {
     case "wallet":
       return <Wallet className="w-4 h-4 text-[#10B981]" />;
     case "bar-chart":
-      return <BarChart3 className="w-4 h-4 text-[#8B5CF6]" />;
+      return <BarChart3 className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />;
     case "calendar":
       return <CalendarClock className="w-4 h-4 text-[#EC4899]" />;
     case "credit-card":
@@ -106,7 +106,7 @@ export function WelcomeHubManagerModal({
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto bg-white dark:bg-[#131B2E] border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-2xl">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 flex items-center justify-center text-[#8B5CF6]">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
               <Layers className="w-5 h-5" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export function WelcomeHubManagerModal({
                       variant="ghost"
                       disabled={isFirst}
                       onClick={() => onMoveWidget(id, "up")}
-                      className="h-7 w-7 text-slate-400 hover:text-[#8B5CF6] disabled:opacity-20"
+                      className="h-7 w-7 text-slate-400 hover:text-amber-600 dark:hover:text-[#D4AF37] disabled:opacity-20"
                       title="Subir posición"
                     >
                       <ChevronUp className="w-4 h-4" />
@@ -177,7 +177,7 @@ export function WelcomeHubManagerModal({
                       variant="ghost"
                       disabled={isLast}
                       onClick={() => onMoveWidget(id, "down")}
-                      className="h-7 w-7 text-slate-400 hover:text-[#8B5CF6] disabled:opacity-20"
+                      className="h-7 w-7 text-slate-400 hover:text-amber-600 dark:hover:text-[#D4AF37] disabled:opacity-20"
                       title="Bajar posición"
                     >
                       <ChevronDown className="w-4 h-4" />
@@ -225,7 +225,7 @@ export function WelcomeHubManagerModal({
             type="button"
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] text-white text-xs font-semibold shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center gap-1.5"
+            className="w-full sm:w-auto rounded-xl bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold text-xs font-semibold shadow-[0_0_15px_rgba(217,119,6,0.3)] flex items-center gap-1.5"
           >
             <Check className="w-4 h-4" />
             Listo

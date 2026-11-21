@@ -144,7 +144,7 @@ export function PayStatementDialog({
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl text-slate-900 dark:text-[#F8FAFC]">
         <DialogHeader>
-          <div className="flex items-center gap-2 text-[#8B5CF6]">
+          <div className="flex items-center gap-2 text-amber-600 dark:text-[#D4AF37]">
             <CreditCard className="w-5 h-5" />
             <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
               Pagar Extracto de Tarjeta
@@ -205,7 +205,7 @@ export function PayStatementDialog({
                 <p className="text-[11px] font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider">
                   Total Cuotas
                 </p>
-                <p className="text-base font-heading font-extrabold text-[#8B5CF6]">
+                <p className="text-base font-heading font-extrabold text-amber-600 dark:text-[#D4AF37]">
                   {formatMoneyCOP(totalAmount)}
                 </p>
               </div>
@@ -303,7 +303,7 @@ export function PayStatementDialog({
                 type="submit"
                 size="sm"
                 disabled={isSubmitting}
-                className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
+                className="text-xs bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold flex items-center gap-1.5 rounded-xl shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all"
               >
                 {isSubmitting ? (
                   <>

@@ -189,7 +189,7 @@ export function CreditCardsClientView({
             </Button>
           </Link>
           <Link href="/transactions">
-            <Button className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all">
+            <Button className="text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Compra</span>
             </Button>
@@ -265,7 +265,7 @@ export function CreditCardsClientView({
           <p className="text-xs font-semibold text-slate-600 dark:text-[#94A3B8] uppercase tracking-wider">
             Dinero Disponible
           </p>
-          <p className="text-2xl md:text-3xl font-heading font-extrabold text-[#8B5CF6] mt-2">
+          <p className="text-2xl md:text-3xl font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] mt-2">
             {formatMoneyCOP(totalAvailableMoney)}
           </p>
           <p className="text-xs text-slate-600 dark:text-[#94A3B8] mt-1">Saldo en cuentas y efectivo</p>
@@ -275,7 +275,7 @@ export function CreditCardsClientView({
       {/* Listado de Tarjetas Activas */}
       <div className="space-y-4">
         <h3 className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-          <CreditCard className="w-5 h-5 text-[#8B5CF6]" />
+          <CreditCard className="w-5 h-5 text-amber-600 dark:text-[#D4AF37]" />
           <span>Tus Tarjetas de Crédito</span>
         </h3>
 
@@ -289,7 +289,7 @@ export function CreditCardsClientView({
               Registra una tarjeta de crédito en la sección de Cuentas para monitorear cortes, pagos y compras en cuotas.
             </p>
             <Link href="/accounts" className="inline-block mt-4">
-              <Button size="sm" className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl">
+              <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl">
                 Crear Tarjeta de Crédito
               </Button>
             </Link>
@@ -338,7 +338,7 @@ export function CreditCardsClientView({
                           <Trash2 className="w-3.5 h-3.5" />
                           <span className="sr-only">Eliminar</span>
                         </Button>
-                        <CreditCard className="w-5 h-5 text-[#8B5CF6] ml-1" />
+                        <CreditCard className="w-5 h-5 text-amber-600 dark:text-[#D4AF37] ml-1" />
                       </div>
                     </div>
 

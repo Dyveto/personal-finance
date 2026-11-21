@@ -67,7 +67,7 @@ export function ThemeToggle() {
     return (
       <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100 dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] transition-colors">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+          <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
             <Moon className="w-3.5 h-3.5" />
           </div>
           <div className="text-left">
@@ -108,7 +108,7 @@ export function ThemeToggle() {
           className={cn(
             "w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-300",
             isDarkMode
-              ? "bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25 group-hover:bg-[#8B5CF6]/25"
+              ? "bg-amber-500/15 text-[#D4AF37] border border-amber-500/25 group-hover:bg-amber-500/25"
               : "bg-amber-500/15 text-amber-600 border border-amber-500/25 group-hover:bg-amber-500/25"
           )}
         >

@@ -521,7 +521,7 @@ export function TransactionForm({
                 setValue("new_category_name", "");
               }
             }}
-            className="text-[11px] text-[#8B5CF6] hover:text-[#A78BFA] font-medium flex items-center gap-1 transition-colors"
+            className="text-[11px] text-amber-600 hover:text-amber-700 dark:text-[#D4AF37] dark:hover:text-[#F3E5AB] font-medium flex items-center gap-1 transition-colors"
           >
             {isCustomCategory ? "Elegir categoría existente" : "+ Nueva categoría"}
           </button>
@@ -551,7 +551,7 @@ export function TransactionForm({
               ))}
               <SelectItem
                 value="__ADD_NEW__"
-                className="text-[#8B5CF6] font-semibold border-t border-slate-100 dark:border-white/[0.08] mt-1 pt-1.5 text-xs"
+                className="text-amber-600 dark:text-[#D4AF37] font-semibold border-t border-slate-100 dark:border-white/[0.08] mt-1 pt-1.5 text-xs"
               >
                 + Añadir categoría personalizada...
               </SelectItem>
@@ -578,7 +578,7 @@ export function TransactionForm({
               </button>
             </div>
             <p className="text-[11px] text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-[#8B5CF6]" />
+              <Sparkles className="w-3 h-3 text-amber-600 dark:text-[#D4AF37]" />
               <span>Se guardará automáticamente y quedará disponible para futuros movimientos.</span>
             </p>
           </div>
@@ -610,7 +610,7 @@ export function TransactionForm({
         <div className="p-4 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0B0F19]/50 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4 text-[#8B5CF6]" />
+              <CreditCard className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
               <Label htmlFor="is_installment" className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC] cursor-pointer">
                 ¿Diferir compra a cuotas?
               </Label>
@@ -618,7 +618,7 @@ export function TransactionForm({
             <input
               id="is_installment"
               type="checkbox"
-              className="h-4 w-4 rounded border-slate-300 dark:border-white/[0.2] text-[#8B5CF6] focus:ring-[#8B5CF6] accent-[#8B5CF6]"
+              className="h-4 w-4 rounded border-slate-300 dark:border-white/[0.2] text-amber-600 dark:text-[#D4AF37] focus:ring-amber-500 accent-amber-600 dark:accent-[#D4AF37]"
               {...register("is_installment")}
             />
           </div>
@@ -645,8 +645,8 @@ export function TransactionForm({
 
               {/* Previsualización del Desglose de Cuotas */}
               {installmentPreview && installmentPreview.count > 1 && (
-                <div className="p-3 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 text-xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-[#8B5CF6]">
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-700 dark:text-[#D4AF37]">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Proyección de Cuotas:</span>
                   </div>
@@ -705,7 +705,7 @@ export function TransactionForm({
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="text-xs bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all"
+          className="text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 transition-all"
         >
           {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
           <span>{isEditing ? "Guardar Cambios" : "Registrar Transacción"}</span>

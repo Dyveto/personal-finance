@@ -593,14 +593,14 @@ export function TransactionsClientView({
             variant="outline"
             className="border-slate-300 dark:border-white/[0.12] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl flex items-center gap-1.5 transition-all shadow-sm font-semibold text-xs md:text-sm"
           >
-            <MessageSquareText className="w-4 h-4 text-[#8B5CF6]" />
+            <MessageSquareText className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
             <span>SMS de nueva transacción</span>
           </Button>
 
           {/* Modal y Botón Normal Nueva Transacción (Flujo tradicional limpio y sin pasos) */}
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all text-xs md:text-sm">
+              <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 transition-all text-xs md:text-sm">
                 <PlusCircle className="w-4 h-4" />
                 <span>Nueva Transacción</span>
               </Button>
@@ -693,12 +693,12 @@ export function TransactionsClientView({
                 {isFilterActive ? "Balance (Filtrado)" : "Balance Neto"}
               </span>
               {isFilterActive && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/20">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/20">
                   Filtro
                 </span>
               )}
             </div>
-            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
@@ -721,10 +721,10 @@ export function TransactionsClientView({
       <div className="surface-card p-5 rounded-2xl space-y-4 relative z-30 hover:transform-none">
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2 text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
-            <Filter className="w-4 h-4 text-[#8B5CF6]" />
+            <Filter className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
             <span>Filtros y Búsqueda Avanzada</span>
             {isFilterActive && (
-              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25 font-bold">
+              <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25 font-bold">
                 Activos: {filteredTransactions.length} de {transactions.length}
               </span>
             )}
@@ -822,7 +822,7 @@ export function TransactionsClientView({
             <select
               value={datePreset}
               onChange={(e) => handleDatePresetChange(e.target.value as DatePreset)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-[#D4AF37]"
             >
               <option value="all">Cualquier fecha</option>
               <option value="this_month">Este mes</option>
@@ -837,7 +837,7 @@ export function TransactionsClientView({
         {(datePreset === "custom" || startDate || endDate) && (
           <div className="p-3 rounded-xl bg-slate-100/60 dark:bg-[#0B0F19]/60 border border-slate-200 dark:border-white/[0.06] flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94A3B8]">
-              <Calendar className="w-3.5 h-3.5 text-[#8B5CF6]" />
+              <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-[#D4AF37]" />
               <span className="font-semibold">Rango:</span>
             </div>
             <div className="flex items-center gap-2">
@@ -890,7 +890,7 @@ export function TransactionsClientView({
               onClick={() => handleTypeFilterChange("all")}
               className={
                 typeFilter === "all"
-                  ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl text-xs shadow-[0_0_12px_rgba(139,92,246,0.25)]"
+                  ? "bg-amber-600 text-white hover:bg-amber-700 dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl text-xs shadow-[0_0_12px_rgba(217,119,6,0.25)]"
                   : "text-slate-600 hover:text-slate-900 dark:text-[#94A3B8] dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl text-xs"
               }
             >
@@ -1002,13 +1002,13 @@ export function TransactionsClientView({
           {selectedCategoryNames.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5 pt-1">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8] flex items-center gap-1">
-                <Tag className="w-3 h-3 text-[#8B5CF6]" />
+                <Tag className="w-3 h-3 text-amber-600 dark:text-[#D4AF37]" />
                 <span>Categorías ({selectedCategoryNames.length}):</span>
               </span>
               {selectedCategoryNames.map((catName) => (
                 <span
                   key={`chip-${catName}`}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/30 text-xs font-semibold text-[#8B5CF6] transition-all hover:bg-[#8B5CF6]/20"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs font-semibold text-amber-700 dark:text-[#D4AF37] transition-all hover:bg-amber-500/20"
                 >
                   <span>{catName}</span>
                   <button
@@ -1048,7 +1048,7 @@ export function TransactionsClientView({
         {/* Cabecera de la sección de categorías */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/[0.06]">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6] flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37] flex-shrink-0">
               <PieChart className="w-4 h-4" />
             </div>
             <div>
@@ -1056,7 +1056,7 @@ export function TransactionsClientView({
                 <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
                   Totales por Categoría
                 </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/25">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25">
                   Filtros Activos
                 </span>
               </div>
@@ -1361,7 +1361,7 @@ export function TransactionsClientView({
             <Button
               onClick={() => setIsDialogOpen(true)}
               size="sm"
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl text-xs"
+              className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl text-xs"
             >
               Registrar Movimiento
             </Button>
@@ -1385,7 +1385,7 @@ export function TransactionsClientView({
                 </span>
               )}
               {selectedCategoryNames.length > 0 && (
-                <span className="text-[#8B5CF6] font-bold">
+                <span className="text-amber-600 dark:text-[#D4AF37] font-bold">
                   Filtrado por: {selectedCategoryNames.join(", ")}
                 </span>
               )}
@@ -1425,7 +1425,7 @@ export function TransactionsClientView({
                           {tx.description}
                         </h4>
                         {tx.is_installment && tx.installment_count > 1 && (
-                          <span className="px-2 py-0.5 rounded-full bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 text-[#8B5CF6] text-[10px] font-bold tracking-wide uppercase flex-shrink-0">
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-700 dark:text-[#D4AF37] text-[10px] font-bold tracking-wide uppercase flex-shrink-0">
                             {tx.installment_count} cuotas
                           </span>
                         )}

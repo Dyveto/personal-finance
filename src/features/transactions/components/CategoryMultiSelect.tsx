@@ -212,9 +212,9 @@ export function CategoryMultiSelect({
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          "w-full h-10 px-3 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 transition-all select-none focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]",
+          "w-full h-10 px-3 rounded-xl border text-xs font-medium flex items-center justify-between gap-2 transition-all select-none focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-[#D4AF37]",
           isOpen
-            ? "border-[#8B5CF6] ring-2 ring-[#8B5CF6]/30 bg-white dark:bg-[#131B2E]"
+            ? "border-amber-500 dark:border-[#D4AF37] ring-2 ring-amber-500/30 dark:ring-[#D4AF37]/30 bg-white dark:bg-[#131B2E]"
             : "border-slate-200 dark:border-white/[0.1] bg-slate-50 dark:bg-[#0B0F19] hover:border-slate-300 dark:hover:border-white/[0.2]",
           count > 0 ? "text-slate-900 dark:text-[#F8FAFC]" : "text-slate-600 dark:text-[#94A3B8]"
         )}
@@ -225,7 +225,7 @@ export function CategoryMultiSelect({
           <Tag
             className={cn(
               "w-3.5 h-3.5 flex-shrink-0 transition-colors",
-              count > 0 ? "text-[#8B5CF6]" : "text-slate-400 dark:text-[#94A3B8]"
+              count > 0 ? "text-amber-600 dark:text-[#D4AF37]" : "text-slate-400 dark:text-[#94A3B8]"
             )}
           />
           <span className="truncate">{triggerLabel}</span>
@@ -291,7 +291,7 @@ export function CategoryMultiSelect({
                 <button
                   type="button"
                   onClick={handleSelectAll}
-                  className="text-[#8B5CF6] hover:text-[#7C3AED] font-semibold hover:underline"
+                  className="text-amber-600 hover:text-amber-700 dark:text-[#D4AF37] dark:hover:text-[#F3E5AB] font-semibold hover:underline"
                 >
                   Todas
                 </button>
@@ -330,7 +330,7 @@ export function CategoryMultiSelect({
                     className={cn(
                       "flex items-center gap-2.5 p-2 rounded-xl text-xs cursor-pointer select-none transition-all group",
                       checked
-                        ? "bg-[#8B5CF6]/10 text-slate-900 dark:text-[#F8FAFC]"
+                        ? "bg-amber-500/10 text-slate-900 dark:text-[#F8FAFC]"
                         : "text-slate-700 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.05]"
                     )}
                   >
@@ -339,8 +339,8 @@ export function CategoryMultiSelect({
                       className={cn(
                         "w-4 h-4 rounded-md border flex items-center justify-center transition-all flex-shrink-0",
                         checked
-                          ? "bg-[#8B5CF6] border-[#8B5CF6] text-white shadow-sm"
-                          : "border-slate-300 dark:border-white/[0.2] bg-white dark:bg-[#0B0F19] group-hover:border-[#8B5CF6]/50"
+                          ? "bg-amber-600 dark:bg-[#D4AF37] border-amber-600 dark:border-[#D4AF37] text-white dark:text-slate-950 shadow-sm"
+                          : "border-slate-300 dark:border-white/[0.2] bg-white dark:bg-[#0B0F19] group-hover:border-amber-500/50 dark:group-hover:border-[#D4AF37]/50"
                       )}
                     >
                       {checked && <Check className="w-3 h-3 stroke-[3]" />}

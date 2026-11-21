@@ -12,19 +12,19 @@
     --card-foreground: #0F172A;
     --popover: #FFFFFF;
     --popover-foreground: #0F172A;
-    --primary: #8B5CF6;
+    --primary: #D97706;
     --primary-foreground: #FFFFFF;
     --secondary: #F1F5F9;
     --secondary-foreground: #0F172A;
     --muted: #F1F5F9;
     --muted-foreground: #475569;
-    --accent: #8B5CF6;
+    --accent: #D97706;
     --accent-foreground: #FFFFFF;
     --destructive: #F43F5E;
     --destructive-foreground: #FFFFFF;
     --border: #E2E8F0;
     --input: #E2E8F0;
-    --ring: #8B5CF6;
+    --ring: #D97706;
     --radius: 0.75rem;
 
     /* Brand Tokens (Modo Día - Contraste WCAG AA/AAA) */
@@ -41,19 +41,19 @@
     --card-foreground: #F8FAFC;
     --popover: #131B2E;
     --popover-foreground: #F8FAFC;
-    --primary: #8B5CF6;
-    --primary-foreground: #F8FAFC;
+    --primary: #D4AF37;
+    --primary-foreground: #0B0F19;
     --secondary: #131B2E;
     --secondary-foreground: #F8FAFC;
     --muted: rgba(255, 255, 255, 0.05);
     --muted-foreground: #94A3B8;
-    --accent: #8B5CF6;
-    --accent-foreground: #F8FAFC;
+    --accent: #D4AF37;
+    --accent-foreground: #0B0F19;
     --destructive: #F43F5E;
     --destructive-foreground: #F8FAFC;
     --border: rgba(255, 255, 255, 0.08);
     --input: rgba(255, 255, 255, 0.08);
-    --ring: #8B5CF6;
+    --ring: #D4AF37;
 
     /* Brand Tokens (Modo Noche - Oro Metálico & Azul Marino) */
     --brand-gold: #D4AF37;
