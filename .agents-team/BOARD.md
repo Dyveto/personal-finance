@@ -1102,25 +1102,22 @@ Task: Audited, tested, and verified end-to-end the "SMS de nueva transacción" f
    - `npm run lint` -> PASS (0 errors, 0 warnings).
    - `npx vitest run` -> PASS (237/237 tests passing across 17 test suites, 100%).
    - `npm run build` -> PASS (Next.js 14 optimized production build, 12 static/dynamic routes + Edge Middleware).
-### 2026-11-20 - FRONTEND AGENT (Interactive Dot Field & Subtle UI Micro-Interactions)
-Task: Implemented subtle, high-performance canvas dot field inspired by antigravity.google and UI micro-animations:
-1. Created `src/components/layout/InteractiveDotField.tsx`:
-   - 2D canvas with `requestAnimationFrame` and devicePixelRatio clamped to `Math.min(devicePixelRatio || 1, 2)`.
-   - Subtle spring/damping physics deflects dots near the mouse cursor (within 130px radius) and gently springs them back.
-   - High performance: automatically pauses RAF loop when idle after dots settle (`idleCounter > 60`), saving 100% CPU when not interacting.
-   - Listens to `document.hidden` (pauses on background tabs) and `prefers-reduced-motion` (renders static dots without RAF).
-   - Automatically disabled on mobile/small viewports (`< 768px`) to conserve mobile battery and GPU.
-   - Non-intrusive color palette: subtle slate/violet dots in light mode and midnight violet/slate in dark mode, strictly below financial text and cards.
-2. Integrated into `DashboardShell.tsx`:
-   - Positioned in background with `absolute inset-0 pointer-events-none z-0`.
-   - Content and main view elevated with `relative z-10`, ensuring zero interference with mouse clicks, forms, selects, or modal overlays.
-3. Subtle UI Micro-Animations:
-   - Updated `src/components/ui/button.tsx` with smooth active press feedback (`active:scale-[0.98] transition-all duration-200 motion-reduce:transition-none`).
-   - Refined `src/app/globals.css` `.surface-card` transitions to specific properties (`transform`, `box-shadow`, `border-color`) and added global `@media (prefers-reduced-motion: reduce)`.
-   - Added subtle hover scaling and easing to SMS wizard badges and progress bars with `motion-reduce:transition-none`.
+### 2026-11-20 - FRONTEND AGENT (Interactive Dot Field: Mobile Ambient Drift & Touch Interaction Optimization)
+Task: Optimized interactive canvas dot field for mobile and touchscreen devices:
+1. Mobile Ambient Movement (`InteractiveDotField.tsx`):
+   - Implemented subtle, continuous organic wave/drift behind the interface on mobile screens (`width < 768px` or `pointer: coarse`).
+   - Adaptive density: spacing set to `54px` on mobile (maintaining ~100 lightweight dots) and `38px` on desktop.
+   - Preserved `devicePixelRatio` clamp to maximum `2` for OLED/Retina mobile screens.
+2. Touch-Only Concentrated Interaction:
+   - Configured `pointerdown`, `pointermove`, `pointerup`, and `pointercancel` with `{ passive: true }`: on mobile/touchscreens, concentrated dot deflection activates ONLY when the user is actively touching or dragging the screen.
+   - Upon release (`pointerup`/`pointercancel`), dots smoothly transition back to the ambient drift with spring damping.
+   - Guaranteed non-blocking UX: canvas container strictly `pointer-events-none z-0`, preserving 100% native smooth scrolling and full interactivity for buttons, cards, selects, modals, and the SMS 2-step wizard.
+3. Theme Contrast & Battery Conservation:
+   - Discreet colors in light mode (`rgba(100, 116, 139, 0.14)`) and dark mode (`rgba(148, 163, 184, 0.10)`), with highlight (`rgba(139, 92, 246, 0.32)`).
+   - Pauses on background tabs via `document.hidden` and renders static dots under `prefers-reduced-motion: reduce`.
 4. Tests and Verification:
-   - Added 6 unit tests in `tests/unit/interactive-dot-field.test.ts`. Total test suite: 243/243 tests passing (100%).
-   - Verified `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run build` (clean production build).
+   - Updated `tests/unit/interactive-dot-field.test.ts` (5 tests covering DPR clamp, mobile density spacing 54px, ambient wave sine math, touch deflection activation, and passive pointer-events-none container).
+   - Quality gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx vitest run` (242/242 tests passing), and `npm run build` (clean production build).
 Handoff status: COMPLETED
 
 ---

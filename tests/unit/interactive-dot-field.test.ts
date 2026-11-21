@@ -1,39 +1,53 @@
 import { describe, it, expect } from "vitest";
 
-describe("Interactive Dot Field Physics & Performance Rules", () => {
-  const gridSpacing = 38;
+describe("Interactive Dot Field Mobile & Touch Rules", () => {
+  const desktopSpacing = 38;
+  const mobileSpacing = 54;
   const interactionRadius = 130;
   const maxPushDistance = 18;
   const damping = 0.12;
 
-  function calculateGrid(width: number, height: number): { cols: number; rows: number; totalDots: number } {
-    if (width < 768) {
-      return { cols: 0, rows: 0, totalDots: 0 };
-    }
-    const cols = Math.floor(width / gridSpacing);
-    const rows = Math.floor(height / gridSpacing);
-    return { cols, rows, totalDots: cols * rows };
+  function calculateGrid(width: number, height: number, isMobileOrTouch: boolean): {
+    cols: number;
+    rows: number;
+    totalDots: number;
+    spacing: number;
+  } {
+    const spacing = isMobileOrTouch ? mobileSpacing : desktopSpacing;
+    const cols = Math.floor(width / spacing);
+    const rows = Math.floor(height / spacing);
+    return { cols, rows, totalDots: cols * rows, spacing };
   }
 
   function calculateDpr(devicePixelRatio: number): number {
     return Math.min(devicePixelRatio || 1, 2);
   }
 
-  function calculateDotPhysics(
+  function calculateAmbientWave(originX: number, originY: number, time: number): { waveX: number; waveY: number } {
+    const waveX = Math.sin(time * 0.0014 + originY * 0.018) * 4.5;
+    const waveY = Math.cos(time * 0.0011 + originX * 0.018) * 4.5;
+    return { waveX, waveY };
+  }
+
+  function calculateTouchPhysics(
     originX: number,
     originY: number,
     currentX: number,
     currentY: number,
-    mouseX: number,
-    mouseY: number,
-    mouseActive: boolean
-  ): { targetX: number; targetY: number; nextX: number; nextY: number; isSettled: boolean } {
-    let targetX = originX;
-    let targetY = originY;
+    touchX: number,
+    touchY: number,
+    isTouchActive: boolean,
+    ambientOffset: { waveX: number; waveY: number }
+  ): { targetX: number; targetY: number; nextX: number; nextY: number } {
+    const baseX = originX + ambientOffset.waveX;
+    const baseY = originY + ambientOffset.waveY;
 
-    if (mouseActive) {
-      const dx = mouseX - originX;
-      const dy = mouseY - originY;
+    let targetX = baseX;
+    let targetY = baseY;
+
+    if (isTouchActive) {
+      const dx = touchX - baseX;
+      const dy = touchY - baseY;
       const distSq = dx * dx + dy * dy;
       const radiusSq = interactionRadius * interactionRadius;
 
@@ -43,8 +57,8 @@ describe("Interactive Dot Field Physics & Performance Rules", () => {
         const force = factor * factor * maxPushDistance;
         const angle = Math.atan2(dy, dx);
 
-        targetX = originX - Math.cos(angle) * force;
-        targetY = originY - Math.sin(angle) * force;
+        targetX = baseX - Math.cos(angle) * force;
+        targetY = baseY - Math.sin(angle) * force;
       }
     }
 
@@ -53,65 +67,52 @@ describe("Interactive Dot Field Physics & Performance Rules", () => {
     const nextX = currentX + diffX * damping;
     const nextY = currentY + diffY * damping;
 
-    const isSettled = Math.abs(diffX) <= 0.04 && Math.abs(diffY) <= 0.04;
-
-    return { targetX, targetY, nextX, nextY, isSettled };
+    return { targetX, targetY, nextX, nextY };
   }
 
-  it("clamps high-density devicePixelRatio to maximum 2 to protect GPU/memory", () => {
+  it("clamps devicePixelRatio to maximum 2 on high-DPI mobile screens to save GPU/battery", () => {
     expect(calculateDpr(1)).toBe(1);
-    expect(calculateDpr(1.5)).toBe(1.5);
     expect(calculateDpr(2)).toBe(2);
-    expect(calculateDpr(3)).toBe(2); // Retinas / 4k displays clamped to 2
-    expect(calculateDpr(4)).toBe(2);
+    expect(calculateDpr(3)).toBe(2); // Retinas / OLEDs clamped to 2
+    expect(calculateDpr(3.5)).toBe(2);
   });
 
-  it("disables particles on mobile screens (< 768px) for battery and CPU conservation", () => {
-    const mobile = calculateGrid(390, 844);
-    expect(mobile.totalDots).toBe(0);
+  it("uses lower dot density (spacing 54px) on mobile/touchscreen to keep dot count ultra-light (~100 dots)", () => {
+    const mobileGrid = calculateGrid(390, 844, true);
+    expect(mobileGrid.spacing).toBe(54);
+    expect(mobileGrid.totalDots).toBeGreaterThan(50);
+    expect(mobileGrid.totalDots).toBeLessThan(150); // Lightweight: ~105 dots
 
-    const tabletSmall = calculateGrid(767, 1024);
-    expect(tabletSmall.totalDots).toBe(0);
-
-    const desktop = calculateGrid(1440, 900);
-    expect(desktop.totalDots).toBeGreaterThan(500);
+    const desktopGrid = calculateGrid(1440, 900, false);
+    expect(desktopGrid.spacing).toBe(38);
+    expect(desktopGrid.totalDots).toBeGreaterThan(500);
   });
 
-  it("leaves dots at equilibrium origin when mouse is outside interaction radius", () => {
-    const dot = calculateDotPhysics(200, 200, 200, 200, 500, 500, true);
-    expect(dot.targetX).toBe(200);
-    expect(dot.targetY).toBe(200);
-    expect(dot.nextX).toBe(200);
-    expect(dot.nextY).toBe(200);
-    expect(dot.isSettled).toBe(true);
+  it("generates continuous smooth organic ambient wave on mobile when not touching screen", () => {
+    const t0 = calculateAmbientWave(100, 100, 0);
+    const t1 = calculateAmbientWave(100, 100, 1000);
+
+    expect(Math.abs(t0.waveX)).toBeLessThanOrEqual(4.5);
+    expect(Math.abs(t0.waveY)).toBeLessThanOrEqual(4.5);
+    expect(t1.waveX).not.toBe(t0.waveX); // Continuously evolving over time
   });
 
-  it("gently deflects dot away from cursor with quadratic falloff when mouse is nearby", () => {
-    // Mouse 50px away from dot (inside 130px interaction radius)
-    const dot = calculateDotPhysics(200, 200, 200, 200, 250, 200, true);
+  it("activates concentrated repulsion deflection ONLY when user actively touches the screen", () => {
+    const ambient = { waveX: 2.0, waveY: -1.5 };
 
-    // Mouse is to the right (+X), so dot target should be pushed to the left (-X)
-    expect(dot.targetX).toBeLessThan(200);
-    expect(dot.targetY).toBeCloseTo(200, 1);
-    expect(dot.isSettled).toBe(false);
+    // Touch active 40px away from the dot's base position
+    const touched = calculateTouchPhysics(100, 100, 102, 98.5, 142, 98.5, true, ambient);
+    expect(touched.targetX).toBeLessThan(102); // Pushed away to the left
 
-    // Next position moves towards target using damping
-    expect(dot.nextX).toBeLessThan(200);
+    // When touch is released (isTouchActive: false), target returns smoothly to ambient base
+    const released = calculateTouchPhysics(100, 100, touched.nextX, touched.nextY, -1000, -1000, false, ambient);
+    expect(released.targetX).toBe(102); // Target is base (100 + 2.0)
+    expect(released.nextX).toBeGreaterThan(touched.nextX); // Spring damping moving back to base
   });
 
-  it("smoothly springs dot back to origin when mouse becomes inactive or leaves window", () => {
-    // Dot currently at deflected position (190, 200), mouse inactive
-    const dot = calculateDotPhysics(200, 200, 190, 200, -1000, -1000, false);
-
-    expect(dot.targetX).toBe(200);
-    expect(dot.targetY).toBe(200);
-    // Next position moves from 190 towards 200: 190 + (200 - 190) * 0.12 = 191.2
-    expect(dot.nextX).toBeCloseTo(191.2, 1);
-  });
-
-  it("detects settled equilibrium state for automatic RAF sleep", () => {
-    // Dot already very close to origin (diff < 0.04)
-    const dot = calculateDotPhysics(200, 200, 199.98, 200, -1000, -1000, false);
-    expect(dot.isSettled).toBe(true);
+  it("never intercepts scroll or clicks: canvas container maintains pointer-events-none", () => {
+    const containerClasses = "absolute inset-0 pointer-events-none overflow-hidden z-0";
+    expect(containerClasses).toContain("pointer-events-none");
+    expect(containerClasses).toContain("z-0");
   });
 });

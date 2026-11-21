@@ -21,7 +21,7 @@ export function InteractiveDotField() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    // Verificar preferencia de movimiento reducido
+    // 1. Preferencia de movimiento reducido
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let prefersReducedMotion = motionQuery.matches;
 
@@ -39,27 +39,33 @@ export function InteractiveDotField() {
     let width = 0;
     let height = 0;
     let dots: Dot[] = [];
-    const gridSpacing = 38;
+    let isTouchOrMobile = false;
+
     const interactionRadius = 130;
     const maxPushDistance = 18;
     const damping = 0.12;
 
-    const mouse = {
+    const pointer = {
       x: -1000,
       y: -1000,
       active: false,
+      isTouch: false,
     };
 
     let animationFrameId: number | null = null;
     let isLoopRunning = false;
     let idleCounter = 0;
-    const MAX_IDLE_FRAMES = 60; // Suspender animación tras estabilizarse (~1 seg)
+    const MAX_DESKTOP_IDLE_FRAMES = 60; // En escritorio, dormir tras estabilizarse
 
-    // Inicializar o reconstruir la cuadrícula de puntos
+    // 2. Construir cuadrícula con densidad adaptativa (baja densidad en móvil)
     const buildDotsGrid = () => {
       dots = [];
-      // Si la pantalla es móvil (< 768px), evitar saturar CPU
-      if (width < 768) return;
+      isTouchOrMobile =
+        width < 768 ||
+        (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches);
+
+      // Mayor espaciado en móviles (54px) para mantener un conteo muy ligero (~100 puntos)
+      const gridSpacing = isTouchOrMobile ? 54 : 38;
 
       const cols = Math.floor(width / gridSpacing);
       const rows = Math.floor(height / gridSpacing);
@@ -82,7 +88,7 @@ export function InteractiveDotField() {
       }
     };
 
-    // Ajustar dimensiones con soporte DPI acotado a máx 2
+    // 3. Ajustar dimensiones con soporte DPI acotado a máx 2
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       width = parent ? parent.clientWidth : window.innerWidth;
@@ -94,19 +100,19 @@ export function InteractiveDotField() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
 
-      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
       buildDotsGrid();
 
-      if (prefersReducedMotion || width < 768) {
+      if (prefersReducedMotion) {
         renderStatic();
       } else {
         wakeLoop();
       }
     };
 
-    // Render estático para usuarios con movimiento reducido o móviles
+    // 4. Render estático (sin animación) para prefers-reduced-motion
     const renderStatic = () => {
       ctx.clearRect(0, 0, width, height);
       if (dots.length === 0) return;
@@ -124,8 +130,8 @@ export function InteractiveDotField() {
       }
     };
 
-    // Bucle interactivo con amortiguación física y suspensión automática
-    const render = () => {
+    // 5. Bucle de renderizado animado con deriva ambiental y respuesta táctil
+    const render = (time: number) => {
       if (!isLoopRunning) return;
 
       ctx.clearRect(0, 0, width, height);
@@ -140,12 +146,26 @@ export function InteractiveDotField() {
 
       let hasActiveMovement = false;
 
+      // Cálculo de onda ambiental para móvil o cuando no haya interacción
+      const isAmbientActive = isTouchOrMobile && !prefersReducedMotion;
+
       for (let i = 0; i < dots.length; i++) {
         const dot = dots[i];
 
-        if (mouse.active) {
-          const dx = mouse.x - dot.originX;
-          const dy = mouse.y - dot.originY;
+        // Posición base con deriva ambiental orgánica en móvil
+        let baseX = dot.originX;
+        let baseY = dot.originY;
+
+        if (isAmbientActive) {
+          baseX += Math.sin(time * 0.0014 + dot.originY * 0.018) * 4.5;
+          baseY += Math.cos(time * 0.0011 + dot.originX * 0.018) * 4.5;
+          hasActiveMovement = true;
+        }
+
+        // Interacción concentrada al tocar la pantalla o mover el cursor
+        if (pointer.active) {
+          const dx = pointer.x - baseX;
+          const dy = pointer.y - baseY;
           const distSq = dx * dx + dy * dy;
           const radiusSq = interactionRadius * interactionRadius;
 
@@ -155,15 +175,15 @@ export function InteractiveDotField() {
             const force = factor * factor * maxPushDistance;
             const angle = Math.atan2(dy, dx);
 
-            dot.targetX = dot.originX - Math.cos(angle) * force;
-            dot.targetY = dot.originY - Math.sin(angle) * force;
+            dot.targetX = baseX - Math.cos(angle) * force;
+            dot.targetY = baseY - Math.sin(angle) * force;
           } else {
-            dot.targetX = dot.originX;
-            dot.targetY = dot.originY;
+            dot.targetX = baseX;
+            dot.targetY = baseY;
           }
         } else {
-          dot.targetX = dot.originX;
-          dot.targetY = dot.originY;
+          dot.targetX = baseX;
+          dot.targetY = baseY;
         }
 
         const diffX = dot.targetX - dot.currentX;
@@ -176,14 +196,14 @@ export function InteractiveDotField() {
           hasActiveMovement = true;
         }
 
-        // Color interactivo sutil
-        const distFromOrigin = Math.hypot(
+        // Distancia del punto respecto a su ancla para resaltar interacción cercana
+        const distFromBase = Math.hypot(
           dot.currentX - dot.originX,
           dot.currentY - dot.originY
         );
 
         ctx.beginPath();
-        if (distFromOrigin > 1.5) {
+        if (distFromBase > 3.0) {
           ctx.fillStyle = highlightColor;
           ctx.arc(dot.currentX, dot.currentY, 1.4, 0, Math.PI * 2);
         } else {
@@ -193,10 +213,10 @@ export function InteractiveDotField() {
         ctx.fill();
       }
 
-      // Si no hay movimiento perceptible ni mouse activo, dormir el loop para ahorrar 100% de CPU
-      if (!hasActiveMovement && !mouse.active) {
+      // En escritorio sin movimiento ambiental: suspender al estabilizarse
+      if (!isAmbientActive && !hasActiveMovement && !pointer.active) {
         idleCounter++;
-        if (idleCounter > MAX_IDLE_FRAMES) {
+        if (idleCounter > MAX_DESKTOP_IDLE_FRAMES) {
           stopLoop();
           return;
         }
@@ -208,7 +228,7 @@ export function InteractiveDotField() {
     };
 
     const startLoop = () => {
-      if (isLoopRunning || prefersReducedMotion || width < 768) return;
+      if (isLoopRunning || prefersReducedMotion) return;
       isLoopRunning = true;
       idleCounter = 0;
       animationFrameId = requestAnimationFrame(render);
@@ -224,41 +244,60 @@ export function InteractiveDotField() {
 
     const wakeLoop = () => {
       idleCounter = 0;
-      if (!isLoopRunning && !prefersReducedMotion && width >= 768) {
+      if (!isLoopRunning && !prefersReducedMotion) {
         startLoop();
       }
     };
 
-    // Eventos de cursor sobre la ventana
-    const handleMouseMove = (e: MouseEvent) => {
+    // 6. Manejo pasivo de interacción con pointer events (mouse + touch)
+    const handlePointerDown = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      pointer.x = e.clientX - rect.left;
+      pointer.y = e.clientY - rect.top;
+      pointer.active = true;
+      pointer.isTouch = e.pointerType === "touch";
+      wakeLoop();
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
       const clientX = e.clientX - rect.left;
       const clientY = e.clientY - rect.top;
 
-      // Solo activar si está dentro de un rango razonable
-      if (
-        clientX >= -50 &&
-        clientX <= width + 50 &&
-        clientY >= -50 &&
-        clientY <= height + 50
-      ) {
-        mouse.x = clientX;
-        mouse.y = clientY;
-        mouse.active = true;
-        wakeLoop();
+      if (e.pointerType === "touch") {
+        // En móvil/táctil, solo desplazar puntos si el usuario está activamente tocando la pantalla
+        if (pointer.active) {
+          pointer.x = clientX;
+          pointer.y = clientY;
+          wakeLoop();
+        }
       } else {
-        mouse.active = false;
+        // En escritorio (mouse), responder al movimiento de proximidad
+        if (
+          clientX >= -50 &&
+          clientX <= width + 50 &&
+          clientY >= -50 &&
+          clientY <= height + 50
+        ) {
+          pointer.x = clientX;
+          pointer.y = clientY;
+          pointer.active = true;
+          pointer.isTouch = false;
+          wakeLoop();
+        } else {
+          pointer.active = false;
+        }
       }
     };
 
-    const handleMouseLeave = () => {
-      mouse.active = false;
-      mouse.x = -1000;
-      mouse.y = -1000;
+    const handlePointerUp = () => {
+      pointer.active = false;
+      pointer.x = -1000;
+      pointer.y = -1000;
       wakeLoop();
     };
 
-    // Escuchar cambios de visibilidad de la pestaña (ahorro de batería)
+    // 7. Pausa de batería al cambiar de pestaña o bloquear dispositivo
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopLoop();
@@ -267,9 +306,9 @@ export function InteractiveDotField() {
       }
     };
 
-    // Observar cambios en el tema claro/oscuro para redibujar de inmediato
+    // 8. Observar cambios en el tema claro/oscuro
     const themeObserver = new MutationObserver(() => {
-      if (prefersReducedMotion || width < 768) {
+      if (prefersReducedMotion) {
         renderStatic();
       } else {
         wakeLoop();
@@ -280,7 +319,7 @@ export function InteractiveDotField() {
       attributeFilter: ["class"],
     });
 
-    // ResizeObserver para ajuste exacto según el contenedor
+    // 9. ResizeObserver
     let resizeObserver: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined" && canvas.parentElement) {
       resizeObserver = new ResizeObserver(() => {
@@ -288,11 +327,15 @@ export function InteractiveDotField() {
       });
       resizeObserver.observe(canvas.parentElement);
     } else {
-      window.addEventListener("resize", resizeCanvas);
+      window.addEventListener("resize", resizeCanvas, { passive: true });
     }
 
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    document.addEventListener("mouseleave", handleMouseLeave);
+    // Todos los listeners con { passive: true } garantizan desplazamiento (scroll) nativo 100% fluido
+    window.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("pointerup", handlePointerUp, { passive: true });
+    window.addEventListener("pointercancel", handlePointerUp, { passive: true });
+    document.addEventListener("mouseleave", handlePointerUp, { passive: true });
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     resizeCanvas();
@@ -300,8 +343,11 @@ export function InteractiveDotField() {
     return () => {
       stopLoop();
       motionQuery.removeEventListener("change", handleMotionChange);
-      window.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("pointerdown", handlePointerDown);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+      document.removeEventListener("mouseleave", handlePointerUp);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       themeObserver.disconnect();
       if (resizeObserver) {
