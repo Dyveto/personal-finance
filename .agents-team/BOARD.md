@@ -155,6 +155,10 @@ Responsibilities:
 - [x] Implement on-the-fly transparent category creation in `createTransaction` and `createInstallmentPurchase` with deduplication and case-insensitive matching.
 - [x] Implement Dashboard layout persistence and user preferences Server Actions (`getDashboardLayout`, `saveDashboardLayout`, `resetDashboardLayout`) with Zod schemas and user session enforcement.
 - [x] Implement Excel 149 movements migration Server Action (`migrateExcelTransactions`, `getExcelMigrationStatus`) with auto account creation (`Efectivo`, `Nequi`, `Bancolombia`), category normalization (`Comida`, `Otros gastos`, `Otros ingresos`), idempotent deduplication key, and automatic balance synchronization.
+- [x] Implement pure, deterministic SMS & Push Notification Parser & Normalizer (`src/lib/sms-transaction-parser.ts`) with Zod schema (`SmsParseResultSchema`):
+  - Deterministic extraction of transaction type (`expense` / `income`), amount normalized via Decimal.js to exact 2 decimals (`NUMERIC(12,2)`), civil date (`YYYY-MM-DD` in America/Bogota), detected bank (Bancolombia, Nequi, BBVA, Nu, Davivienda, etc.), account reference (`*XXXX`), user account matching with ambiguity detection, and clean suggested description.
+  - Sanitization of customer service lines (`018000...`) and Colombian mobile numbers to prevent false monetary matches.
+  - Comprehensive unit test coverage in `tests/unit/sms-transaction-parser.test.ts` (25 tests).
 - [x] Implement financial calculations (money.ts).
 - [x] Implement credit card schedules and calendar rules (calendar.ts).
 - [x] Implement credit-card.ts, installments.ts and projections.ts.
@@ -1039,6 +1043,23 @@ Task: Synchronized remote repository, verified tag v1.4.0, and generated formal 
    - URL: https://github.com/Dyveto/personal-finance/pull/3
 3. Automated CI/CD execution: Triggered GitHub Actions pipeline `QA Gates & Netlify Deploy` and Netlify Deploy Preview.
 Handoff status: COMPLETED
+
+### 2026-11-20 - BACKEND AGENT (SMS & Push Notification Parser Module)
+Task: Implemented pure, deterministic TypeScript parser and normalizer for Colombian banking SMS and push notifications:
+1. Created `src/lib/sms-transaction-parser.ts` with `UserAccountSchema`, `SmsParseResultSchema`, and `parseSmsTransaction()`:
+   - Evaluates Colombian bank push and SMS notifications (Bancolombia, Nequi, BBVA, Nu, Davivienda, etc.).
+   - Amount normalized with Decimal.js (ROUND_HALF_UP) to exact 2-decimal string format for PostgreSQL NUMERIC(12,2).
+   - Civil date normalized to YYYY-MM-DD in America/Bogota.
+   - Bank detected and matched against user accounts by lastFour digits or bank aliases with ambiguity detection.
+   - Suggested description cleans merchant, recipient, LLave (@dylan531), payroll, and cash withdrawal information.
+   - Customer support telephone lines (018000...) and mobile phone lines sanitized so they are never parsed as monetary amounts.
+   - Robust fallback (`confidence: 'high' | 'partial' | 'none'`, warnings array), zero unhandled exceptions.
+2. Re-exported schemas and types in `src/lib/validations/finance.ts`.
+3. Documented architectural decision ADR-007 in `.agents-team/DECISIONS.md`.
+4. Added 25 unit tests in `tests/unit/sms-transaction-parser.test.ts` (211/211 tests passing across 15 test suites).
+5. Executed verification: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors, 0 warnings).
+Handoff status: COMPLETED
+Next agent: FRONTEND (Ready to build SMS paste modal & transaction pre-fill UI).
 
 ---
 
