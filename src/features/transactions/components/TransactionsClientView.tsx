@@ -33,6 +33,7 @@ import {
   Laptop,
   TrendingUp,
   Plus,
+  MessageSquareText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ import {
   TransactionForm,
   type TransactionCreatedResult,
 } from "@/features/transactions/components/TransactionForm";
+import { SmsTransactionModal } from "@/features/transactions/components/SmsTransactionModal";
 import { CategoryMultiSelect } from "@/features/transactions/components/CategoryMultiSelect";
 import { AccountMultiSelect } from "@/features/transactions/components/AccountMultiSelect";
 import {
@@ -128,6 +130,7 @@ export function TransactionsClientView({
 }: TransactionsClientViewProps) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSmsModalOpen, setIsSmsModalOpen] = useState(false);
   const [transactions, setTransactions] = useState<TransactionRow[]>(initialTransactions ?? []);
   const [editingTransaction, setEditingTransaction] = useState<TransactionRow | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<TransactionRow | null>(null);
@@ -572,29 +575,52 @@ export function TransactionsClientView({
           </p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all">
-              <PlusCircle className="w-4 h-4" />
-              <span>Nueva Transacción</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
-            <DialogHeader>
-              <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">Registrar Transacción</DialogTitle>
-              <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
-                Ingresa los detalles del movimiento. En tarjetas de crédito puedes diferir a cuotas.
-              </DialogDescription>
-            </DialogHeader>
-            <TransactionForm
-              accounts={accounts}
-              categories={categories}
-              onSuccess={handleTransactionCreated}
-              onCancel={() => setIsDialogOpen(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {/* Botón Asistente SMS de Nueva Transacción */}
+          <Button
+            type="button"
+            onClick={() => setIsSmsModalOpen(true)}
+            variant="outline"
+            className="border-slate-300 dark:border-white/[0.12] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl flex items-center gap-1.5 transition-all shadow-sm font-semibold text-xs md:text-sm"
+          >
+            <MessageSquareText className="w-4 h-4 text-[#8B5CF6]" />
+            <span>SMS de nueva transacción</span>
+          </Button>
+
+          {/* Modal y Botón Normal Nueva Transacción (Flujo tradicional limpio y sin pasos) */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all text-xs md:text-sm">
+                <PlusCircle className="w-4 h-4" />
+                <span>Nueva Transacción</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] text-slate-900 dark:text-[#F8FAFC] rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]">
+              <DialogHeader>
+                <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">Registrar Transacción</DialogTitle>
+                <DialogDescription className="text-xs text-slate-500 dark:text-[#94A3B8]">
+                  Ingresa los detalles del movimiento. En tarjetas de crédito puedes diferir a cuotas.
+                </DialogDescription>
+              </DialogHeader>
+              <TransactionForm
+                accounts={accounts}
+                categories={categories}
+                onSuccess={handleTransactionCreated}
+                onCancel={() => setIsDialogOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
+
+      {/* Modal Asistente SMS de Nueva Transacción (Flujo guiado de 2 pasos) */}
+      <SmsTransactionModal
+        isOpen={isSmsModalOpen}
+        onOpenChange={setIsSmsModalOpen}
+        accounts={accounts}
+        categories={categories}
+        onSuccess={handleTransactionCreated}
+      />
 
       {/* KPI Cards de Resumen Dinámico */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">

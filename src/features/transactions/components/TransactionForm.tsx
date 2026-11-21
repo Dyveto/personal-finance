@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -87,10 +87,25 @@ export type TransactionCreatedResult =
   | TransactionRow
   | { transaction: TransactionRow; installments: string[] };
 
+export interface TransactionPrefillData {
+  account_id?: string;
+  category_id?: string;
+  new_category_name?: string;
+  description?: string;
+  amount?: string;
+  transaction_type?: "income" | "expense";
+  transaction_date?: string;
+  is_installment?: boolean;
+  installment_count?: string;
+  notes?: string;
+  autoFocusAccount?: boolean;
+}
+
 interface TransactionFormProps {
   accounts: AccountRow[];
   categories: CategoryRow[];
   initialData?: TransactionRow;
+  prefillData?: TransactionPrefillData;
   onSuccess?: (result?: TransactionCreatedResult) => void;
   onCancel?: () => void;
 }
@@ -99,6 +114,7 @@ export function TransactionForm({
   accounts,
   categories,
   initialData,
+  prefillData,
   onSuccess,
   onCancel,
 }: TransactionFormProps) {
@@ -124,18 +140,46 @@ export function TransactionForm({
   } = useForm<TransactionFormValues>({
     resolver: zodResolver(TransactionFormSchema),
     defaultValues: {
-      account_id: initialData?.account_id || accounts[0]?.id || "",
-      category_id: initialData?.category_id || "",
-      new_category_name: "",
-      description: initialData?.description || "",
-      amount: initialData?.amount ? initialData.amount.toString() : "",
-      transaction_type: initialData?.transaction_type || "expense",
-      transaction_date: initialData?.transaction_date || todayStr,
-      is_installment: initialData?.is_installment ?? false,
-      installment_count: initialData?.installment_count ? initialData.installment_count.toString() : "1",
-      notes: initialData?.notes || "",
+      account_id:
+        initialData?.account_id ??
+        (prefillData?.account_id !== undefined ? prefillData.account_id : accounts[0]?.id || ""),
+      category_id: initialData?.category_id || prefillData?.category_id || "",
+      new_category_name: prefillData?.new_category_name || "",
+      description: initialData?.description || prefillData?.description || "",
+      amount: initialData?.amount ? initialData.amount.toString() : prefillData?.amount || "",
+      transaction_type: initialData?.transaction_type || prefillData?.transaction_type || "expense",
+      transaction_date: initialData?.transaction_date || prefillData?.transaction_date || todayStr,
+      is_installment: initialData?.is_installment ?? prefillData?.is_installment ?? false,
+      installment_count: initialData?.installment_count ? initialData.installment_count.toString() : prefillData?.installment_count || "1",
+      notes: initialData?.notes || prefillData?.notes || "",
     },
   });
+
+  // Sincronizar prefillData si cambia dinámicamente
+  useEffect(() => {
+    if (prefillData) {
+      if (prefillData.account_id !== undefined) setValue("account_id", prefillData.account_id);
+      if (prefillData.category_id !== undefined) setValue("category_id", prefillData.category_id);
+      if (prefillData.description !== undefined) setValue("description", prefillData.description);
+      if (prefillData.amount !== undefined) setValue("amount", prefillData.amount);
+      if (prefillData.transaction_type !== undefined) setValue("transaction_type", prefillData.transaction_type);
+      if (prefillData.transaction_date !== undefined) setValue("transaction_date", prefillData.transaction_date);
+      if (prefillData.notes !== undefined) setValue("notes", prefillData.notes);
+    }
+  }, [prefillData, setValue]);
+
+  // Auto-focus en el selector de cuenta si autoFocusAccount es verdadero
+  useEffect(() => {
+    if (prefillData?.autoFocusAccount) {
+      const timer = setTimeout(() => {
+        const trigger = document.getElementById("account_id");
+        if (trigger) {
+          trigger.focus();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [prefillData?.autoFocusAccount]);
 
   const selectedAccountId = watch("account_id");
   const selectedType = watch("transaction_type");
