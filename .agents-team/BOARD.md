@@ -1121,6 +1121,21 @@ Task: Amplified responsiveness, visibility, and dynamic broad aura in `Interacti
    - Validation gates: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), `npx vitest run` (243/243 tests passing, 100%), and `npm run build` (clean production build).
 Handoff status: COMPLETED
 
+### 2026-11-20 - BACKEND AGENT (SMS Parser: Empty Suggested Description by UX Directive)
+Task: Adjusted `src/lib/sms-transaction-parser.ts` to prevent generic descriptions like "Gasto / Transferencia":
+1. Updated `extractSuggestedDescription` and `parseSmsTransaction` to always return an empty string `""` for `suggestedDescription`, allowing users to enter their own custom description directly in the transaction form without manually clearing automated placeholder text.
+2. Preserved exact extraction and normalization of:
+   - Transaction `type` (`'expense' | 'income'`).
+   - Transaction `amount` (formatted to 2 decimal places with Decimal.js, `NUMERIC(12,2)`).
+   - Transaction civil `date` (`YYYY-MM-DD` in `America/Bogota`).
+   - `detectedBank` (Bancolombia, Nequi, BBVA, Nu, Davivienda, etc.).
+   - `detectedAccountRef` (`*XXXX`).
+   - `matchedAccountId` and `accountMatched`.
+3. Adjusted confidence determination logic so that partial detections (`amount !== null || type !== null`) correctly report `confidence: "partial"`.
+4. Updated all unit test assertions across `tests/unit/sms-transaction-parser.test.ts`, `tests/unit/qa-sms-audit.test.ts`, and `tests/unit/sms-transaction-wizard.test.ts` to verify `suggestedDescription: ""`.
+5. Quality gates verified: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run test:run` (243/243 tests pass).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

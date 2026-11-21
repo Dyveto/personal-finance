@@ -68,7 +68,7 @@ describe("SMS Transaction Wizard Flow Logic", () => {
     expect(result.prefillData?.amount).toBe("45000.00");
     expect(result.prefillData?.transaction_type).toBe("expense");
     expect(result.prefillData?.transaction_date).toBe("2026-11-20");
-    expect(result.prefillData?.description).toContain("RESTAURANTE EL SOL");
+    expect(result.prefillData?.description).toBe("");
   });
 
   it("transitions to step 2 with autoFocusAccount = true and empty account_id when account cannot be matched", () => {

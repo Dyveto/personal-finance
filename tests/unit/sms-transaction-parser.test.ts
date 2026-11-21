@@ -26,7 +26,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.detectedAccountRef).toBe("*9266");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-1");
-      expect(result.suggestedDescription).toBe("EXITO CALLE 80");
+      expect(result.suggestedDescription).toBe("");
       expect(result.confidence).toBe("high");
       expect(SmsParseResultSchema.safeParse(result).success).toBe(true);
     });
@@ -43,7 +43,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.detectedAccountRef).toBe("*9266");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-1");
-      expect(result.suggestedDescription).toContain("@dylan531");
+      expect(result.suggestedDescription).toBe("");
       expect(result.confidence).toBe("high");
     });
 
@@ -55,7 +55,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("expense");
       expect(result.amount).toBe("25000.00");
       expect(result.date).toBe("2026-11-16");
-      expect(result.suggestedDescription).toBe("Transferencia a JUAN PEREZ");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-1");
     });
@@ -68,7 +68,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("income");
       expect(result.amount).toBe("150000.00");
       expect(result.date).toBe("2026-11-16");
-      expect(result.suggestedDescription).toBe("Transferencia de PEDRO GOMEZ");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-1");
       expect(result.confidence).toBe("high");
@@ -82,7 +82,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("income");
       expect(result.amount).toBe("80000.00");
       expect(result.date).toBe("2026-11-16");
-      expect(result.suggestedDescription).toBe("Transferencia de MARI LUZ (@dylan531)");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-1");
     });
@@ -94,7 +94,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
 
       expect(result.type).toBe("income");
       expect(result.amount).toBe("500000.00");
-      expect(result.suggestedDescription).toBe("Abono de NOMINA");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
     });
 
@@ -105,7 +105,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
 
       expect(result.type).toBe("expense");
       expect(result.amount).toBe("100000.00");
-      expect(result.suggestedDescription).toBe("Retiro en CAJERO AUT");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
     });
   });
@@ -119,7 +119,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("expense");
       expect(result.amount).toBe("25000.00");
       expect(result.detectedBank).toBe("Nequi");
-      expect(result.suggestedDescription).toBe("Transferencia a Juan Perez");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("should parse money received (income)", () => {
@@ -141,7 +141,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("expense");
       expect(result.amount).toBe("18500.00");
       expect(result.date).toBe("2026-11-16");
-      expect(result.suggestedDescription).toBe("DROGUERIA LA REBAJA");
+      expect(result.suggestedDescription).toBe("");
     });
   });
 
@@ -156,7 +156,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.date).toBe("2026-11-15");
       expect(result.detectedBank).toBe("BBVA");
       expect(result.detectedAccountRef).toBe("*4321");
-      expect(result.suggestedDescription).toBe("D1 SA");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bbva-1");
     });
@@ -181,7 +181,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.date).toBe("2026-11-16");
       expect(result.detectedBank).toBe("Nu");
       expect(result.detectedAccountRef).toBe("*7890");
-      expect(result.suggestedDescription).toBe("SPOTIFY");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-nu-1");
     });
@@ -193,7 +193,7 @@ describe("SMS Transaction Parser & Normalizer (Colombian Financial SMS)", () => 
       expect(result.type).toBe("income");
       expect(result.amount).toBe("50000.00");
       expect(result.detectedBank).toBe("Nu");
-      expect(result.suggestedDescription).toBe("Transferencia de Maria");
+      expect(result.suggestedDescription).toBe("");
     });
   });
 

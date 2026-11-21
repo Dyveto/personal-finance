@@ -39,7 +39,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-9266");
       expect(result.confidence).toBe("high");
-      expect(result.suggestedDescription).toContain("@dylan531");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("verifies ATM cash withdrawal in Bancolombia", () => {
@@ -49,7 +49,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
 
       expect(result.type).toBe("expense");
       expect(result.amount).toBe("200000.00");
-      expect(result.suggestedDescription).toBe("Retiro en CAJERO AUT");
+      expect(result.suggestedDescription).toBe("");
       expect(result.accountMatched).toBe(true);
     });
 
@@ -74,7 +74,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.detectedBank).toBe("Nequi");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-nequi-531");
-      expect(result.suggestedDescription).toBe("Transferencia a Carlos Gomez");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("verifies Nequi incoming money notification (¡Te llegó plata!)", () => {
@@ -98,7 +98,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.date).toBe("2026-11-17");
       expect(result.detectedBank).toBe("Nequi");
       expect(result.accountMatched).toBe(true);
-      expect(result.suggestedDescription).toBe("Panadería El Trigo");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("verifies Nequi account top-up (recarga exitosa)", () => {
@@ -126,7 +126,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.detectedAccountRef).toBe("*7890");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-nu-7890");
-      expect(result.suggestedDescription).toBe("SPOTIFY");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("verifies Nu incoming transfer to Nu account preserving cents", () => {
@@ -140,7 +140,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.detectedBank).toBe("Nu");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-nu-7890");
-      expect(result.suggestedDescription).toBe("Transferencia de Maria");
+      expect(result.suggestedDescription).toBe("");
     });
 
     it("verifies Nu outgoing transfer", () => {
@@ -152,7 +152,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.amount).toBe("35000.00");
       expect(result.date).toBe("2026-11-19");
       expect(result.detectedBank).toBe("Nu");
-      expect(result.suggestedDescription).toBe("Transferencia a Sofia");
+      expect(result.suggestedDescription).toBe("");
     });
   });
 

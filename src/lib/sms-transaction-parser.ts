@@ -428,81 +428,11 @@ function inferTransactionType(text: string, detectedBank: string | null): "expen
 }
 
 /**
- * Limpia y genera una sugerencia de descripción concisa a partir del texto.
+ * Genera una sugerencia de descripción a partir del texto.
+ * Directriz de UX: Retorna siempre una cadena vacía "" para que el usuario ingrese
+ * su propia descripción en el formulario sin tener que borrar texto automático genérico.
  */
-function extractSuggestedDescription(text: string, type: "expense" | "income" | null): string {
-  // Limpiar texto de teléfonos de soporte y marcas repetitivas
-  let cleaned = sanitizeCustomerServiceNumbers(text)
-    .replace(/\s+/g, " ")
-    .trim();
-
-  // Quitar coletillas de soporte al final (ej: "Dudas al ...", "Si no fuiste tu...")
-  cleaned = cleaned.replace(/(?:dudas|inquietudes|si\s+no\s+fuiste\s+t[uú]|comun[íi]cate|para\s+m[aá]s\s+informaci[oó]n).*/gi, "").trim();
-
-  // 1. Detección de llaves de transferencias (ej: "@dylan531")
-  const llaveMatch = /@([a-zA-Z0-9_.-]+)/.exec(cleaned);
-  const llave = llaveMatch ? `@${llaveMatch[1]}` : null;
-
-  // 2. Recepción de fondos (prioridad para ingresos, ej: "de MARI LUZ con llave @dylan531", "de PEDRO GOMEZ", "de Maria en tu cuenta Nu")
-  if (type === "income") {
-    const senderMatch = /(?:^|\s)de\s+([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,'-]{3,35}?)(?:\s+(?:en\s+(?:tu|su)\s+cuenta|en\s+(?:tu|su)|con\s+llave|por\s+[$0-9.,\s]|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
-    if (senderMatch && senderMatch[1]) {
-      const sender = senderMatch[1].trim();
-      if (!/^(?:NOMINA|NÓMINA)$/i.test(sender)) {
-        return llave ? `Transferencia de ${sender} (${llave})` : `Transferencia de ${sender}`;
-      }
-      return `Abono de ${sender.toUpperCase()}`;
-    }
-  }
-
-  // 3. Compras en establecimientos (ej: "en EXITO CALLE 80", "en SPOTIFY", "en D1 SA", "en Panadería El Trigo")
-  if (type !== "income") {
-    const merchantMatch = /\ben\s+([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,&'-]{3,40}?)(?:\s+(?:desde|con\s+su|con\s+tu|con\s+tarjeta|con\s+t\.|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
-    if (merchantMatch && merchantMatch[1]) {
-      const merchant = merchantMatch[1].trim();
-      if (!/^(?:cajero|su\s+cta|tu\s+cta|tu\s+cuenta|su\s+cuenta|cuenta)/i.test(merchant)) {
-        return merchant;
-      }
-    }
-  }
-
-  // 4. Pagos a servicios o destinatarios (ej: "a SERVICIOS PUBLICOS", "a Juan Perez")
-  const recipientMatch = /(?:^|\s)a\s+(?:la\s+cuenta\s+de\s+|la\s+llave\s+|Nequi\s+)?([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,@'-]{2,35}?)(?:\s+(?:desde|con|el\s+\d|\d{1,2}[\/\-]|\[TELEFONO_SOPORTE\]|\(|\.|$))/i.exec(cleaned);
-  if (recipientMatch && recipientMatch[1]) {
-    let recipient = recipientMatch[1].trim();
-    // Limpiar teléfonos adjuntos en paréntesis o residuos de puntuación
-    recipient = recipient.replace(/\s*\(.*?\)$/, "").replace(/[.,]$/, "").trim();
-    if (!/^(?:tu|su)\s+(?:cta|cuenta)/i.test(recipient) && recipient.length > 0) {
-      if (type === "expense") {
-        return `Transferencia a ${recipient}`;
-      }
-    }
-  }
-
-  // 5. Retiros en cajero
-  if (/retiro|sacaste/i.test(cleaned)) {
-    const cajeroMatch = /en\s+(cajero(?:\s+[A-Za-z0-9]+)?)/i.exec(cleaned);
-    return cajeroMatch ? `Retiro en ${cajeroMatch[1]}` : "Retiro en cajero";
-  }
-
-  // 6. Abonos de nómina
-  if (/n[oó]mina/i.test(cleaned)) {
-    return "Abono de Nómina";
-  }
-
-  // 7. Si hay llave identificada
-  if (llave) {
-    return type === "income" ? `Transferencia de ${llave}` : `Transferencia a ${llave}`;
-  }
-
-  // Fallbacks genéricos legibles
-  if (type === "expense") {
-    return "Gasto / Transferencia";
-  }
-  if (type === "income") {
-    return "Ingreso / Abono";
-  }
-
+function extractSuggestedDescription(): string {
   return "";
 }
 
@@ -633,8 +563,8 @@ export function parseSmsTransaction(
     warnings.push("No se pudo inferir con certeza si la transacción es un gasto o un ingreso.");
   }
 
-  // 6. Generar descripción sugerida
-  const suggestedDescription = extractSuggestedDescription(cleanText, type);
+  // 6. Generar descripción sugerida (siempre "" por directriz de UX)
+  const suggestedDescription = extractSuggestedDescription();
 
   // 7. Emparejar cuenta con las del usuario
   const { matchedAccountId, accountMatched } = matchUserAccount(
@@ -648,7 +578,7 @@ export function parseSmsTransaction(
   let confidence: "high" | "partial" | "none" = "none";
   if (type !== null && amount !== null && date !== null && (detectedBank !== null || detectedAccountRef !== null)) {
     confidence = "high";
-  } else if (amount !== null || (type !== null && suggestedDescription.length > 0)) {
+  } else if (amount !== null || type !== null) {
     confidence = "partial";
   }
 
