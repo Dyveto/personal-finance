@@ -63,6 +63,34 @@ Consequences:
 
 Affected agents: BACKEND, FRONTEND, QA.
 
+## ADR-008: Credit Card Management Fee Modalities and Precision
+
+Date: 2026-11-21
+Status: ACCEPTED
+
+Problem: Users in Colombia manage various credit cards with differing management fee rules: fixed monthly charges (Nu, Bancolombia, etc. regardless of usage), conditional charges (only if the card was used or carries a balance), or exemption rules (exempt if used, or fully exempt / no fee). The system needed to capture exact decimal fee amounts and enforce billing rules without floating-point errors or security regressions.
+
+Decision:
+1. Extend `public.accounts` with:
+   - `management_fee NUMERIC(12,2)`: Non-negative monetary amount in COP, defaulting to 0.00 for credit cards, strictly NULL for bank/cash accounts.
+   - `management_fee_type TEXT`: Constrained via CHECK constraint `accounts_management_fee_rules` to:
+     - `fixed_monthly`: Cobro mensual fijo (se cobra todos los meses, se use o no la tarjeta; ej. Nu $12.000 COP).
+     - `only_on_use`: Cobro condicionado a uso (solo si se registra compras o saldo adeudado en el ciclo).
+     - `exempt_if_used`: Exenta si se usa (sin cobro si se registra consumo en el mes).
+     - `exempt`: Exenta permanente / Sin cuota de manejo ($0.00).
+2. Domain Logic:
+   - Encapsulated in `src/lib/finance/management-fee.ts` via `evaluateManagementFee()` using pure decimal arithmetic and zero React/Next.js dependencies.
+3. RLS and Security:
+   - RLS remains active and isolated by `user_id = (SELECT auth.uid())`.
+   - Recreated `public.credit_card_balance_summary` view with `WITH (security_invoker = true)` including fee fields.
+
+Consequences:
+- Supports realistic Colombian banking scenarios.
+- Zero floating-point rounding issues.
+- Full backwards compatibility with existing cards (defaulting to 0 and exempt).
+
+Affected agents: DB, BACKEND, FRONTEND, QA.
+
 ## CHANGE LOG
 
 New architectural decisions must include:

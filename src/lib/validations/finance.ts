@@ -148,6 +148,18 @@ export const NonNegativeMoneySchema = z
   .default(0);
 
 /**
+ * Catálogo de modalidades de cobro de cuota de manejo en tarjetas de crédito.
+ */
+export const ManagementFeeTypeSchema = z.enum(
+  ["fixed_monthly", "only_on_use", "exempt_if_used", "exempt"],
+  {
+    message: "Modalidad de cuota de manejo inválida",
+  }
+);
+
+export type ManagementFeeType = z.infer<typeof ManagementFeeTypeSchema>;
+
+/**
  * Esquema para cuentas estándar (Efectivo y Bancos).
  */
 export const StandardAccountSchema = z.object({
@@ -166,6 +178,8 @@ export const StandardAccountSchema = z.object({
   credit_limit: z.null().optional(),
   closing_day: z.null().optional(),
   payment_due_day: z.null().optional(),
+  management_fee: z.null().optional(),
+  management_fee_type: z.null().optional(),
 });
 
 /**
@@ -185,6 +199,8 @@ export const CreditCardAccountSchema = z.object({
   credit_limit: PositiveMoneySchema,
   closing_day: DayOfMonthSchema,
   payment_due_day: DayOfMonthSchema,
+  management_fee: NonNegativeMoneySchema.default(0),
+  management_fee_type: ManagementFeeTypeSchema.default("exempt"),
 });
 
 /**
@@ -219,6 +235,8 @@ export const UpdateStandardAccountSchema = z.object({
   credit_limit: z.null().optional(),
   closing_day: z.null().optional(),
   payment_due_day: z.null().optional(),
+  management_fee: z.null().optional(),
+  management_fee_type: z.null().optional(),
 });
 
 /**
@@ -241,6 +259,8 @@ export const UpdateCreditCardAccountSchema = z.object({
   credit_limit: PositiveMoneySchema.optional(),
   closing_day: DayOfMonthSchema.optional(),
   payment_due_day: DayOfMonthSchema.optional(),
+  management_fee: NonNegativeMoneySchema.optional(),
+  management_fee_type: ManagementFeeTypeSchema.optional(),
 });
 
 /**

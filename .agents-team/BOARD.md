@@ -1301,11 +1301,43 @@ Task: Overhauled brand presence and UI coherence across light and dark modes:
      - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
 Handoff status: COMPLETED
 
+### 2026-11-21 - MULTI-AGENT HANDOFF: CREDIT CARD MANAGEMENT FEE & CHARGING MODALITIES (DB, Backend, Frontend, QA)
+Task: Implemented complete domain support for Credit Card Management Fees (Cuota de Manejo) in COP and distinct charging modalities:
+1. Database Layer (DB Agent):
+   - Created migrations `supabase/migrations/20260401000000_credit_card_management_fee.sql` and `database/migrations/20260401000000_credit_card_management_fee.sql`.
+   - Added `management_fee NUMERIC(12,2)` and `management_fee_type TEXT` with CHECK constraint `accounts_management_fee_rules` (`fixed_monthly`, `only_on_use`, `exempt_if_used`, `exempt`).
+   - Backfilled existing credit cards with `0.00` and `'exempt'`; enforced `NULL` for `cash` and `bank` accounts.
+   - Recreated `credit_card_balance_summary` view with `WITH (security_invoker = true)` exposing fee fields.
+   - Updated `src/types/database.types.ts` with `ManagementFeeType` and extended table & view types.
+   - Documented in `.agents-team/DECISIONS.md` under `ADR-008: Credit Card Management Fee Modalities and Precision`.
+2. Backend & Finance Engine (Backend Agent):
+   - Created pure domain engine `src/lib/finance/management-fee.ts` with `evaluateManagementFee()` covering:
+     - `fixed_monthly`: Fixed fee charged every month regardless of usage (e.g. Nu $12,000 COP).
+     - `only_on_use`: Charged only when there is balance/usage in the period; $0.00 if unused.
+     - `exempt_if_used`: $0.00 when used; charges configured fee when inactive.
+     - `exempt`: Always $0.00.
+   - Updated Zod validation schemas in `src/lib/validations/account.ts` and `src/lib/validations/finance.ts` with `ManagementFeeTypeSchema`.
+   - Updated Server Actions `createAccount` and `updateAccount` in `src/features/accounts/actions/account-actions.ts` with error mapping for `accounts_management_fee_rules`.
+3. Frontend UI & UX (Frontend Agent):
+   - `src/features/accounts/components/AccountForm.tsx`: Input field for fee amount in COP with instant currency preview, and accessible `<select>` with Spanish modality descriptions and dynamic contextual explanation hints.
+   - `src/features/credit-cards/components/CreditCardsClientView.tsx`: Added cuota de manejo row and modality badges (`Todos los meses`, `Solo si se usa`, `Exenta por uso`, `Sin cuota`).
+   - `src/features/accounts/components/AccountsClientView.tsx`: Displayed cuota de manejo and modality indicator on credit card cards.
+   - Maintained full WCAG AA contrast in Light and Dark modes.
+4. QA Audit & Verification Gate (QA Verifier Agent):
+   - Created `tests/unit/management-fee.test.ts` (15 comprehensive unit tests covering all modalities, Nu $12,000 COP scenario, cent preservation, and Zod validation).
+   - Fixed Zod schema error messaging and removed `as any` casts to preserve strict TypeScript typing (`strict: true`).
+   - Executed mandatory quality gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 errors, 0 warnings).
+     - `npm run test:run` -> Code 0 (21 suites, 299 tests passing).
+     - `npm run build` -> Code 0 (Production build succeeded cleanly, 14 routes optimized).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity & Gold Theme)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee)
 
 - [x] All implementation agents are COMPLETED.
 - [x] All critical bugs are resolved.
@@ -1314,4 +1346,4 @@ Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Br
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Sprint 3 Milestone and Full System (v1.5.1 Hotfix & Official Brand Identity with Enriched Gold Theme) are officially verified, released, and approved.
+Credit Card Management Fee configuration (amount in COP and charging modalities: fixed monthly, only on usage, exempt if used, exempt) is fully verified, tested, built, and approved.

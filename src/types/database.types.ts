@@ -6,6 +6,12 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type ManagementFeeType =
+  | 'fixed_monthly'
+  | 'only_on_use'
+  | 'exempt_if_used'
+  | 'exempt'
+
 export interface Database {
   public: {
     Tables: {
@@ -22,6 +28,8 @@ export interface Database {
           credit_limit: number | null
           closing_day: number | null
           payment_due_day: number | null
+          management_fee: number | null
+          management_fee_type: ManagementFeeType | null
           color: string | null
           is_active: boolean
           created_at: string
@@ -39,6 +47,8 @@ export interface Database {
           credit_limit?: number | null
           closing_day?: number | null
           payment_due_day?: number | null
+          management_fee?: number | null
+          management_fee_type?: ManagementFeeType | null
           color?: string | null
           is_active?: boolean
           created_at?: string
@@ -56,6 +66,8 @@ export interface Database {
           credit_limit?: number | null
           closing_day?: number | null
           payment_due_day?: number | null
+          management_fee?: number | null
+          management_fee_type?: ManagementFeeType | null
           color?: string | null
           is_active?: boolean
           created_at?: string
@@ -287,6 +299,8 @@ export interface Database {
           closing_day: number | null
           payment_due_day: number | null
           current_balance: number | null
+          management_fee: number | null
+          management_fee_type: ManagementFeeType | null
           unpaid_expenses_total: number | null
           total_expenses: number | null
           total_statements_paid: number | null

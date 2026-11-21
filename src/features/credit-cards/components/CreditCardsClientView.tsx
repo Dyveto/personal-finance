@@ -376,6 +376,31 @@ export function CreditCardsClientView({
                       </span>
                       <span>Pago: día {card.payment_due_day || "-"}</span>
                     </div>
+
+                    {/* Cuota de Manejo */}
+                    <div className="flex justify-between items-center text-[11px] pt-1.5 border-t border-slate-100 dark:border-white/[0.05]">
+                      <span className="text-slate-500 dark:text-[#94A3B8]">Cuota manejo:</span>
+                      <span className="font-semibold text-right">
+                        {card.management_fee_type === "exempt" || !card.management_fee || card.management_fee <= 0 ? (
+                          <span className="text-emerald-700 dark:text-emerald-400 font-medium">Exenta ($0)</span>
+                        ) : card.management_fee_type === "fixed_monthly" ? (
+                          <span className="text-amber-800 dark:text-[#D4AF37] font-bold">
+                            {formatMoneyCOP(card.management_fee)}{" "}
+                            <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">(fija)</span>
+                          </span>
+                        ) : card.management_fee_type === "only_on_use" ? (
+                          <span className="text-blue-700 dark:text-blue-400 font-bold">
+                            {formatMoneyCOP(card.management_fee)}{" "}
+                            <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">(si se usa)</span>
+                          </span>
+                        ) : (
+                          <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                            {formatMoneyCOP(card.management_fee)}{" "}
+                            <span className="text-[10px] font-normal text-slate-500 dark:text-slate-400">(exenta por uso)</span>
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               );

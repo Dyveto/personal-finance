@@ -1,4 +1,4 @@
-﻿$srcImg = "public\brand\logo.jpg"
+$srcImg = "public\brand\logo.jpg"
 
 if (-not (Test-Path $srcImg)) {
     $srcImg = "C:\Users\Dyveto\.gemini\antigravity\brain\b314c3f8-def4-417a-9efa-3a8a12064e3c\.user_uploaded\media_1795295716747_bcc9d35e.jpg"
