@@ -3,6 +3,7 @@
 import { Menu, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/layout/NotificationBell";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -23,6 +24,10 @@ export function Header({ onMenuToggle, title = "Dashboard Financiero" }: HeaderP
         >
           <Menu className="w-5 h-5" />
         </Button>
+
+        <div className="md:hidden flex items-center">
+          <BrandLogo variant="icon" size="sm" href="/" priority />
+        </div>
 
         <div>
           <h1 className="text-base md:text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC] leading-tight">

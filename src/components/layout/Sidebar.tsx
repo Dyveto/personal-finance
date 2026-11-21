@@ -8,7 +8,6 @@ import {
   CreditCard,
   ArrowLeftRight,
   ShieldCheck,
-  TrendingUp,
   LogOut,
   Tag,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions/auth-actions";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { APP_VERSION } from "@/config/version";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 interface NavItem {
   name: string;
@@ -82,18 +82,8 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
       aria-label="Barra lateral de navegación"
     >
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-200 dark:border-white/[0.08]">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#8B5CF6] text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.35)]">
-          <TrendingUp className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <span className="font-heading font-bold tracking-tight text-slate-900 dark:text-[#F8FAFC] block text-sm">
-            Personal Finance
-          </span>
-          <span className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] block -mt-0.5 tracking-wider uppercase">
-            COP Edition
-          </span>
-        </div>
+      <div className="flex items-center gap-3 px-5 h-20 border-b border-slate-200 dark:border-white/[0.08]">
+        <BrandLogo variant="full" size="md" href="/" priority />
       </div>
 
       {/* Navigation Links */}
@@ -117,14 +107,14 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
               className={cn(
                 "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ease-smooth",
                 isActive
-                  ? "bg-[#8B5CF6]/15 text-[#8B5CF6] border border-[#8B5CF6]/30 font-semibold shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+                  ? "bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/30 dark:border-amber-400/30 font-semibold shadow-[0_0_12px_rgba(212,175,55,0.15)]"
                   : "text-slate-600 dark:text-[#94A3B8] hover:bg-slate-100 dark:hover:bg-white/[0.05] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
               )}
             >
               <Icon
                 className={cn(
                   "w-5 h-5 transition-colors",
-                  isActive ? "text-[#8B5CF6]" : "text-slate-400 dark:text-[#94A3B8]"
+                  isActive ? "text-amber-700 dark:text-[#D4AF37]" : "text-slate-400 dark:text-[#94A3B8]"
                 )}
               />
               <span>{item.name}</span>

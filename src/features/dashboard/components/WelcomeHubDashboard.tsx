@@ -300,15 +300,15 @@ export function WelcomeHubDashboard({
             }}
             className={cn(
               "border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131B2E] text-slate-800 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-[#1a233a] rounded-xl transition-all flex items-center gap-1.5",
-              isEditing && "border-[#8B5CF6] text-[#8B5CF6] bg-[#8B5CF6]/10 shadow-[0_0_15px_rgba(139,92,246,0.2)]"
+              isEditing && "border-amber-500 dark:border-[#D4AF37] text-amber-700 dark:text-[#D4AF37] bg-amber-500/10 shadow-[0_0_15px_rgba(217,119,6,0.2)]"
             )}
           >
-            <SlidersHorizontal className="w-4 h-4 text-[#8B5CF6]" />
+            <SlidersHorizontal className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
             <span>{isEditing ? "Salir de Edición" : "Personalizar Dashboard"}</span>
           </Button>
 
           <Link href="/transactions">
-            <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 transition-all">
+            <Button className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Transacción</span>
             </Button>
@@ -419,7 +419,7 @@ export function WelcomeHubDashboard({
             type="button"
             disabled={isPending}
             onClick={handleSave}
-            className="rounded-full px-5 py-3 bg-[#8B5CF6] hover:bg-[#7C3AED] text-white font-semibold text-xs shadow-[0_0_25px_rgba(139,92,246,0.5)] flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+            className="rounded-full px-5 py-3 bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 font-bold text-xs shadow-[0_0_25px_rgba(217,119,6,0.5)] flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
           >
             {isPending ? (
               <span className="flex items-center gap-1.5">
@@ -437,10 +437,10 @@ export function WelcomeHubDashboard({
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="bg-white/90 dark:bg-[#131B2E]/90 hover:bg-slate-50 dark:hover:bg-[#1A233D] text-slate-800 dark:text-[#F8FAFC] border border-slate-200 dark:border-[#8B5CF6]/50 shadow-[0_0_20px_rgba(139,92,246,0.25)] rounded-full px-4 py-2.5 flex items-center gap-2 backdrop-blur-md transition-all group hover:scale-105"
+            className="bg-white/90 dark:bg-[#131B2E]/90 hover:bg-slate-50 dark:hover:bg-[#1A233D] text-slate-800 dark:text-[#F8FAFC] border border-slate-200 dark:border-amber-500/50 shadow-[0_0_20px_rgba(217,119,6,0.25)] rounded-full px-4 py-2.5 flex items-center gap-2 backdrop-blur-md transition-all group hover:scale-105"
             title="Personalizar orden y visibilidad del Dashboard"
           >
-            <SlidersHorizontal className="w-4 h-4 text-[#8B5CF6] group-hover:rotate-45 transition-transform" />
+            <SlidersHorizontal className="w-4 h-4 text-amber-600 dark:text-[#D4AF37] group-hover:rotate-45 transition-transform" />
             <span className="text-xs font-heading font-semibold">Personalizar</span>
           </button>
         )}

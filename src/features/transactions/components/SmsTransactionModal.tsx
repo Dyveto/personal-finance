@@ -96,8 +96,8 @@ export function SmsTransactionModal({
                 <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC] text-lg md:text-xl">
                   SMS de nueva transacción
                 </DialogTitle>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 transition-transform duration-200 hover:scale-105 motion-reduce:transform-none">
-                  <Sparkles className="w-3 h-3 text-[#8B5CF6]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 dark:text-[#D4AF37] border border-amber-500/25 transition-transform duration-200 hover:scale-105 motion-reduce:transform-none">
+                  <Sparkles className="w-3 h-3 text-amber-600 dark:text-[#D4AF37]" />
                   Paso 1 de 2
                 </span>
               </div>
@@ -111,10 +111,10 @@ export function SmsTransactionModal({
                   <span className="text-slate-500 dark:text-[#94A3B8] font-medium">
                     Progreso del asistente
                   </span>
-                  <span className="text-[#8B5CF6] font-semibold">50%</span>
+                  <span className="text-amber-600 dark:text-[#D4AF37] font-semibold">50%</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#8B5CF6] transition-all duration-300 ease-out motion-reduce:transition-none w-1/2" />
+                  <div className="h-full bg-amber-500 dark:bg-[#D4AF37] transition-all duration-300 ease-out motion-reduce:transition-none w-1/2" />
                 </div>
               </div>
             </DialogHeader>
@@ -136,7 +136,7 @@ export function SmsTransactionModal({
                   if (errorMsg) setErrorMsg(null);
                 }}
                 placeholder="Ej: Bancolombia le informa compra por $45.000,00 en RESTAURANTE EL SOL con tarjeta *1234 el 20/11/2026..."
-                className="w-full rounded-xl p-3 text-xs md:text-sm bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#8B5CF6]/50 resize-y"
+                className="w-full rounded-xl p-3 text-xs md:text-sm bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:focus:ring-[#D4AF37]/50 resize-y"
               />
               <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8]">
                 <span>Pega el mensaje recibido de Bancolombia, Nequi, Davivienda, etc.</span>
@@ -150,7 +150,7 @@ export function SmsTransactionModal({
                   type="checkbox"
                   checked={includeSmsInNotes}
                   onChange={(e) => setIncludeSmsInNotes(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 dark:border-white/[0.2] bg-white dark:bg-[#0B0F19] text-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/40 accent-[#8B5CF6] cursor-pointer transition-colors"
+                  className="h-4 w-4 rounded border-slate-300 dark:border-white/[0.2] bg-white dark:bg-[#0B0F19] text-amber-600 dark:text-[#D4AF37] focus:ring-2 focus:ring-amber-500/40 accent-amber-600 dark:accent-[#D4AF37] cursor-pointer transition-colors"
                 />
                 <label
                   htmlFor="include-sms-in-notes"
@@ -182,7 +182,7 @@ export function SmsTransactionModal({
                 type="button"
                 disabled={!rawText.trim()}
                 onClick={handleNextStep}
-                className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl text-xs flex items-center gap-1.5 shadow-sm font-semibold transition-all"
+                className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"
               >
                 <span>Siguiente</span>
                 <ArrowRight className="w-3.5 h-3.5" />

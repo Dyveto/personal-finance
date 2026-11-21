@@ -137,7 +137,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all">
+            <Button className="bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold dark:shadow-[0_0_15px_rgba(212,175,55,0.3)] rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition-all">
               <PlusCircle className="w-4 h-4" />
               <span>Nueva Cuenta</span>
             </Button>
@@ -246,7 +246,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
         <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-slate-600 dark:text-[#94A3B8]">Cupo Total Aprobado</span>
-            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
               <CardIcon className="w-4 h-4" />
             </div>
           </div>
@@ -259,11 +259,11 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
         <div className="surface-card p-5 rounded-2xl">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold uppercase text-slate-600 dark:text-[#94A3B8]">Cupo Disponible</span>
-            <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/15 border border-[#8B5CF6]/25 flex items-center justify-center text-[#8B5CF6]">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
               <Building2 className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-xl md:text-2xl font-heading font-extrabold text-[#8B5CF6] mt-3">
+          <div className="text-xl md:text-2xl font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] mt-3">
             {formatMoneyCOP(availableCredit)}
           </div>
           <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] mt-0.5">Cupo libre para usar</p>
@@ -276,7 +276,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
           variant={activeTab === "all" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("all")}
-          className={activeTab === "all" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
+          className={activeTab === "all" ? "bg-amber-600 text-white hover:bg-amber-700 dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl shadow-[0_0_12px_rgba(217,119,6,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
         >
           Todas ({accounts.length})
         </Button>
@@ -284,7 +284,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
           variant={activeTab === "standard" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("standard")}
-          className={activeTab === "standard" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
+          className={activeTab === "standard" ? "bg-amber-600 text-white hover:bg-amber-700 dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl shadow-[0_0_12px_rgba(217,119,6,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
         >
           Bancos y Efectivo (
           {accounts.filter((a) => a.account_type === "cash" || a.account_type === "bank").length})
@@ -293,7 +293,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
           variant={activeTab === "credit" ? "default" : "ghost"}
           size="sm"
           onClick={() => setActiveTab("credit")}
-          className={activeTab === "credit" ? "bg-[#8B5CF6] text-white hover:bg-[#7C3AED] rounded-xl shadow-[0_0_12px_rgba(139,92,246,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
+          className={activeTab === "credit" ? "bg-amber-600 text-white hover:bg-amber-700 dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl shadow-[0_0_12px_rgba(217,119,6,0.25)]" : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"}
         >
           Tarjetas de Crédito ({accounts.filter((a) => a.account_type === "credit_card").length})
         </Button>
@@ -313,7 +313,7 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
             <Button
               onClick={() => setIsDialogOpen(true)}
               size="sm"
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white rounded-xl"
+              className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl"
             >
               Registrar Cuenta
             </Button>
