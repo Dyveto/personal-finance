@@ -4,7 +4,23 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Personal Finance | Control Financiero",
   description: "Sistema Web de Finanzas Personales, Cuentas, Tarjetas de Crédito y Proyecciones",
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Finanzas",
+  },
 };
 
 export const viewport: Viewport = {

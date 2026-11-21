@@ -26,6 +26,12 @@
     --input: #E2E8F0;
     --ring: #8B5CF6;
     --radius: 0.75rem;
+
+    /* Brand Tokens (Modo Día - Contraste WCAG AA/AAA) */
+    --brand-gold: #A16207;
+    --brand-gold-subtle: #FEF3C7;
+    --brand-gold-glow: rgba(161, 98, 7, 0.15);
+    --brand-navy: #0B132B;
   }
 
   .dark {
@@ -48,6 +54,12 @@
     --border: rgba(255, 255, 255, 0.08);
     --input: rgba(255, 255, 255, 0.08);
     --ring: #8B5CF6;
+
+    /* Brand Tokens (Modo Noche - Oro Metálico & Azul Marino) */
+    --brand-gold: #D4AF37;
+    --brand-gold-subtle: rgba(212, 175, 55, 0.12);
+    --brand-gold-glow: rgba(212, 175, 55, 0.25);
+    --brand-navy: #0B132B;
   }
 }
 

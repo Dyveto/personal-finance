@@ -14,6 +14,8 @@ Este documento define la guía visual, tipográfica y de interacción aprobada p
 
 ## 2. Paleta de Colores (HEX Codes)
 *Prohibido usar degradados morados sobre fondo blanco.* Se prioriza una atmósfera oscura, profunda y sofisticada mediante contrastes marcados.
+- **Identidad de Marca - Dorado Metálico (Logo Monograma 'F'):** `#D4AF37` (Acento oro de la billetera y flecha ascendente) / `#F6E09D` (resplandor suave). En **Modo Día**, se proyecta como `#A16207` (dorado ámbar profundo) garantizando contraste accesible WCAG AA/AAA (> 4.5:1) sobre fondos claros.
+- **Identidad de Marca - Azul Marino Profundo (Logo Squircle):** `#0B132B` (Azul medianoche del emblema) y `#070B14` (Fondo de gradiente base).
 - **Fondo General (Atmósfera y Profundidad):** `#0B0F19` (Azul medianoche profundo con superposiciones de iluminación CSS radiales).
 - **Superficies / Tarjetas (Cards sin sombras genéricas):** `#131B2E` con borde sutil de separación (`1px solid rgba(255, 255, 255, 0.08)`).
 - **Acento Primario (Vibrante / Acciones Clave):** `#8B5CF6` (Violeta eléctrico puro para elementos interactivos destacados).

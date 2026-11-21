@@ -8,7 +8,6 @@ import {
   CreditCard,
   ArrowLeftRight,
   ShieldCheck,
-  TrendingUp,
   LogOut,
   Tag,
 } from "lucide-react";
@@ -16,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { signOut } from "@/features/auth/actions/auth-actions";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { APP_VERSION } from "@/config/version";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 interface NavItem {
   name: string;
@@ -83,17 +83,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     >
       {/* Brand Header */}
       <div className="flex items-center gap-3 px-6 h-16 border-b border-slate-200 dark:border-white/[0.08]">
-        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#8B5CF6] text-white font-bold shadow-[0_0_15px_rgba(139,92,246,0.35)]">
-          <TrendingUp className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <span className="font-heading font-bold tracking-tight text-slate-900 dark:text-[#F8FAFC] block text-sm">
-            Personal Finance
-          </span>
-          <span className="text-[11px] font-medium text-slate-500 dark:text-[#94A3B8] block -mt-0.5 tracking-wider uppercase">
-            COP Edition
-          </span>
-        </div>
+        <BrandLogo variant="full" size="sm" href="/" priority />
       </div>
 
       {/* Navigation Links */}

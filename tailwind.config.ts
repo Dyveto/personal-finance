@@ -16,6 +16,15 @@ const config: Config = {
         sans: ["'Outfit'", "sans-serif"],
       },
       colors: {
+        // Brand Identity Palette (Logo Gold & Deep Navy)
+        brand: {
+          gold: "#D4AF37",
+          goldLight: "#F6E09D",
+          goldDark: "#A16207",
+          navy: "#0B132B",
+          navyDark: "#070B14",
+          glow: "rgba(212, 175, 55, 0.25)",
+        },
         // DESIGN.md Palette
         canvas: "#0B0F19",
         surface: {
