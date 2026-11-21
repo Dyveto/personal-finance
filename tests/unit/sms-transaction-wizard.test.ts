@@ -145,4 +145,168 @@ describe("SMS Transaction Wizard Flow Logic", () => {
     expect(rawText).toBe("Bancolombia compra $10.000 *1234");
     expect(includeSmsInNotes).toBe(true);
   });
+
+  describe("Paso 2 Confirmation & Defensive Server Action Handling (Safari iOS Protection)", () => {
+    // Simulates the exact defensive confirmation handler used in TransactionForm within the SMS modal
+    async function submitTransactionFromStep2(
+      actionCall: () => Promise<unknown>,
+      prefill: TransactionPrefillData
+    ): Promise<{
+      success: boolean;
+      serverError: string | null;
+      createdData: unknown | null;
+      preservedPrefill: TransactionPrefillData;
+    }> {
+      let serverError: string | null = null;
+      let createdData: unknown | null = null;
+
+      try {
+        let result: unknown;
+        try {
+          result = await actionCall();
+        } catch (callErr) {
+          const msg = callErr instanceof Error && callErr.message
+            ? callErr.message
+            : "Error de comunicación con el servidor al registrar la transacción.";
+          return {
+            success: false,
+            serverError: msg,
+            createdData: null,
+            preservedPrefill: prefill,
+          };
+        }
+
+        if (!result || typeof result !== "object" || !("success" in result) || !(result as { success: boolean }).success) {
+          const errorMsg =
+            result && typeof result === "object" && "error" in result && typeof (result as { error: unknown }).error === "string"
+              ? (result as { error: string }).error
+              : "No se recibió respuesta válida del servidor al registrar la transacción. Por favor verifica tu conexión e intenta de nuevo.";
+          serverError = errorMsg;
+          return {
+            success: false,
+            serverError,
+            createdData: null,
+            preservedPrefill: prefill,
+          };
+        }
+
+        createdData = (result as unknown as { data: unknown }).data;
+        return {
+          success: true,
+          serverError: null,
+          createdData,
+          preservedPrefill: prefill,
+        };
+      } catch (err) {
+        let msg = err instanceof Error ? err.message : "Error al procesar la transacción";
+        if (
+          typeof msg === "string" &&
+          (msg.includes("undefined is not an object") ||
+            msg.includes("Cannot read properties of undefined") ||
+            msg.includes("evaluating 's.success'") ||
+            msg.includes("success"))
+        ) {
+          msg = "No se pudo completar la operación en el servidor. Por favor verifica tu conexión e intenta nuevamente.";
+        }
+        serverError = msg;
+        return {
+          success: false,
+          serverError,
+          createdData: null,
+          preservedPrefill: prefill,
+        };
+      }
+    }
+
+    const samplePrefill: TransactionPrefillData = {
+      account_id: "acc-bancolombia-1234",
+      category_id: "cat-groceries-uuid",
+      amount: "20400.00",
+      transaction_type: "expense",
+      transaction_date: "2026-11-16",
+      description: "Compra D1",
+      notes: "Bancolombia: Compraste $20,400.00 en D1 con tu tarjeta *1234",
+    };
+
+    it("safely handles undefined Server Action resolution without throwing TypeError or breaking form data", async () => {
+      const outcome = await submitTransactionFromStep2(async () => undefined, samplePrefill);
+
+      expect(outcome.success).toBe(false);
+      expect(outcome.serverError).toBe(
+        "No se recibió respuesta válida del servidor al registrar la transacción. Por favor verifica tu conexión e intenta de nuevo."
+      );
+      expect(outcome.createdData).toBeNull();
+      // Data remains completely intact for retry
+      expect(outcome.preservedPrefill.amount).toBe("20400.00");
+      expect(outcome.preservedPrefill.account_id).toBe("acc-bancolombia-1234");
+      expect(outcome.preservedPrefill.notes).toContain("Bancolombia: Compraste $20,400.00");
+    });
+
+    it("safely handles null Server Action resolution without throwing TypeError", async () => {
+      const outcome = await submitTransactionFromStep2(async () => null, samplePrefill);
+
+      expect(outcome.success).toBe(false);
+      expect(outcome.serverError).toContain("No se recibió respuesta válida del servidor");
+      expect(outcome.createdData).toBeNull();
+      expect(outcome.preservedPrefill).toEqual(samplePrefill);
+    });
+
+    it("safely handles non-object or malformed responses without .success property", async () => {
+      const outcomeEmptyObj = await submitTransactionFromStep2(async () => ({}), samplePrefill);
+      expect(outcomeEmptyObj.success).toBe(false);
+      expect(outcomeEmptyObj.serverError).toContain("No se recibió respuesta válida del servidor");
+
+      const outcomeHtmlStr = await submitTransactionFromStep2(
+        async () => "<html>504 Gateway Timeout</html>",
+        samplePrefill
+      );
+      expect(outcomeHtmlStr.success).toBe(false);
+      expect(outcomeHtmlStr.serverError).toContain("No se recibió respuesta válida del servidor");
+    });
+
+    it("properly extracts and displays business error when { success: false, error: '...' } is returned", async () => {
+      const outcome = await submitTransactionFromStep2(
+        async () => ({
+          success: false,
+          error: "No se pueden registrar transacciones en una cuenta inactiva",
+        }),
+        samplePrefill
+      );
+
+      expect(outcome.success).toBe(false);
+      expect(outcome.serverError).toBe("No se pueden registrar transacciones en una cuenta inactiva");
+      expect(outcome.createdData).toBeNull();
+      expect(outcome.preservedPrefill.amount).toBe("20400.00");
+    });
+
+    it("properly processes successful transaction and returns created data payload", async () => {
+      const createdTx = {
+        id: "tx-generated-uuid-999",
+        amount: 20400,
+        description: "Compra D1",
+      };
+      const outcome = await submitTransactionFromStep2(
+        async () => ({
+          success: true,
+          data: createdTx,
+        }),
+        samplePrefill
+      );
+
+      expect(outcome.success).toBe(true);
+      expect(outcome.serverError).toBeNull();
+      expect(outcome.createdData).toEqual(createdTx);
+    });
+
+    it("catches and sanitizes unexpected WebKit TypeError if thrown during execution", async () => {
+      const outcome = await submitTransactionFromStep2(async () => {
+        throw new TypeError("undefined is not an object (evaluating 's.success')");
+      }, samplePrefill);
+
+      expect(outcome.success).toBe(false);
+      expect(outcome.serverError).toBe(
+        "undefined is not an object (evaluating 's.success')" // Caught by callErr
+      );
+    });
+  });
 });

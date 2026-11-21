@@ -32,7 +32,7 @@ export function NotificationBell() {
     try {
       setIsLoading(true);
       const res = await getPaymentAlerts();
-      if (res.success) {
+      if (res && typeof res === "object" && "success" in res && res.success) {
         setAlerts(res.data);
       }
     } catch {

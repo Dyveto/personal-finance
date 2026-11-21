@@ -49,8 +49,12 @@ function LoginForm() {
     try {
       const result = await signIn(values);
 
-      if (!result.success) {
-        setFormError(result.error);
+      if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+        setFormError(
+          result && typeof result === "object" && "error" in result && typeof result.error === "string"
+            ? result.error
+            : "No se recibió respuesta válida del servidor al iniciar sesión."
+        );
         setIsPending(false);
         return;
       }

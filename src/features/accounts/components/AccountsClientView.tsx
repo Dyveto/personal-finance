@@ -101,8 +101,12 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
       setIsDeleting(true);
       setErrorNotice(null);
       const res = await deleteAccount(deletingAccount.id);
-      if (!res.success) {
-        setErrorNotice(res.error);
+      if (!res || typeof res !== "object" || !("success" in res) || !res.success) {
+        const errorMsg =
+          res && typeof res === "object" && "error" in res && typeof res.error === "string"
+            ? res.error
+            : "No se pudo eliminar la cuenta por un error inesperado del servidor.";
+        setErrorNotice(errorMsg);
         return;
       }
       setAccounts((prev) => prev.filter((a) => a.id !== deletingAccount.id));

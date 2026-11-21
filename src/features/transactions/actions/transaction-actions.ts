@@ -301,11 +301,15 @@ export async function createTransaction(
       };
     }
 
-    revalidatePath("/transactions");
-    revalidatePath("/accounts");
-    revalidatePath("/credit-cards");
-    revalidatePath("/dashboard");
-    revalidatePath("/");
+    try {
+      revalidatePath("/transactions");
+      revalidatePath("/accounts");
+      revalidatePath("/credit-cards");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch (revalidateErr) {
+      console.warn("Non-critical: revalidatePath failed after createTransaction:", revalidateErr);
+    }
 
     return { success: true, data: insertedTransaction };
   } catch (err) {
@@ -431,11 +435,15 @@ export async function createInstallmentPurchase(
       };
     }
 
-    revalidatePath("/transactions");
-    revalidatePath("/accounts");
-    revalidatePath("/credit-cards");
-    revalidatePath("/dashboard");
-    revalidatePath("/");
+    try {
+      revalidatePath("/transactions");
+      revalidatePath("/accounts");
+      revalidatePath("/credit-cards");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch (revalidateErr) {
+      console.warn("Non-critical: revalidatePath failed after createInstallmentPurchase:", revalidateErr);
+    }
 
     return {
       success: true,
@@ -692,11 +700,15 @@ export async function updateTransaction(
       }
     }
 
-    revalidatePath("/transactions");
-    revalidatePath("/accounts");
-    revalidatePath("/credit-cards");
-    revalidatePath("/dashboard");
-    revalidatePath("/");
+    try {
+      revalidatePath("/transactions");
+      revalidatePath("/accounts");
+      revalidatePath("/credit-cards");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch (revalidateErr) {
+      console.warn("Non-critical: revalidatePath failed after updateTransaction:", revalidateErr);
+    }
 
     return { success: true, data: updatedTx };
   } catch (err) {
@@ -796,11 +808,15 @@ export async function deleteTransaction(
         .eq("user_id", user.id);
     }
 
-    revalidatePath("/transactions");
-    revalidatePath("/accounts");
-    revalidatePath("/credit-cards");
-    revalidatePath("/dashboard");
-    revalidatePath("/");
+    try {
+      revalidatePath("/transactions");
+      revalidatePath("/accounts");
+      revalidatePath("/credit-cards");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch (revalidateErr) {
+      console.warn("Non-critical: revalidatePath failed after deleteTransaction:", revalidateErr);
+    }
 
     return {
       success: true,

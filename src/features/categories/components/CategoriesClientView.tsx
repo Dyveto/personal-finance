@@ -219,8 +219,12 @@ export function CategoriesClientView({
           is_active: formActive,
         });
 
-        if (!res.success) {
-          setFormError(res.error);
+        if (!res || typeof res !== "object" || !("success" in res) || !res.success) {
+          const errorMsg =
+            res && typeof res === "object" && "error" in res && typeof res.error === "string"
+              ? res.error
+              : "No se recibió respuesta válida del servidor al actualizar la categoría.";
+          setFormError(errorMsg);
           return;
         }
 
@@ -241,8 +245,12 @@ export function CategoriesClientView({
           is_active: formActive,
         });
 
-        if (!res.success) {
-          setFormError(res.error);
+        if (!res || typeof res !== "object" || !("success" in res) || !res.success) {
+          const errorMsg =
+            res && typeof res === "object" && "error" in res && typeof res.error === "string"
+              ? res.error
+              : "No se recibió respuesta válida del servidor al crear la categoría.";
+          setFormError(errorMsg);
           return;
         }
 
@@ -270,11 +278,15 @@ export function CategoriesClientView({
       setIsDeleting(true);
       const res = await deleteCategory(deletingCategory.id);
 
-      if (!res.success) {
-        setFeedback({ type: "error", message: res.error });
+      if (!res || typeof res !== "object" || !("success" in res) || !res.success) {
+        const errorMsg =
+          res && typeof res === "object" && "error" in res && typeof res.error === "string"
+            ? res.error
+            : "No se pudo eliminar la categoría por un error inesperado del servidor.";
+        setFeedback({ type: "error", message: errorMsg });
         setDeleteErrorAlert({
           title: "Eliminación Bloqueada por Seguridad",
-          message: res.error,
+          message: errorMsg,
         });
         setDeletingCategory(null);
         return;

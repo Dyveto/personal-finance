@@ -92,10 +92,24 @@ export function PayStatementDialog({
         notes: notes.trim() ? notes : undefined,
       };
 
-      const result = await markExtractAsPaid(payload);
+      let result;
+      try {
+        result = await markExtractAsPaid(payload);
+      } catch (callErr) {
+        const msg = callErr instanceof Error && callErr.message
+          ? callErr.message
+          : "Error de comunicación con el servidor al registrar el pago del extracto.";
+        setErrorMessage(msg);
+        setIsSubmitting(false);
+        return;
+      }
 
-      if (!result.success) {
-        setErrorMessage(result.error);
+      if (!result || typeof result !== "object" || !("success" in result) || !result.success) {
+        const errorMsg =
+          result && typeof result === "object" && "error" in result && typeof result.error === "string"
+            ? result.error
+            : "No se recibió respuesta válida del servidor al registrar el pago del extracto.";
+        setErrorMessage(errorMsg);
         setIsSubmitting(false);
         return;
       }
