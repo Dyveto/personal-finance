@@ -94,7 +94,7 @@ export function SmsTransactionModal({
                 <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC] text-lg md:text-xl">
                   SMS de nueva transacción
                 </DialogTitle>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50 transition-transform duration-200 hover:scale-105 motion-reduce:transform-none">
                   <Sparkles className="w-3 h-3 text-[#8B5CF6]" />
                   Paso 1 de 2
                 </span>
@@ -112,7 +112,7 @@ export function SmsTransactionModal({
                   <span className="text-[#8B5CF6] font-semibold">50%</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#8B5CF6] transition-all duration-300 w-1/2" />
+                  <div className="h-full bg-[#8B5CF6] transition-all duration-300 ease-out motion-reduce:transition-none w-1/2" />
                 </div>
               </div>
             </DialogHeader>
@@ -177,7 +177,7 @@ export function SmsTransactionModal({
                 <DialogTitle className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC] text-lg md:text-xl">
                   Confirmar Transacción
                 </DialogTitle>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 transition-transform duration-200 hover:scale-105 motion-reduce:transform-none">
                   <CheckCircle2 className="w-3 h-3 text-[#10B981]" />
                   Paso 2 de 2
                 </span>
@@ -195,7 +195,7 @@ export function SmsTransactionModal({
                   <span className="text-[#10B981] font-semibold">100% completado</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-100 dark:bg-white/[0.08] rounded-full overflow-hidden">
-                  <div className="h-full bg-[#10B981] transition-all duration-300 w-full" />
+                  <div className="h-full bg-[#10B981] transition-all duration-300 ease-out motion-reduce:transition-none w-full" />
                 </div>
               </div>
             </DialogHeader>
