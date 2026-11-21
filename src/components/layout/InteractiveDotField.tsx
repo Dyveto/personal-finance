@@ -2,16 +2,146 @@
 
 import { useEffect, useRef } from "react";
 
-interface Dot {
+export interface MicroStroke {
   originX: number;
   originY: number;
   currentX: number;
   currentY: number;
   targetX: number;
   targetY: number;
+  angle: number;
+  targetAngle: number;
+  baseLength: number;
+  length: number;
+  phase: number;
+  speed: number;
+  spatialWarmth: number;
 }
 
-export function InteractiveDotField() {
+export interface InteractiveDotFieldProps {
+  className?: string;
+  density?: "subtle" | "normal" | "dense";
+}
+
+// ---------------------------------------------------------------------------
+// FUNCIONES PURAS Y MATEMÁTICAS EXPORTADAS PARA PRUEBAS Y AUDITORÍA
+// ---------------------------------------------------------------------------
+
+/**
+ * Limita el devicePixelRatio a un máximo de 2 para proteger pantallas de alta densidad (Retina/4K).
+ */
+export function calculateDpr(devicePixelRatio: number): number {
+  return Math.min(Math.max(devicePixelRatio || 1, 1), 2);
+}
+
+/**
+ * Calcula el espaciado y cantidad de trazos según viewport y densidad.
+ */
+export function calculateGridDimensions(
+  width: number,
+  height: number,
+  isMobileOrTouch: boolean,
+  density: "subtle" | "normal" | "dense" = "normal"
+): { cols: number; rows: number; totalStrokes: number; spacing: number } {
+  let baseSpacing = isMobileOrTouch ? 50 : 36;
+  if (density === "subtle") baseSpacing += 10;
+  if (density === "dense") baseSpacing -= 6;
+
+  const cols = Math.max(1, Math.floor(width / baseSpacing));
+  const rows = Math.max(1, Math.floor(height / baseSpacing));
+  return {
+    cols,
+    rows,
+    totalStrokes: cols * rows,
+    spacing: baseSpacing,
+  };
+}
+
+/**
+ * Factor de despeje central: atenúa la opacidad y escala de los trazos
+ * en la zona central de la pantalla donde habitan las tarjetas financieras y datos clave.
+ */
+export function calculateCenterAttenuation(
+  x: number,
+  y: number,
+  width: number,
+  height: number
+): number {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const dx = x - centerX;
+  const dy = y - centerY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const maxRadius = Math.sqrt(centerX * centerX + centerY * centerY) * 0.55;
+
+  const norm = Math.min(1, dist / (maxRadius || 1));
+  // Curva smoothstep entre 0.45 (centro más limpio) y 1.0 (bordes plenos)
+  const t = Math.max(0, Math.min(1, norm));
+  const smooth = t * t * (3 - 2 * t);
+  return 0.48 + 0.52 * smooth;
+}
+
+/**
+ * Calcula la orientación angular base continua (deriva ambiental orgánica permanente).
+ */
+export function calculateMicroStrokeAngle(
+  x: number,
+  y: number,
+  time: number,
+  phase: number
+): number {
+  const wave1 = Math.sin(time * 0.00075 + y * 0.0042 + phase);
+  const wave2 = Math.cos(time * 0.00062 + x * 0.0038 + phase * 0.5);
+  return wave1 * Math.PI * 0.65 + wave2 * Math.PI * 0.35;
+}
+
+/**
+ * Modulación cromática gradual entre tonos fríos (índigo/violeta/azul cian)
+ * y tonos cálidos (ámbar/dorado/coral suave) calibrados para Modo Día y Modo Noche.
+ */
+export function calculateChromaticColor(
+  warmth: number,
+  alpha: number,
+  isDark: boolean
+): string {
+  const w = Math.max(0, Math.min(1, warmth));
+  const a = Math.max(0, Math.min(1, alpha));
+
+  if (isDark) {
+    // Modo Noche:
+    // Frío (w=0): Violeta eléctrico / Índigo luminiscente rgb(120, 110, 245)
+    // Cálido (w=1): Ámbar dorado / Coral suave rgb(245, 168, 65)
+    const r = Math.round(115 + (245 - 115) * w);
+    const g = Math.round(110 + (168 - 110) * w);
+    const b = Math.round(245 + (65 - 245) * w);
+    return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
+  } else {
+    // Modo Día:
+    // Frío (w=0): Pizarra azulado frío con matiz índigo rgb(95, 105, 190)
+    // Cálido (w=1): Ámbar ocre elegante rgb(200, 125, 45)
+    const r = Math.round(95 + (200 - 95) * w);
+    const g = Math.round(105 + (125 - 105) * w);
+    const b = Math.round(190 + (45 - 190) * w);
+    return `rgba(${r}, ${g}, ${b}, ${a.toFixed(2)})`;
+  }
+}
+
+/**
+ * Diferencia angular mínima considerando la periodicidad circular de 2PI.
+ */
+export function shortestAngleDiff(target: number, current: number): number {
+  const diff = (target - current) % (Math.PI * 2);
+  return ((diff + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+}
+
+/**
+ * Componente de Campo de Micro-trazos Dinámico e Interactivo (Antigravity Style).
+ * Totalmente desacoplado, pasivo y con cero interferencia sobre inputs y componentes.
+ */
+export function InteractiveDotField({
+  className = "",
+  density = "normal",
+}: InteractiveDotFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -21,7 +151,7 @@ export function InteractiveDotField() {
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
 
-    // 1. Preferencia de movimiento reducido
+    // 1. Detección y respeto de accesibilidad prefers-reduced-motion
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     let prefersReducedMotion = motionQuery.matches;
 
@@ -38,65 +168,79 @@ export function InteractiveDotField() {
 
     let width = 0;
     let height = 0;
-    let dots: Dot[] = [];
+    let strokes: MicroStroke[] = [];
     let isTouchOrMobile = false;
 
-    // Rango amplio de influencia inspirado en antigravity.google
-    const interactionRadius = 250; // Ampliado de 130 a 250px para onda amplia
-    const maxPushDistance = 26; // Desplazamiento elástico orgánico
-    const damping = 0.10; // Amortiguación fluida
+    // Parámetros de física de interacción amplia
+    const interactionRadius = 240; // Radio amplio y envolvente
+    const maxPushDistance = 22; // Desplazamiento elástico suave
+    const damping = 0.09; // Amortiguación suave
+    const angularDamping = 0.08; // Suavizado angular continuo
 
     const pointer = {
-      x: -1000,
-      y: -1000,
+      x: -2000,
+      y: -2000,
       active: false,
       isTouch: false,
     };
 
     let animationFrameId: number | null = null;
     let isLoopRunning = false;
-    let idleCounter = 0;
-    const MAX_DESKTOP_IDLE_FRAMES = 75; // En escritorio, dormir tras estabilizarse
 
-    // 2. Construir cuadrícula con densidad adaptativa (baja densidad en móvil)
-    const buildDotsGrid = () => {
-      dots = [];
+    // 2. Construcción de cuadrícula de micro-trazos con desfase y pesos espaciales
+    const buildStrokesGrid = () => {
+      strokes = [];
       isTouchOrMobile =
         width < 768 ||
         (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches);
 
-      // Mayor espaciado en móviles (52px) para mantener un conteo ligero (~110 puntos)
-      // En escritorio espaciado a 38px
-      const gridSpacing = isTouchOrMobile ? 52 : 38;
+      const grid = calculateGridDimensions(width, height, isTouchOrMobile, density);
+      const offsetX = (width - grid.cols * grid.spacing) / 2 + grid.spacing / 2;
+      const offsetY = (height - grid.rows * grid.spacing) / 2 + grid.spacing / 2;
 
-      const cols = Math.floor(width / gridSpacing);
-      const rows = Math.floor(height / gridSpacing);
-      const offsetX = (width - cols * gridSpacing) / 2 + gridSpacing / 2;
-      const offsetY = (height - rows * gridSpacing) / 2 + gridSpacing / 2;
+      for (let i = 0; i < grid.cols; i++) {
+        for (let j = 0; j < grid.rows; j++) {
+          const ox = offsetX + i * grid.spacing;
+          const oy = offsetY + j * grid.spacing;
 
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          const ox = offsetX + i * gridSpacing;
-          const oy = offsetY + j * gridSpacing;
-          dots.push({
+          // Semilla de fase pseudo-aleatoria pero determinista por celda
+          const phase = ((i * 37 + j * 73) % 100) / 100 * Math.PI * 2;
+          const speed = 0.85 + (((i * 13 + j * 29) % 30) / 100);
+
+          // Longitud contenida de micro-cápsula (6px a 12px)
+          const baseLength = isTouchOrMobile ? 7 : 9.5;
+
+          // Peso de calidez espacial (gradiente diagonal: superior izquierda frío -> inferior derecha cálido)
+          const normX = width > 0 ? ox / width : 0.5;
+          const normY = height > 0 ? oy / height : 0.5;
+          const spatialWarmth = Math.min(1, Math.max(0, normX * 0.55 + normY * 0.45));
+
+          strokes.push({
             originX: ox,
             originY: oy,
             currentX: ox,
             currentY: oy,
             targetX: ox,
             targetY: oy,
+            angle: phase,
+            targetAngle: phase,
+            baseLength,
+            length: baseLength,
+            phase,
+            speed,
+            spatialWarmth,
           });
         }
       }
     };
 
-    // 3. Ajustar dimensiones con soporte DPI acotado a máx 2
+    // 3. Ajuste de dimensiones con DPI acotado
     const resizeCanvas = () => {
       const parent = canvas.parentElement;
       width = parent ? parent.clientWidth : window.innerWidth;
       height = parent ? parent.clientHeight : window.innerHeight;
 
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = calculateDpr(window.devicePixelRatio || 1);
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
@@ -104,8 +248,9 @@ export function InteractiveDotField() {
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
+      ctx.lineCap = "round";
 
-      buildDotsGrid();
+      buildStrokesGrid();
 
       if (prefersReducedMotion) {
         renderStatic();
@@ -114,124 +259,132 @@ export function InteractiveDotField() {
       }
     };
 
-    // 4. Render estático (sin animación) para prefers-reduced-motion
+    // 4. Render estático para personas con prefers-reduced-motion
     const renderStatic = () => {
       ctx.clearRect(0, 0, width, height);
-      if (dots.length === 0) return;
+      if (strokes.length === 0) return;
 
       const isDark = document.documentElement.classList.contains("dark");
-      ctx.fillStyle = isDark
-        ? "rgba(148, 163, 184, 0.20)"
-        : "rgba(100, 116, 139, 0.22)";
 
-      for (let i = 0; i < dots.length; i++) {
-        const dot = dots[i];
+      for (let i = 0; i < strokes.length; i++) {
+        const s = strokes[i];
+        const centerFactor = calculateCenterAttenuation(s.originX, s.originY, width, height);
+        const strokeColor = calculateChromaticColor(
+          s.spatialWarmth,
+          (isDark ? 0.22 : 0.20) * centerFactor,
+          isDark
+        );
+
+        const halfLen = (s.baseLength * centerFactor) / 2;
+        const cosA = Math.cos(s.angle);
+        const sinA = Math.sin(s.angle);
+
         ctx.beginPath();
-        ctx.arc(dot.originX, dot.originY, 1.4, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(s.originX - cosA * halfLen, s.originY - sinA * halfLen);
+        ctx.lineTo(s.originX + cosA * halfLen, s.originY + sinA * halfLen);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = isDark ? 1.2 : 1.3;
+        ctx.stroke();
       }
     };
 
-    // 5. Bucle de renderizado animado con campo amplio y deriva ambiental
+    // 5. Bucle de animación continuo y orgánico (antigravity field)
     const render = (time: number) => {
       if (!isLoopRunning) return;
 
       ctx.clearRect(0, 0, width, height);
-
       const isDark = document.documentElement.classList.contains("dark");
+      const radiusSq = interactionRadius * interactionRadius;
 
-      let hasActiveMovement = false;
+      for (let i = 0; i < strokes.length; i++) {
+        const s = strokes[i];
 
-      // Cálculo de onda ambiental para móvil o cuando no haya interacción
-      const isAmbientActive = isTouchOrMobile && !prefersReducedMotion;
+        // Deriva ambiental perpetua: cada trazo se mueve suavemente en su propia fase
+        const tScaled = time * s.speed;
+        const baseAngle = calculateMicroStrokeAngle(s.originX, s.originY, tScaled, s.phase);
 
-      for (let i = 0; i < dots.length; i++) {
-        const dot = dots[i];
+        // Micro-desplazamiento de corriente suave (3.5px a 5px)
+        const ambientDriftX = Math.cos(baseAngle) * 4.2;
+        const ambientDriftY = Math.sin(baseAngle) * 4.2;
 
-        // Posición base con deriva ambiental orgánica en móvil
-        let baseX = dot.originX;
-        let baseY = dot.originY;
+        const anchorX = s.originX + ambientDriftX;
+        const anchorY = s.originY + ambientDriftY;
 
-        if (isAmbientActive) {
-          baseX += Math.sin(time * 0.0014 + dot.originY * 0.018) * 5.0;
-          baseY += Math.cos(time * 0.0011 + dot.originX * 0.018) * 5.0;
-          hasActiveMovement = true;
-        }
-
-        // Interacción concentrada en rango amplio (250px)
         let proximity = 0;
+        let pointerAngle = 0;
 
+        // Perturbación suave si el puntero está activo (cursor o toque)
         if (pointer.active) {
-          const dx = pointer.x - baseX;
-          const dy = pointer.y - baseY;
+          const dx = pointer.x - anchorX;
+          const dy = pointer.y - anchorY;
           const distSq = dx * dx + dy * dy;
-          const radiusSq = interactionRadius * interactionRadius;
 
           if (distSq < radiusSq) {
             const dist = Math.sqrt(distSq);
-            proximity = 1 - dist / interactionRadius; // 0 (borde) a 1 (centro)
-            // Curva suave de caída de fuerza
-            const force = proximity * proximity * maxPushDistance;
-            const angle = Math.atan2(dy, dx);
+            const linearProx = 1 - dist / interactionRadius;
+            // Curva suave cúbica
+            proximity = linearProx * linearProx * (3 - 2 * linearProx);
 
-            dot.targetX = baseX - Math.cos(angle) * force;
-            dot.targetY = baseY - Math.sin(angle) * force;
+            pointerAngle = Math.atan2(dy, dx);
+            const push = proximity * maxPushDistance;
+
+            s.targetX = anchorX - Math.cos(pointerAngle) * push;
+            s.targetY = anchorY - Math.sin(pointerAngle) * push;
+
+            // El trazo se orienta tangencialmente al flujo del puntero
+            const tangentAngle = pointerAngle + Math.PI / 2;
+            s.targetAngle = baseAngle + shortestAngleDiff(tangentAngle, baseAngle) * (proximity * 0.65);
+            s.length = s.baseLength * (1 + proximity * 0.4);
           } else {
-            dot.targetX = baseX;
-            dot.targetY = baseY;
+            s.targetX = anchorX;
+            s.targetY = anchorY;
+            s.targetAngle = baseAngle;
+            s.length = s.baseLength;
           }
         } else {
-          dot.targetX = baseX;
-          dot.targetY = baseY;
+          s.targetX = anchorX;
+          s.targetY = anchorY;
+          s.targetAngle = baseAngle;
+          s.length = s.baseLength;
         }
 
-        const diffX = dot.targetX - dot.currentX;
-        const diffY = dot.targetY - dot.currentY;
+        // Integración física elástica (lerp)
+        s.currentX += (s.targetX - s.currentX) * damping;
+        s.currentY += (s.targetY - s.currentY) * damping;
 
-        dot.currentX += diffX * damping;
-        dot.currentY += diffY * damping;
+        // Interpolación angular suave evitando saltos en el límite circular
+        const angleDelta = shortestAngleDiff(s.targetAngle, s.angle);
+        s.angle += angleDelta * angularDamping;
 
-        if (Math.abs(diffX) > 0.03 || Math.abs(diffY) > 0.03) {
-          hasActiveMovement = true;
-        }
+        // Despeje central: trazos más sutiles y limpios en la zona central
+        const centerFactor = calculateCenterAttenuation(s.currentX, s.currentY, width, height);
 
-        // Tamaño y opacidad dinámicos según proximidad al cursor
-        let dotRadius = 1.35;
-        let fillStyle = "";
+        // Modulación cromática: calidez espacial base + perturbación dinámica
+        const dynamicWarmth = Math.min(1, s.spatialWarmth + proximity * 0.55);
 
-        if (proximity > 0) {
-          dotRadius = 1.35 + proximity * 0.9; // Crece sutilmente de 1.35px a 2.25px
-          if (isDark) {
-            // Modo noche: violeta vibrante con brillo gradual
-            const alpha = 0.20 + proximity * 0.45;
-            fillStyle = `rgba(167, 139, 250, ${alpha.toFixed(2)})`;
-          } else {
-            // Modo día: violeta eléctrico profundo con excelente contraste
-            const alpha = 0.22 + proximity * 0.43;
-            fillStyle = `rgba(124, 58, 237, ${alpha.toFixed(2)})`;
-          }
-        } else {
-          // Puntos en reposo: claramente visibles pero no invasivos
-          fillStyle = isDark
-            ? "rgba(148, 163, 184, 0.20)"
-            : "rgba(100, 116, 139, 0.22)";
-        }
+        // Opacidad calibrada para no interferir con las cifras en COP
+        const baseAlpha = isDark ? 0.18 : 0.17;
+        const activeAlpha = isDark ? 0.38 : 0.32;
+        const totalAlpha = (baseAlpha + proximity * activeAlpha) * centerFactor;
+
+        const strokeColor = calculateChromaticColor(dynamicWarmth, totalAlpha, isDark);
+
+        // Dibujar micro-cápsula / segmento fino
+        const halfLen = (s.length * centerFactor) / 2;
+        const cosA = Math.cos(s.angle);
+        const sinA = Math.sin(s.angle);
+
+        const startX = s.currentX - cosA * halfLen;
+        const startY = s.currentY - sinA * halfLen;
+        const endX = s.currentX + cosA * halfLen;
+        const endY = s.currentY + sinA * halfLen;
 
         ctx.beginPath();
-        ctx.fillStyle = fillStyle;
-        ctx.arc(dot.currentX, dot.currentY, dotRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // En escritorio sin movimiento ambiental: suspender al estabilizarse
-      if (!isAmbientActive && !hasActiveMovement && !pointer.active) {
-        idleCounter++;
-        if (idleCounter > MAX_DESKTOP_IDLE_FRAMES) {
-          stopLoop();
-          return;
-        }
-      } else {
-        idleCounter = 0;
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = isDark ? 1.25 : 1.35;
+        ctx.stroke();
       }
 
       animationFrameId = requestAnimationFrame(render);
@@ -240,7 +393,6 @@ export function InteractiveDotField() {
     const startLoop = () => {
       if (isLoopRunning || prefersReducedMotion) return;
       isLoopRunning = true;
-      idleCounter = 0;
       animationFrameId = requestAnimationFrame(render);
     };
 
@@ -253,13 +405,12 @@ export function InteractiveDotField() {
     };
 
     const wakeLoop = () => {
-      idleCounter = 0;
       if (!isLoopRunning && !prefersReducedMotion) {
         startLoop();
       }
     };
 
-    // 6. Manejo pasivo de interacción con pointer events (mouse + touch)
+    // 6. Manejo pasivo de interacción de puntero (mouse y táctil)
     const handlePointerDown = (e: PointerEvent) => {
       const rect = canvas.getBoundingClientRect();
       pointer.x = e.clientX - rect.left;
@@ -275,19 +426,17 @@ export function InteractiveDotField() {
       const clientY = e.clientY - rect.top;
 
       if (e.pointerType === "touch") {
-        // En móvil/táctil, solo desplazar puntos si el usuario está activamente tocando la pantalla
         if (pointer.active) {
           pointer.x = clientX;
           pointer.y = clientY;
           wakeLoop();
         }
       } else {
-        // En escritorio (mouse), responder al movimiento de proximidad
         if (
-          clientX >= -100 &&
-          clientX <= width + 100 &&
-          clientY >= -100 &&
-          clientY <= height + 100
+          clientX >= -120 &&
+          clientX <= width + 120 &&
+          clientY >= -120 &&
+          clientY <= height + 120
         ) {
           pointer.x = clientX;
           pointer.y = clientY;
@@ -302,12 +451,12 @@ export function InteractiveDotField() {
 
     const handlePointerUp = () => {
       pointer.active = false;
-      pointer.x = -1000;
-      pointer.y = -1000;
+      pointer.x = -2000;
+      pointer.y = -2000;
       wakeLoop();
     };
 
-    // 7. Pausa de batería al cambiar de pestaña o bloquear dispositivo
+    // 7. Pausa de renderizado cuando la pestaña pasa a segundo plano
     const handleVisibilityChange = () => {
       if (document.hidden) {
         stopLoop();
@@ -316,7 +465,7 @@ export function InteractiveDotField() {
       }
     };
 
-    // 8. Observar cambios en el tema claro/oscuro
+    // 8. Reaccionar a cambios de tema Día/Noche
     const themeObserver = new MutationObserver(() => {
       if (prefersReducedMotion) {
         renderStatic();
@@ -340,7 +489,7 @@ export function InteractiveDotField() {
       window.addEventListener("resize", resizeCanvas, { passive: true });
     }
 
-    // Todos los listeners con { passive: true } garantizan desplazamiento (scroll) nativo 100% fluido
+    // Todos los listeners registrados con { passive: true } para proteger el scroll a 60/120 fps
     window.addEventListener("pointerdown", handlePointerDown, { passive: true });
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerup", handlePointerUp, { passive: true });
@@ -366,11 +515,11 @@ export function InteractiveDotField() {
         window.removeEventListener("resize", resizeCanvas);
       }
     };
-  }, []);
+  }, [density]);
 
   return (
     <div
-      className="absolute inset-0 pointer-events-none overflow-hidden z-0"
+      className={`absolute inset-0 pointer-events-none overflow-hidden z-0 ${className}`}
       aria-hidden="true"
     >
       <canvas

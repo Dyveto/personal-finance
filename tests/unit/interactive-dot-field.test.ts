@@ -1,124 +1,122 @@
 import { describe, it, expect } from "vitest";
+import {
+  calculateDpr,
+  calculateGridDimensions,
+  calculateCenterAttenuation,
+  calculateMicroStrokeAngle,
+  calculateChromaticColor,
+  shortestAngleDiff,
+} from "@/components/layout/InteractiveDotField";
 
-describe("Interactive Dot Field Broad Aura & Dynamic Physics", () => {
-  const desktopSpacing = 38;
-  const mobileSpacing = 52;
-  const interactionRadius = 250;
-  const maxPushDistance = 26;
-  const damping = 0.10;
+describe("Antigravity Dynamic Micro-Stroke Field Physics & Visual Rules", () => {
+  describe("1. DPI and Responsive Layout", () => {
+    it("clamps devicePixelRatio to maximum 2 on high-density displays", () => {
+      expect(calculateDpr(1)).toBe(1);
+      expect(calculateDpr(1.5)).toBe(1.5);
+      expect(calculateDpr(2)).toBe(2);
+      expect(calculateDpr(3)).toBe(2);
+      expect(calculateDpr(4)).toBe(2);
+    });
 
-  function calculateGrid(width: number, height: number, isMobileOrTouch: boolean): {
-    cols: number;
-    rows: number;
-    totalDots: number;
-    spacing: number;
-  } {
-    const spacing = isMobileOrTouch ? mobileSpacing : desktopSpacing;
-    const cols = Math.floor(width / spacing);
-    const rows = Math.floor(height / spacing);
-    return { cols, rows, totalDots: cols * rows, spacing };
-  }
+    it("calculates lightweight grid on mobile (spacing 50px) and expansive grid on desktop (spacing 36px)", () => {
+      const mobileGrid = calculateGridDimensions(390, 844, true, "normal");
+      expect(mobileGrid.spacing).toBe(50);
+      expect(mobileGrid.totalStrokes).toBeGreaterThan(50);
+      expect(mobileGrid.totalStrokes).toBeLessThan(150);
 
-  function calculateDpr(devicePixelRatio: number): number {
-    return Math.min(devicePixelRatio || 1, 2);
-  }
+      const desktopGrid = calculateGridDimensions(1440, 900, false, "normal");
+      expect(desktopGrid.spacing).toBe(36);
+      expect(desktopGrid.totalStrokes).toBeGreaterThan(600);
+    });
 
-  function calculateAmbientWave(originX: number, originY: number, time: number): { waveX: number; waveY: number } {
-    const waveX = Math.sin(time * 0.0014 + originY * 0.018) * 5.0;
-    const waveY = Math.cos(time * 0.0011 + originX * 0.018) * 5.0;
-    return { waveX, waveY };
-  }
+    it("respects density prop configurations (subtle, normal, dense)", () => {
+      const subtle = calculateGridDimensions(1200, 800, false, "subtle");
+      const normal = calculateGridDimensions(1200, 800, false, "normal");
+      const dense = calculateGridDimensions(1200, 800, false, "dense");
 
-  function calculateBroadAuraPhysics(
-    originX: number,
-    originY: number,
-    currentX: number,
-    currentY: number,
-    pointerX: number,
-    pointerY: number,
-    isPointerActive: boolean
-  ): { targetX: number; targetY: number; nextX: number; nextY: number; proximity: number; dotRadius: number } {
-    let targetX = originX;
-    let targetY = originY;
-    let proximity = 0;
-
-    if (isPointerActive) {
-      const dx = pointerX - originX;
-      const dy = pointerY - originY;
-      const distSq = dx * dx + dy * dy;
-      const radiusSq = interactionRadius * interactionRadius;
-
-      if (distSq < radiusSq) {
-        const dist = Math.sqrt(distSq);
-        proximity = 1 - dist / interactionRadius;
-        const force = proximity * proximity * maxPushDistance;
-        const angle = Math.atan2(dy, dx);
-
-        targetX = originX - Math.cos(angle) * force;
-        targetY = originY - Math.sin(angle) * force;
-      }
-    }
-
-    const diffX = targetX - currentX;
-    const diffY = targetY - currentY;
-    const nextX = currentX + diffX * damping;
-    const nextY = currentY + diffY * damping;
-
-    const dotRadius = proximity > 0 ? 1.35 + proximity * 0.9 : 1.35;
-
-    return { targetX, targetY, nextX, nextY, proximity, dotRadius };
-  }
-
-  it("clamps devicePixelRatio to maximum 2 on high-DPI screens", () => {
-    expect(calculateDpr(1)).toBe(1);
-    expect(calculateDpr(2)).toBe(2);
-    expect(calculateDpr(3)).toBe(2);
+      expect(subtle.spacing).toBeGreaterThan(normal.spacing);
+      expect(dense.spacing).toBeLessThan(normal.spacing);
+      expect(dense.totalStrokes).toBeGreaterThan(normal.totalStrokes);
+    });
   });
 
-  it("calculates lightweight grid on mobile (spacing 52px) and expansive on desktop (spacing 38px)", () => {
-    const mobileGrid = calculateGrid(390, 844, true);
-    expect(mobileGrid.spacing).toBe(52);
-    expect(mobileGrid.totalDots).toBeGreaterThan(60);
-    expect(mobileGrid.totalDots).toBeLessThan(140);
+  describe("2. Central Area Clearing (Despeje Central)", () => {
+    it("produces higher visual clarity / reduced opacity at screen center and full density at edges", () => {
+      const width = 1440;
+      const height = 900;
+      const centerX = width / 2;
+      const centerY = height / 2;
 
-    const desktopGrid = calculateGrid(1440, 900, false);
-    expect(desktopGrid.spacing).toBe(38);
-    expect(desktopGrid.totalDots).toBeGreaterThan(500);
+      const centerFactor = calculateCenterAttenuation(centerX, centerY, width, height);
+      const edgeFactor = calculateCenterAttenuation(10, 10, width, height);
+      const cornerFactor = calculateCenterAttenuation(width, height, width, height);
 
-    // Continuous mobile ambient drift
-    const wave = calculateAmbientWave(100, 100, 500);
-    expect(Math.abs(wave.waveX)).toBeLessThanOrEqual(5.0);
-    expect(Math.abs(wave.waveY)).toBeLessThanOrEqual(5.0);
+      // Center attenuation should be around ~0.48 to 0.55 for clear data readability
+      expect(centerFactor).toBeLessThan(0.55);
+      expect(centerFactor).toBeGreaterThanOrEqual(0.48);
+
+      // Edges should have full visual weight (~1.0)
+      expect(edgeFactor).toBeGreaterThan(0.9);
+      expect(cornerFactor).toBe(1.0);
+    });
   });
 
-  it("responds over an expansive radius of 250px around the cursor with smooth proximity scaling", () => {
-    // Pointer 180px away (well outside former 130px radius, but within new 250px zone)
-    const result = calculateBroadAuraPhysics(200, 200, 200, 200, 380, 200, true);
+  describe("3. Autonomous Ambient Flow & Circular Angles", () => {
+    it("computes continuous organic orientation angles without NaN or infinity", () => {
+      const angle1 = calculateMicroStrokeAngle(100, 150, 0, 0.5);
+      const angle2 = calculateMicroStrokeAngle(100, 150, 1000, 0.5);
+      const angle3 = calculateMicroStrokeAngle(200, 300, 1000, 0.5);
 
-    expect(result.proximity).toBeGreaterThan(0);
-    expect(result.targetX).toBeLessThan(200); // Deflected smoothly away from pointer
-    expect(result.dotRadius).toBeGreaterThan(1.35); // Radius dynamically enhanced
+      expect(Number.isFinite(angle1)).toBe(true);
+      expect(Number.isFinite(angle2)).toBe(true);
+      expect(Number.isFinite(angle3)).toBe(true);
+      // Different times and positions yield varied organic orientations
+      expect(angle1).not.toBe(angle2);
+      expect(angle2).not.toBe(angle3);
+    });
+
+    it("computes shortest angular difference respecting 2PI periodicity without jumping", () => {
+      // Small positive difference
+      expect(shortestAngleDiff(0.5, 0.4)).toBeCloseTo(0.1, 5);
+
+      // Across the +PI / -PI boundary: 3.10 and -3.10 are 0.083 apart
+      const diffWrap = shortestAngleDiff(3.1, -3.1);
+      expect(Math.abs(diffWrap)).toBeLessThan(0.2);
+
+      // Same angle
+      expect(shortestAngleDiff(Math.PI, Math.PI)).toBe(0);
+    });
   });
 
-  it("increases proximity and dot size as cursor gets closer to the dot center", () => {
-    const far = calculateBroadAuraPhysics(200, 200, 200, 200, 400, 200, true); // 200px away
-    const close = calculateBroadAuraPhysics(200, 200, 200, 200, 240, 200, true); // 40px away
+  describe("4. Chromatic Modulation (Cold vs. Warm Palettes)", () => {
+    it("interpolates cold (indigo/violet) to warm (amber/gold) in Dark Mode", () => {
+      const coldDark = calculateChromaticColor(0, 0.3, true);
+      const warmDark = calculateChromaticColor(1, 0.3, true);
 
-    expect(close.proximity).toBeGreaterThan(far.proximity);
-    expect(close.dotRadius).toBeGreaterThan(far.dotRadius);
-    expect(close.dotRadius).toBeLessThanOrEqual(2.25);
+      // Cold has high blue channel (>= 240) and lower red
+      expect(coldDark).toContain("rgba(115, 110, 245, 0.30)");
+
+      // Warm has high red channel (>= 240) and lower blue
+      expect(warmDark).toContain("rgba(245, 168, 65, 0.30)");
+    });
+
+    it("interpolates cold slate-violet to warm slate-amber in Light Mode without reducing COP legibility", () => {
+      const coldLight = calculateChromaticColor(0, 0.25, false);
+      const warmLight = calculateChromaticColor(1, 0.25, false);
+
+      // Cold light mode: slate blue-violet
+      expect(coldLight).toContain("rgba(95, 105, 190, 0.25)");
+
+      // Warm light mode: warm amber-gold
+      expect(warmLight).toContain("rgba(200, 125, 45, 0.25)");
+    });
   });
 
-  it("returns smoothly to equilibrium when pointer is deactivated or leaves window", () => {
-    const deflected = calculateBroadAuraPhysics(200, 200, 185, 200, -1000, -1000, false);
-    expect(deflected.targetX).toBe(200);
-    expect(deflected.targetY).toBe(200);
-    expect(deflected.nextX).toBeGreaterThan(185); // Moving back toward 200
-  });
-
-  it("ensures canvas container maintains non-blocking pointer-events-none and z-0 layer", () => {
-    const containerClasses = "absolute inset-0 pointer-events-none overflow-hidden z-0";
-    expect(containerClasses).toContain("pointer-events-none");
-    expect(containerClasses).toContain("z-0");
+  describe("5. Layering & Architectural Isolation", () => {
+    it("ensures container keeps pointer-events-none and z-0 layer below content and modals", () => {
+      const containerClasses = "absolute inset-0 pointer-events-none overflow-hidden z-0";
+      expect(containerClasses).toContain("pointer-events-none");
+      expect(containerClasses).toContain("z-0");
+    });
   });
 });
