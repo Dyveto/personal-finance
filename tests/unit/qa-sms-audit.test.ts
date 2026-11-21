@@ -10,7 +10,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
     { id: "acc-nu-7890", name: "Nu Tarjeta de Crédito", lastFour: "7890" },
   ];
 
-  describe("1. Bancolombia Transactions (User Cases)", () => {
+  describe("1. Bancolombia Coverage & Precision", () => {
     it("verifies outgoing transfer: expense, exact amount 20400.00, civil date 2026-11-16, account *9266", () => {
       const sms =
         "Bancolombia: Transferiste $20,400.00 desde tu cuenta *9266 a la cuenta *3023568257 el 16/11/26 a las 18:14. Dudas al 018000912345";
@@ -26,7 +26,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.confidence).toBe("high");
     });
 
-    it("verifies incoming transfer: income, exact amount 25000.00, civil date 2026-11-08, account *9266", () => {
+    it("verifies incoming transfer with llave: income, exact amount 25000.00, civil date 2026-11-08, account *9266", () => {
       const sms =
         "Bancolombia: Dylan, recibiste una transferencia de OLGA MATILDE TORRES por $25,000.00 en tu cuenta *9266 conectada a la llave @dylan531 el 08/11/26 a las 21:25. Dudas al 018000912345";
       const result = parseSmsTransaction(sms, userAccounts);
@@ -39,11 +39,82 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-bancolombia-9266");
       expect(result.confidence).toBe("high");
+      expect(result.suggestedDescription).toContain("@dylan531");
+    });
+
+    it("verifies ATM cash withdrawal in Bancolombia", () => {
+      const sms =
+        "Bancolombia le informa retiro por $200.000,00 en CAJERO AUT el 15/11/2026 desde cta *9266. Dudas al 018000912345";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("200000.00");
+      expect(result.suggestedDescription).toBe("Retiro en CAJERO AUT");
+      expect(result.accountMatched).toBe(true);
+    });
+
+    it("sanitizes 018000 customer telephone lines from amounts", () => {
+      const sms =
+        "Bancolombia: Compra por $45.000 en EXITO con tarjeta *9266 el 14/11/2026. Dudas al 018000912345 o 018000123456";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.amount).toBe("45000.00");
+      expect(result.amount).not.toBe("018000912345.00");
     });
   });
 
-  describe("2. Nu, Nequi & BBVA Cases (Preserving Exact Cents)", () => {
-    it("verifies Nu expense preserving cents (45200.75) and account matching", () => {
+  describe("2. Nequi Coverage & Precision", () => {
+    it("verifies Nequi outgoing transfer ignoring phone numbers", () => {
+      const sms =
+        "¡Enviaste plata! Enviaste $50.000 a Carlos Gomez (3001234567). Si no fuiste tu comunicate al 3006000100.";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("50000.00");
+      expect(result.detectedBank).toBe("Nequi");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-nequi-531");
+      expect(result.suggestedDescription).toBe("Transferencia a Carlos Gomez");
+    });
+
+    it("verifies Nequi incoming money notification (¡Te llegó plata!)", () => {
+      const sms =
+        "¡Te llegó plata! Sofia te envió $85.000 a tu Nequi. ¡Entra y revisa!";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("income");
+      expect(result.amount).toBe("85000.00");
+      expect(result.detectedBank).toBe("Nequi");
+      expect(result.accountMatched).toBe(true);
+    });
+
+    it("verifies Nequi merchant payment preserving cents", () => {
+      const sms =
+        "Pagaste $18.500,25 en Panadería El Trigo desde tu Nequi el 17/11/2026.";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("expense");
+      expect(result.amount).toBe("18500.25");
+      expect(result.date).toBe("2026-11-17");
+      expect(result.detectedBank).toBe("Nequi");
+      expect(result.accountMatched).toBe(true);
+      expect(result.suggestedDescription).toBe("Panadería El Trigo");
+    });
+
+    it("verifies Nequi account top-up (recarga exitosa)", () => {
+      const sms =
+        "Recarga exitosa por $120.000 en tu Nequi el 16/11/2026.";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("income");
+      expect(result.amount).toBe("120000.00");
+      expect(result.detectedBank).toBe("Nequi");
+      expect(result.accountMatched).toBe(true);
+    });
+  });
+
+  describe("3. Nu Coverage & Precision", () => {
+    it("verifies Nu credit card purchase with cents (45200.75)", () => {
       const sms =
         "Nu: Compra aprobada por $45.200,75 en SPOTIFY con tu tarjeta de credito *7890 el 16/11/2026 14:30";
       const result = parseSmsTransaction(sms, userAccounts);
@@ -52,23 +123,40 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.amount).toBe("45200.75");
       expect(result.date).toBe("2026-11-16");
       expect(result.detectedBank).toBe("Nu");
+      expect(result.detectedAccountRef).toBe("*7890");
       expect(result.accountMatched).toBe(true);
       expect(result.matchedAccountId).toBe("acc-nu-7890");
+      expect(result.suggestedDescription).toBe("SPOTIFY");
     });
 
-    it("verifies Nequi expense preserving cents (18500.25)", () => {
+    it("verifies Nu incoming transfer to Nu account preserving cents", () => {
       const sms =
-        "¡Enviaste plata! Enviaste $18.500,25 a Panadería El Trigo desde tu Nequi el 17/11/2026.";
+        "Nu: Recibiste una transferencia por $50.000,50 de Maria en tu cuenta Nu el 18/11/2026.";
+      const result = parseSmsTransaction(sms, userAccounts);
+
+      expect(result.type).toBe("income");
+      expect(result.amount).toBe("50000.50");
+      expect(result.date).toBe("2026-11-18");
+      expect(result.detectedBank).toBe("Nu");
+      expect(result.accountMatched).toBe(true);
+      expect(result.matchedAccountId).toBe("acc-nu-7890");
+      expect(result.suggestedDescription).toBe("Transferencia de Maria");
+    });
+
+    it("verifies Nu outgoing transfer", () => {
+      const sms =
+        "Nu: Transferiste $35.000 a Sofia desde tu cuenta Nu el 19/11/2026.";
       const result = parseSmsTransaction(sms, userAccounts);
 
       expect(result.type).toBe("expense");
-      expect(result.amount).toBe("18500.25");
-      expect(result.date).toBe("2026-11-17");
-      expect(result.detectedBank).toBe("Nequi");
-      expect(result.accountMatched).toBe(true);
-      expect(result.matchedAccountId).toBe("acc-nequi-531");
+      expect(result.amount).toBe("35000.00");
+      expect(result.date).toBe("2026-11-19");
+      expect(result.detectedBank).toBe("Nu");
+      expect(result.suggestedDescription).toBe("Transferencia a Sofia");
     });
+  });
 
+  describe("4. BBVA & Cross-Bank Cents Precision", () => {
     it("verifies BBVA income preserving cents (350000.50)", () => {
       const sms =
         "BBVA: Abono a tu cuenta *4321 por $350.000,50 de Nómina el 15/11/2026.";
@@ -82,7 +170,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.matchedAccountId).toBe("acc-bbva-4321");
     });
 
-    it("verifies BBVA expense with comma separator and dot decimals (65400.99)", () => {
+    it("verifies BBVA expense with comma thousands and dot decimals (65400.99)", () => {
       const sms =
         "BBVA: Compra con tarjeta debito *4321 por $65,400.99 en RESTAURANTE el 15/11/2026.";
       const result = parseSmsTransaction(sms, userAccounts);
@@ -94,7 +182,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
     });
   });
 
-  describe("3. Unmatched Account Handling (accountMatched: false)", () => {
+  describe("5. Unmatched Account Handling & Fallback", () => {
     it("retains extracted amount, date and type when account reference does not match any user account", () => {
       const sms =
         "Banco Falabella: Compra aprobada por $120.000,00 en HOMECENTER con tarjeta *9999 el 10/11/2026";
@@ -106,11 +194,25 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.accountMatched).toBe(false);
       expect(result.matchedAccountId).toBeNull();
       expect(result.detectedAccountRef).toBe("*9999");
+      expect(result.warnings.some((w) => w.includes("No se encontró una cuenta"))).toBe(true);
+    });
+
+    it("warns when multiple user accounts share the same bank and no lastFour is provided", () => {
+      const ambiguousAccounts: UserAccount[] = [
+        { id: "banc-1", name: "Bancolombia Ahorros 1" },
+        { id: "banc-2", name: "Bancolombia Ahorros 2" },
+      ];
+      const sms = "Bancolombia: Compra por $50.000 en EXITO el 12/11/2026";
+      const result = parseSmsTransaction(sms, ambiguousAccounts);
+
+      expect(result.accountMatched).toBe(false);
+      expect(result.matchedAccountId).toBeNull();
+      expect(result.warnings.some((w) => w.includes("varias cuentas"))).toBe(true);
     });
   });
 
-  describe("4. Resiliency & Partial/Unrecognized Messages", () => {
-    it("handles partial message safely without crash", () => {
+  describe("6. Resiliency, Warnings & Safety", () => {
+    it("handles partial message safely reporting confidence partial", () => {
       const sms = "Tu compra fue por $55.000";
       const result = parseSmsTransaction(sms, userAccounts);
 
@@ -118,9 +220,10 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.type).toBe("expense");
       expect(result.accountMatched).toBe(false);
       expect(result.confidence).toBe("partial");
+      expect(result.warnings.length).toBeGreaterThan(0);
     });
 
-    it("handles unrecognized or random text without throwing exceptions", () => {
+    it("handles completely unrecognized random text returning confidence none", () => {
       const sms = "Buenas tardes, confirmo asistencia a la reunión de mañana a las 3pm.";
       const result = parseSmsTransaction(sms, userAccounts);
 
@@ -131,9 +234,17 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(result.accountMatched).toBe(false);
       expect(result.warnings.length).toBeGreaterThan(0);
     });
+
+    it("handles empty and whitespace string safely", () => {
+      const result = parseSmsTransaction("   \n\t  ");
+      expect(result.confidence).toBe("none");
+      expect(result.amount).toBeNull();
+      expect(result.type).toBeNull();
+      expect(result.accountMatched).toBe(false);
+    });
   });
 
-  describe("5. 2-Step Wizard Flow & Isolation Verification", () => {
+  describe("7. 2-Step Wizard Flow, Auto-Focus & Flow Isolation", () => {
     function simulateWizardStep1To2(
       rawText: string,
       accounts: UserAccount[]
@@ -159,7 +270,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       };
     }
 
-    it("verifies Step 1 (50%) -> Step 2 (100%) transition with account matched", () => {
+    it("verifies Step 1 (50%) -> Step 2 (100%) transition with account matched (autoFocusAccount = false)", () => {
       const sms =
         "Bancolombia: Transferiste $20,400.00 desde tu cuenta *9266 a la cuenta *3023568257 el 16/11/26";
       const wizard = simulateWizardStep1To2(sms, userAccounts);
@@ -171,7 +282,7 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(wizard.prefillData.amount).toBe("20400.00");
     });
 
-    it("verifies Step 1 (50%) -> Step 2 (100%) transition with unmatched account sets autoFocusAccount = true", () => {
+    it("verifies Step 1 (50%) -> Step 2 (100%) transition with unmatched account sets autoFocusAccount = true and empty account_id", () => {
       const sms =
         "Banco Agrario: Compra aprobada por $32.000 en ALMACEN el 12/11/2026 con tarjeta *1111";
       const wizard = simulateWizardStep1To2(sms, userAccounts);

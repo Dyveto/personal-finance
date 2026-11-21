@@ -443,17 +443,31 @@ function extractSuggestedDescription(text: string, type: "expense" | "income" | 
   const llaveMatch = /@([a-zA-Z0-9_.-]+)/.exec(cleaned);
   const llave = llaveMatch ? `@${llaveMatch[1]}` : null;
 
-  // 2. Compras en establecimientos (ej: "en EXITO CALLE 80", "en SPOTIFY", "en D1 SA")
-  const merchantMatch = /\ben\s+([A-Z0-9\s.,&'-]{3,40}?)(?:\s+(?:desde|con\s+su|con\s+tu|con\s+tarjeta|con\s+t\.|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
-  if (merchantMatch && merchantMatch[1]) {
-    const merchant = merchantMatch[1].trim();
-    if (!/^(?:cajero|su\s+cta|tu\s+cta|cuenta)/i.test(merchant)) {
-      return merchant;
+  // 2. Recepción de fondos (prioridad para ingresos, ej: "de MARI LUZ con llave @dylan531", "de PEDRO GOMEZ", "de Maria en tu cuenta Nu")
+  if (type === "income") {
+    const senderMatch = /(?:^|\s)de\s+([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,'-]{3,35}?)(?:\s+(?:en\s+(?:tu|su)\s+cuenta|en\s+(?:tu|su)|con\s+llave|por\s+[$0-9.,\s]|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
+    if (senderMatch && senderMatch[1]) {
+      const sender = senderMatch[1].trim();
+      if (!/^(?:NOMINA|NÓMINA)$/i.test(sender)) {
+        return llave ? `Transferencia de ${sender} (${llave})` : `Transferencia de ${sender}`;
+      }
+      return `Abono de ${sender.toUpperCase()}`;
     }
   }
 
-  // 3. Pagos a servicios o destinatarios (ej: "a SERVICIOS PUBLICOS", "a Juan Perez")
-  const recipientMatch = /\ba\s+(?:la\s+cuenta\s+de\s+|la\s+llave\s+|Nequi\s+)?([A-Za-z0-9\s.,@'-]{2,35}?)(?:\s+(?:desde|con|el\s+\d|\d{1,2}[\/\-]|\[TELEFONO_SOPORTE\]|\(|\.|$))/i.exec(cleaned);
+  // 3. Compras en establecimientos (ej: "en EXITO CALLE 80", "en SPOTIFY", "en D1 SA", "en Panadería El Trigo")
+  if (type !== "income") {
+    const merchantMatch = /\ben\s+([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,&'-]{3,40}?)(?:\s+(?:desde|con\s+su|con\s+tu|con\s+tarjeta|con\s+t\.|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
+    if (merchantMatch && merchantMatch[1]) {
+      const merchant = merchantMatch[1].trim();
+      if (!/^(?:cajero|su\s+cta|tu\s+cta|tu\s+cuenta|su\s+cuenta|cuenta)/i.test(merchant)) {
+        return merchant;
+      }
+    }
+  }
+
+  // 4. Pagos a servicios o destinatarios (ej: "a SERVICIOS PUBLICOS", "a Juan Perez")
+  const recipientMatch = /(?:^|\s)a\s+(?:la\s+cuenta\s+de\s+|la\s+llave\s+|Nequi\s+)?([A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s.,@'-]{2,35}?)(?:\s+(?:desde|con|el\s+\d|\d{1,2}[\/\-]|\[TELEFONO_SOPORTE\]|\(|\.|$))/i.exec(cleaned);
   if (recipientMatch && recipientMatch[1]) {
     let recipient = recipientMatch[1].trim();
     // Limpiar teléfonos adjuntos en paréntesis o residuos de puntuación
@@ -463,16 +477,6 @@ function extractSuggestedDescription(text: string, type: "expense" | "income" | 
         return `Transferencia a ${recipient}`;
       }
     }
-  }
-
-  // 4. Recepción de fondos (ej: "de MARI LUZ con llave @dylan531", "de PEDRO GOMEZ", "de Maria en tu cuenta Nu")
-  const senderMatch = /\bde\s+([A-Za-z0-9\s.,'-]{3,35}?)(?:\s+(?:en\s+(?:tu|su)\s+cuenta|en\s+(?:tu|su)|con\s+llave|el\s+\d|\d{1,2}[\/\-]|$))/i.exec(cleaned);
-  if (senderMatch && senderMatch[1] && type === "income") {
-    const sender = senderMatch[1].trim();
-    if (!/^(?:NOMINA|NÓMINA)$/i.test(sender)) {
-      return llave ? `Transferencia de ${sender} (${llave})` : `Transferencia de ${sender}`;
-    }
-    return `Abono de ${sender.toUpperCase()}`;
   }
 
   // 5. Retiros en cajero

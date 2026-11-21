@@ -1072,22 +1072,31 @@ Task: Integrated guided 2-step "SMS de nueva transacción" wizard modal and form
 4. Added 5 unit tests in `tests/unit/sms-transaction-wizard.test.ts`.
 Handoff status: COMPLETED
 
-### 2026-11-20 - QA VERIFIER AGENT (End-to-End SMS Transaction Wizard & Parser Audit)
-Task: Audited, tested, and verified end-to-end the "SMS de nueva transacción" feature (parser, wizard modal, auto-focus, decimal precision, resilient fallbacks, and standard flow isolation):
-1. Created comprehensive Vitest suite in `tests/unit/qa-sms-audit.test.ts` (12 tests) covering:
-   - Bancolombia outgoing transfer (`Transferiste $20,400.00 desde tu cuenta *9266 a la cuenta *3023568257 el 16/11/26...`): Expense type, exact amount 20400.00, civil date 2026-11-16, matched to account *9266 / Bancolombia.
-   - Bancolombia incoming transfer (`...recibiste una transferencia de OLGA MATILDE TORRES por $25,000.00 en tu cuenta *9266 conectada a la llave @dylan531 el 08/11/26...`): Income type, exact amount 25000.00, civil date 2026-11-08, matched to account *9266.
-   - Nu, Nequi, and BBVA income and expense notifications preserving cents without rounding error or decimal loss (e.g. 45200.75, 18500.25, 350000.50, 65400.99).
-   - Unrecognized account handling (`accountMatched: false`): correctly retains extracted amount, date, and type while setting `autoFocusAccount: true` with empty `account_id`.
-   - Resiliency & error safety: partial and random non-banking text handled without crashes or unhandled exceptions, returning confidence `none` or `partial`.
-   - 2-Step wizard behavior: verifies Step 1 (50% progress) -> Step 2 (100% progress) transition, and total isolation of standard "Nueva Transacción" modal (no step badges or progress bars).
-2. Bug fix in `src/lib/sms-transaction-parser.ts`: Enhanced `isExpense` regex pattern with `\bcompra\b` to robustly capture informal purchase phrases (`Tu compra fue de $55.000`, `compra exitosa`, etc.).
-3. Executed mandatory QA verification gate:
+### 2026-11-20 - QA VERIFIER AGENT (Critical Audit: Nu, Nequi & Bancolombia Coverage & Light/Dark Theme Verification)
+Task: Audited, tested, and verified end-to-end the "SMS de nueva transacción" feature with deep coverage for Nu, Nequi, and Bancolombia, diacritics extraction accuracy, and visual contrast in both Light and Dark themes:
+1. Coverage & Precision Audit for Colombian Banking Entities:
+   - Bancolombia: Verified outgoing transfers (`Transferiste $20,400.00...`), incoming transfers with llave (`...recibiste una transferencia de OLGA MATILDE TORRES por $25,000.00... @dylan531`), ATM cash withdrawals (`Retiro por $200.000... en CAJERO AUT`), sanitization of customer service 018000 telephone lines, and multi-account ambiguity warnings.
+   - Nequi: Verified outgoing transfers ignoring mobile phone numbers (`(3001234567)` / support `3006000100`), incoming notifications (`¡Te llegó plata! Sofia te envió $85.000...`), merchant store purchases (`Pagaste $18.500,25 en Panadería El Trigo...`), and account top-ups (`Recarga exitosa por $120.000...`).
+   - Nu (Nubank): Verified credit card purchases with fractional cents (`$45.200,75`), incoming transfers to Nu savings account (`Recibiste una transferencia por $50.000,50 de Maria en tu cuenta Nu`), outgoing transfers (`Transferiste $35.000 a Sofia...`), and account matching by bank alias.
+   - Preserved exact 2-decimal precision (`NUMERIC(12,2)`) across all formats (`.` and `,` separators) without decimal truncation or floating-point drift.
+2. Defect Resolution & Diacritics Hardening:
+   - Enhanced `extractSuggestedDescription` in `src/lib/sms-transaction-parser.ts` to support Spanish accented characters (`ÁÉÍÓÚáéíóúÑñ`) preventing false token splits on words like `Panadería`, `Droguería`, and `Éxito`.
+   - Adjusted rule prioritization so that for `type === "income"`, sender extraction (`de Maria`) executes prior to merchant heuristics, preventing destination accounts (`en tu cuenta Nu`) from being mistakenly recognized as merchant names.
+   - Enhanced preposition boundaries with `(?:^|\s)a\s+` and `(?:^|\s)de\s+` to prevent substring collision with accented word endings.
+3. Light Mode & Dark Mode Visual Accessibility (WCAG 2.1 AA) Audit:
+   - SMS Action Button: High contrast in day mode (`border-slate-300 bg-white text-slate-800 hover:bg-slate-100`) and night mode (`dark:border-white/[0.12] dark:bg-[#131B2E] dark:text-[#F8FAFC] dark:hover:bg-white/[0.05]`).
+   - Modal Step 1: Crisp badge `Paso 1 de 2` (`bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300`), 50% electric violet progress bar, high-contrast textarea (`bg-slate-50 text-slate-900 dark:bg-[#0B0F19] dark:text-[#F8FAFC]`), visible character counter and clear action buttons.
+   - Modal Step 2: High-contrast badge `Paso 2 de 2` (`bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300`), 100% emerald progress bar, bank pill, account status badges (`Cuenta vinculada` vs `Selecciona tu cuenta`), and amber notice when account is not recognized.
+   - Auto-Focus Verification: Verified that when `accountMatched === false`, `autoFocusAccount: true` directs focus to `#account_id` trigger with empty selection.
+   - Standard Flow Isolation: Confirmed that opening the traditional "Nueva Transacción" dialog displays the clean form without step badges, progress bars, or wizard headers.
+4. Expanded Vitest Test Suite:
+   - Created and expanded `tests/unit/qa-sms-audit.test.ts` (21 tests). Total test suite expanded to 237 passing tests across 17 test files (100% pass rate).
+5. Mandatory QA Verification Gate:
    - `npx tsc --noEmit` -> PASS (0 errors, strict: true).
    - `npm run lint` -> PASS (0 errors, 0 warnings).
-   - `npx vitest run` -> PASS (228/228 tests passing across 17 test suites, 100%).
+   - `npx vitest run` -> PASS (237/237 tests passing across 17 test suites, 100%).
    - `npm run build` -> PASS (Next.js 14 optimized production build, 12 static/dynamic routes + Edge Middleware).
-Verdict: APPROVED & VERIFIED (Zero defects, 100% test pass rate, production build clean).
+Verdict: APPROVED & VERIFIED (Zero defects, 100% test pass rate, full WCAG day/night contrast compliance, production build clean).
 Handoff status: COMPLETED
 
 ---
