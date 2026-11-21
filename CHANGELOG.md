@@ -30,6 +30,28 @@ Antes de fusionar o promover cualquier cambio desde la rama `develop` a `main`, 
 
 ---
 
+## [v1.5.0] - 2026-11-20
+### Añadido
+- **Campo de Micro-trazos Dinámico estilo Antigravity (`InteractiveDotField`)**:
+  - Reemplazo de círculos estáticos por micro-trazos/cápsulas dinámicas con orientación fluida y longitud adaptable (`6-12px`).
+  - Modulación cromática contextual (`calculateChromaticColor`) con gradientes espaciales entre tonos fríos (índigo/violeta/celeste) y cálidos (ámbar/dorado/coral) calibrados para Modo Claro y Modo Oscuro.
+  - Atenuación y despeje en la zona central (`calculateCenterAttenuation`) para garantizar legibilidad óptima sobre cifras y tarjetas financieras en COP sin ruido visual.
+  - Flujo ambiental continuo con ondas senoidales multicapa que nunca se congela al estar inactivo el cursor.
+  - Aura de interacción elástica de 240px con caída cúbica suave y alineación tangencial al movimiento.
+  - Soporte táctil optimizado para móviles con menor densidad de trazos, `max-devicePixelRatio: 2`, interacción activa solo al tocar y retorno gradual a la deriva ambiental.
+  - Accesibilidad estricta con `prefers-reduced-motion: reduce` y pausa del ciclo `requestAnimationFrame` cuando la pestaña está oculta (`document.hidden`).
+- **Asistente SMS de Nueva Transacción en 2 Pasos (`SmsTransactionWizard`)**:
+  - Paso 1: Checkbox accesible para decidir opcionalmente si se incluye el texto original completo del SMS en el campo de Notas u Observaciones del Paso 2.
+  - Paso 2: Limpieza de valores automáticos en Descripción y Categoría (`""`) para que el usuario escriba su propio concepto sin tener que borrar texto precargado.
+  - Foco inteligente automático en Cuenta si no se detectó correspondencia, o en Descripción si la cuenta fue identificada exitosamente.
+- **Normalización Bancaria Robusta en el Parser de SMS (`sms-transaction-parser`)**:
+  - Soporte de pagos recibidos / abonos a cuentas de ahorros (`income`) con formatos invertidos de fecha y hora (`el 10:17 a las 19/11/2026`).
+  - Soporte para formatos europeos/mixtos con puntos de miles y comas decimales (ej. `$164.000,00`).
+  - Filtro y sanitización estricta de líneas de soporte telefónico bancario (`604...`, `018000...`) previniendo falsos positivos en números de cuenta.
+  - Retorno garantizado de `suggestedDescription: ""`.
+
+---
+
 ## [v1.4.0] - 2026-11-18
 ### Añadido
 - Visualización elegante y sutil de la versión actual (`v1.4.0`) en la tarjeta inferior de seguridad del Sidebar.

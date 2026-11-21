@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { InteractiveDotField } from "@/components/layout/InteractiveDotField";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -79,10 +80,11 @@ export function DashboardShell({
       )}
 
       {/* Área principal de contenido */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-300">
+      <div className="relative flex flex-col flex-1 min-w-0 overflow-hidden bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-[#F8FAFC] transition-colors duration-300">
+        <InteractiveDotField />
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
-        <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">
+        <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">
           <div className="w-full max-w-7xl mx-auto h-auto">{children}</div>
         </main>
       </div>

@@ -7,4 +7,4 @@
  * - MINOR (v1.X.0): Nuevas funcionalidades compatibles hacia atrás.
  * - MAJOR (vX.0.0): Cambios disruptivos o modificaciones de arquitectura mayores.
  */
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";

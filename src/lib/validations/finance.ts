@@ -491,4 +491,13 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardLayoutConfig = {
   collapsed_widgets: [],
 };
 
+// Re-exportación de esquemas y tipos para parseo de SMS/notificaciones bancarias
+export {
+  UserAccountSchema,
+  SmsParseResultSchema,
+  type UserAccount,
+  type SmsParseResult,
+} from "@/lib/sms-transaction-parser";
+
+
 
