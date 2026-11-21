@@ -1148,7 +1148,27 @@ Task: Enhanced the 2-step SMS Transaction Wizard (`SmsTransactionModal.tsx` & `T
    - Refined focus management: if `accountMatched === false`, focuses `#account_id` trigger; if `accountMatched === true`, smoothly focuses `#category_id` trigger so the user can immediately select category and type description.
 3. Quality & Tests:
    - Updated `tests/unit/sms-transaction-wizard.test.ts` to cover checkbox toggling, notes population, empty category/description, and state preservation.
-   - Quality gates verified: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run test:run` (244/244 tests passing).
+   - Quality gates verified: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run test:run` (245/245 tests passing).
+Handoff status: COMPLETED
+
+### 2026-11-20 - QA VERIFIER AGENT (Verification of SMS Parser & 2-Step Wizard Notes Integration)
+Task: Audited, tested, and verified end-to-end the SMS parser and 2-step wizard adjustments:
+1. Parser Description Sanitization Verification:
+   - Verified that `suggestedDescription` strictly returns an empty string `""` across all banking entities (Bancolombia, Nequi, Nu, BBVA), avoiding unwanted generic text like "Gasto / Transferencia".
+   - Verified that extraction of `type`, `amount` (2-decimal precision), civil `date` (America/Bogota), and account matching remains 100% accurate.
+2. 2-Step Wizard Flow & Notes Checkbox Verification:
+   - Verified that when the Step 1 checkbox is marked (`includeSmsInNotes === true`), the full trimmed SMS notification is passed directly to the `notes` field in Step 2.
+   - Verified that when unchecked (`includeSmsInNotes === false`, default), `notes`, `description`, and `category_id` remain completely empty (`""`), leaving the user in full control of categorization and naming.
+   - Verified that returning from Step 2 to Step 1 via "Volver al texto" preserves both the pasted SMS text and the checkbox state without loss.
+   - Verified focus behavior: `#account_id` is auto-focused when account is unmatched; `#category_id` is auto-focused when account is linked.
+3. Expanded Test Suite Coverage:
+   - Updated and expanded `tests/unit/qa-sms-audit.test.ts` (24 tests) and `tests/unit/sms-transaction-wizard.test.ts` (7 tests). Global test suite expanded to 248 tests across 18 test files (100% passing).
+4. Strict Verification Gate:
+   - `npx tsc --noEmit` -> PASS (0 errors, strict: true).
+   - `npm run lint` -> PASS (0 errors, 0 warnings).
+   - `npx vitest run` -> PASS (248/248 tests passing across 18 test suites, 100%).
+   - `npm run build` -> PASS (Next.js 14 optimized production build, 12 static/dynamic routes + Edge Middleware).
+Verdict: APPROVED & VERIFIED
 Handoff status: COMPLETED
 
 ---

@@ -244,10 +244,11 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
     });
   });
 
-  describe("7. 2-Step Wizard Flow, Auto-Focus & Flow Isolation", () => {
+  describe("7. 2-Step Wizard Flow, Notes Checkbox & Flow Isolation", () => {
     function simulateWizardStep1To2(
       rawText: string,
-      accounts: UserAccount[]
+      accounts: UserAccount[],
+      includeSmsInNotes: boolean = false
     ): {
       step: 1 | 2;
       progress: number;
@@ -255,20 +256,35 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       autoFocusAccount: boolean;
     } {
       const parsed = parseSmsTransaction(rawText, accounts);
+      const trimmed = rawText.trim();
       return {
         step: 2,
         progress: 100,
         autoFocusAccount: !parsed.accountMatched,
         prefillData: {
           account_id: parsed.matchedAccountId ?? "",
+          category_id: "",
           amount: parsed.amount ?? "",
           transaction_type: parsed.type ?? "expense",
           transaction_date: parsed.date ?? undefined,
-          description: parsed.suggestedDescription ?? "",
+          description: "",
+          notes: includeSmsInNotes ? trimmed : "",
           autoFocusAccount: !parsed.accountMatched,
         },
       };
     }
+
+    it("verifies parser returns suggestedDescription === '' to prevent generic descriptions across all banks", () => {
+      const bancolombiaSms = "Bancolombia: Compra por $50.000 en EXITO el 16/11/2026 con tarjeta *9266";
+      const nequiSms = "¡Enviaste plata! Enviaste $20.000 a Carlos Gomez";
+      const nuSms = "Nu: Compra aprobada por $15.000 en SPOTIFY el 16/11/2026 con tarjeta *7890";
+      const bbvaSms = "BBVA: Compra por $40.000 en D1 el 15/11/2026 con tarjeta *4321";
+
+      expect(parseSmsTransaction(bancolombiaSms, userAccounts).suggestedDescription).toBe("");
+      expect(parseSmsTransaction(nequiSms, userAccounts).suggestedDescription).toBe("");
+      expect(parseSmsTransaction(nuSms, userAccounts).suggestedDescription).toBe("");
+      expect(parseSmsTransaction(bbvaSms, userAccounts).suggestedDescription).toBe("");
+    });
 
     it("verifies Step 1 (50%) -> Step 2 (100%) transition with account matched (autoFocusAccount = false)", () => {
       const sms =
@@ -280,6 +296,9 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(wizard.autoFocusAccount).toBe(false);
       expect(wizard.prefillData.account_id).toBe("acc-bancolombia-9266");
       expect(wizard.prefillData.amount).toBe("20400.00");
+      expect(wizard.prefillData.category_id).toBe("");
+      expect(wizard.prefillData.description).toBe("");
+      expect(wizard.prefillData.notes).toBe("");
     });
 
     it("verifies Step 1 (50%) -> Step 2 (100%) transition with unmatched account sets autoFocusAccount = true and empty account_id", () => {
@@ -292,6 +311,31 @@ describe("QA Audit: SMS Transaction Parser & Wizard Verification", () => {
       expect(wizard.autoFocusAccount).toBe(true);
       expect(wizard.prefillData.account_id).toBe("");
       expect(wizard.prefillData.amount).toBe("32000.00");
+      expect(wizard.prefillData.category_id).toBe("");
+      expect(wizard.prefillData.description).toBe("");
+      expect(wizard.prefillData.notes).toBe("");
+    });
+
+    it("verifies that checking includeSmsInNotes transfers the complete raw SMS text into notes", () => {
+      const sms =
+        "  Bancolombia le informa compra por $75.000 en RESTAURANTE con tarjeta *9266 el 20/11/2026. Dudas al 018000912345  ";
+      const wizard = simulateWizardStep1To2(sms, userAccounts, true);
+
+      expect(wizard.step).toBe(2);
+      expect(wizard.prefillData.notes).toBe(sms.trim());
+      expect(wizard.prefillData.description).toBe("");
+      expect(wizard.prefillData.category_id).toBe("");
+    });
+
+    it("verifies that unchecking includeSmsInNotes leaves notes and description completely empty", () => {
+      const sms =
+        "Bancolombia le informa compra por $75.000 en RESTAURANTE con tarjeta *9266 el 20/11/2026";
+      const wizard = simulateWizardStep1To2(sms, userAccounts, false);
+
+      expect(wizard.step).toBe(2);
+      expect(wizard.prefillData.notes).toBe("");
+      expect(wizard.prefillData.description).toBe("");
+      expect(wizard.prefillData.category_id).toBe("");
     });
 
     it("guarantees isolation: standard new transaction flow has undefined prefillData and no wizard state", () => {
