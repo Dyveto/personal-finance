@@ -46,12 +46,14 @@ export function SmsTransactionModal({
 }: SmsTransactionModalProps) {
   const [step, setStep] = useState<1 | 2>(1);
   const [rawText, setRawText] = useState("");
+  const [includeSmsInNotes, setIncludeSmsInNotes] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [parseResult, setParseResult] = useState<SmsParseResult | null>(null);
 
   const handleClose = useCallback(() => {
     setStep(1);
     setRawText("");
+    setIncludeSmsInNotes(false);
     setErrorMsg(null);
     setParseResult(null);
     onOpenChange(false);
@@ -139,6 +141,23 @@ export function SmsTransactionModal({
               <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8]">
                 <span>Pega el mensaje recibido de Bancolombia, Nequi, Davivienda, etc.</span>
                 <span>{rawText.length} caracteres</span>
+              </div>
+
+              {/* Checkbox para incluir texto SMS en notas */}
+              <div className="flex items-center gap-2.5 pt-2">
+                <input
+                  id="include-sms-in-notes"
+                  type="checkbox"
+                  checked={includeSmsInNotes}
+                  onChange={(e) => setIncludeSmsInNotes(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300 dark:border-white/[0.2] bg-white dark:bg-[#0B0F19] text-[#8B5CF6] focus:ring-2 focus:ring-[#8B5CF6]/40 accent-[#8B5CF6] cursor-pointer transition-colors"
+                />
+                <label
+                  htmlFor="include-sms-in-notes"
+                  className="text-xs text-slate-700 dark:text-[#CBD5E1] cursor-pointer select-none font-medium hover:text-slate-900 dark:hover:text-[#F8FAFC] transition-colors"
+                >
+                  Incluir el mensaje original en las notas de la transacción
+                </label>
               </div>
             </div>
 
@@ -248,10 +267,12 @@ export function SmsTransactionModal({
               categories={categories}
               prefillData={{
                 account_id: parseResult?.matchedAccountId ?? "",
+                category_id: "",
                 amount: parseResult?.amount ?? "",
                 transaction_type: parseResult?.type ?? "expense",
                 transaction_date: parseResult?.date ?? undefined,
-                description: parseResult?.suggestedDescription ?? "",
+                description: "",
+                notes: includeSmsInNotes ? rawText.trim() : "",
                 autoFocusAccount: !parseResult?.accountMatched,
               }}
               onSuccess={(result) => {

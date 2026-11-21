@@ -1136,6 +1136,21 @@ Task: Adjusted `src/lib/sms-transaction-parser.ts` to prevent generic descriptio
 5. Quality gates verified: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run test:run` (243/243 tests pass).
 Handoff status: COMPLETED
 
+### 2026-11-20 - FRONTEND AGENT (SMS Wizard: Original SMS in Notes Checkbox & Free User Fields)
+Task: Enhanced the 2-step SMS Transaction Wizard (`SmsTransactionModal.tsx` & `TransactionForm.tsx`):
+1. Step 1 Checkbox Integration:
+   - Added accessible, high-contrast checkbox below textarea: *"Incluir el mensaje original en las notas de la transacción"*.
+   - Unchecked by default, preserving toggle state when navigating back and forth with "Volver al texto".
+   - When checked, populates `notes` with the full trimmed SMS text.
+   - When unchecked, leaves `notes` completely empty (`""`).
+2. Free Fields in Step 2:
+   - Explicitly leaves `category_id: ""` (unselected) and `description: ""` (empty) in `prefillData`, preventing generic automated labels and allowing immediate manual entry.
+   - Refined focus management: if `accountMatched === false`, focuses `#account_id` trigger; if `accountMatched === true`, smoothly focuses `#category_id` trigger so the user can immediately select category and type description.
+3. Quality & Tests:
+   - Updated `tests/unit/sms-transaction-wizard.test.ts` to cover checkbox toggling, notes population, empty category/description, and state preservation.
+   - Quality gates verified: `npx tsc --noEmit` (0 errors), `npm run lint` (0 errors), and `npm run test:run` (244/244 tests passing).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE

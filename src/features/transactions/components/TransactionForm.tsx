@@ -168,11 +168,19 @@ export function TransactionForm({
     }
   }, [prefillData, setValue]);
 
-  // Auto-focus en el selector de cuenta si autoFocusAccount es verdadero
+  // Auto-focus en el selector de cuenta si autoFocusAccount es verdadero, o en categoría si la cuenta ya está vinculada
   useEffect(() => {
     if (prefillData?.autoFocusAccount) {
       const timer = setTimeout(() => {
         const trigger = document.getElementById("account_id");
+        if (trigger) {
+          trigger.focus();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    } else if (prefillData && prefillData.autoFocusAccount === false) {
+      const timer = setTimeout(() => {
+        const trigger = document.getElementById("category_id");
         if (trigger) {
           trigger.focus();
         }
