@@ -1288,6 +1288,19 @@ describe("Server Actions: statement-actions.ts (markExtractAsPaid)", () => {
       }
     });
 
+    it("should reject cleanUnusedDefaultCategories when targetEmail belongs to another user (SEC-001)", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: { id: "user-123", email: "legit@example.com" } },
+        error: null,
+      });
+
+      const result = await cleanUnusedDefaultCategories("victim@example.com");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("No autorizado");
+      }
+    });
+
     it("should return category usage counts map for authenticated user", async () => {
       mockGetUser.mockResolvedValueOnce({
         data: { user: { id: validUserId } },

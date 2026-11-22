@@ -4,17 +4,15 @@ import {
   type ExcelMovementRecord,
 } from "@/features/transactions/data/excel-movements";
 
-// Mock Supabase admin client
-const mockListUsers = vi.fn();
+// Mock Supabase server client
+const mockGetUser = vi.fn();
 const mockFrom = vi.fn();
 const mockRpc = vi.fn();
 
-vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: () => ({
     auth: {
-      admin: {
-        listUsers: mockListUsers,
-      },
+      getUser: mockGetUser,
     },
     from: mockFrom,
     rpc: mockRpc,
@@ -34,7 +32,7 @@ import {
 describe("Excel Migration: Data Integrity & Server Actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockListUsers.mockReset();
+    mockGetUser.mockReset();
     mockFrom.mockReset();
     mockRpc.mockReset();
   });
@@ -87,24 +85,39 @@ describe("Excel Migration: Data Integrity & Server Actions", () => {
     const validUserId = "bc9c8825-dcdf-4d20-9704-83f8e969ebac";
     const testEmail = "calderongoenaga2004@gmail.com";
 
-    it("should return error if target user is not found in Supabase Auth", async () => {
-      mockListUsers.mockResolvedValueOnce({
-        data: { users: [] },
+    it("should return error if user is unauthenticated", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
+
+      const result = await migrateExcelTransactions(testEmail);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error).toContain("Unauthorized");
+      }
+    });
+
+    it("should reject migration if authenticated user targets another user's email (SEC-001)", async () => {
+      mockGetUser.mockResolvedValueOnce({
+        data: {
+          user: { id: validUserId, email: "other@example.com" },
+        },
         error: null,
       });
 
-      const result = await migrateExcelTransactions("nonexistent@example.com");
+      const result = await migrateExcelTransactions(testEmail);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error).toContain("Usuario destino no encontrado");
+        expect(result.error).toContain("No autorizado");
       }
     });
 
     it("should create missing accounts, ensure categories and insert transactions idempotently", async () => {
-      // 1. Mock listUsers with target user
-      mockListUsers.mockResolvedValueOnce({
+      // 1. Mock getUser with target user
+      mockGetUser.mockResolvedValueOnce({
         data: {
-          users: [{ id: validUserId, email: testEmail }],
+          user: { id: validUserId, email: testEmail },
         },
         error: null,
       });
@@ -224,9 +237,9 @@ describe("Excel Migration: Data Integrity & Server Actions", () => {
     });
 
     it("should skip duplicate transactions based on (user_id, account_id, date, amount, description)", async () => {
-      mockListUsers.mockResolvedValueOnce({
+      mockGetUser.mockResolvedValueOnce({
         data: {
-          users: [{ id: validUserId, email: testEmail }],
+          user: { id: validUserId, email: testEmail },
         },
         error: null,
       });
@@ -320,9 +333,9 @@ describe("Excel Migration: Data Integrity & Server Actions", () => {
     const testEmail = "calderongoenaga2004@gmail.com";
 
     it("should return migration status with totalExpected and totalImported", async () => {
-      mockListUsers.mockResolvedValueOnce({
+      mockGetUser.mockResolvedValueOnce({
         data: {
-          users: [{ id: validUserId, email: testEmail }],
+          user: { id: validUserId, email: testEmail },
         },
         error: null,
       });

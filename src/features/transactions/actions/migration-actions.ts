@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import type { ActionResult } from "@/types/actions";
 import type { TransactionInsert } from "@/types/database.types";
 import {
@@ -94,33 +94,35 @@ export async function migrateExcelTransactions(
   customMovements?: ExcelMovementRecord[]
 ): Promise<ActionResult<MigrationSummary>> {
   try {
-    const adminClient = createAdminClient();
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "Unauthorized: User is not authenticated",
+      };
+    }
+
+    if (targetEmail && user.email) {
+      const normalizedTarget = targetEmail.trim().toLowerCase();
+      const normalizedUser = user.email.trim().toLowerCase();
+      if (normalizedTarget !== normalizedUser) {
+        return {
+          success: false,
+          error: "No autorizado: No tienes permiso para operar sobre los datos de otro usuario",
+        };
+      }
+    }
+
+    const userId = user.id;
     const movements = customMovements || EXCEL_MOVEMENTS;
 
-    // 1. Identificar usuario por email
-    const { data: usersData, error: usersError } = await adminClient.auth.admin.listUsers();
-    if (usersError) {
-      return {
-        success: false,
-        error: `Error al consultar usuarios en Supabase Auth: ${usersError.message}`,
-      };
-    }
-
-    const targetUser = usersData.users.find(
-      (u) => u.email && u.email.toLowerCase() === targetEmail.toLowerCase()
-    );
-
-    if (!targetUser) {
-      return {
-        success: false,
-        error: `Usuario destino no encontrado en Supabase Auth: ${targetEmail}`,
-      };
-    }
-
-    const userId = targetUser.id;
-
     // 2. Creación Automática de Cuentas (Efectivo, Nequi, Bancolombia)
-    const { data: existingAccounts, error: accountsFetchError } = await adminClient
+    const { data: existingAccounts, error: accountsFetchError } = await supabase
       .from("accounts")
       .select("*")
       .eq("user_id", userId);
@@ -144,7 +146,7 @@ export async function migrateExcelTransactions(
     for (const reqAcc of REQUIRED_ACCOUNTS) {
       const lower = reqAcc.name.toLowerCase();
       if (!accountMap.has(lower)) {
-        const { data: newAcc, error: createAccError } = await adminClient
+        const { data: newAcc, error: createAccError } = await supabase
           .from("accounts")
           .insert({
             user_id: userId,
@@ -173,7 +175,7 @@ export async function migrateExcelTransactions(
     }
 
     // 3. Gestión y Normalización de Categorías
-    const { data: existingCategories, error: categoriesFetchError } = await adminClient
+    const { data: existingCategories, error: categoriesFetchError } = await supabase
       .from("categories")
       .select("*")
       .eq("user_id", userId);
@@ -198,7 +200,7 @@ export async function migrateExcelTransactions(
     for (const reqCat of REQUIRED_CATEGORIES) {
       const key = `${reqCat.name.trim().toLowerCase()}_${reqCat.category_type}`;
       if (!categoryMap.has(key)) {
-        const { data: newCat, error: createCatError } = await adminClient
+        const { data: newCat, error: createCatError } = await supabase
           .from("categories")
           .insert({
             user_id: userId,
@@ -225,7 +227,7 @@ export async function migrateExcelTransactions(
     }
 
     // 4. Inserción Idempotente de Transacciones (Control de Duplicados)
-    const { data: existingTransactions, error: txFetchError } = await adminClient
+    const { data: existingTransactions, error: txFetchError } = await supabase
       .from("transactions")
       .select("account_id, transaction_date, amount, description")
       .eq("user_id", userId);
@@ -331,7 +333,7 @@ export async function migrateExcelTransactions(
       const chunkSize = 50;
       for (let i = 0; i < toInsert.length; i += chunkSize) {
         const chunk = toInsert.slice(i, i + chunkSize);
-        const { error: insertError } = await adminClient.from("transactions").insert(chunk);
+        const { error: insertError } = await supabase.from("transactions").insert(chunk);
         if (insertError) {
           return {
             success: false,
@@ -342,7 +344,7 @@ export async function migrateExcelTransactions(
 
       // Recalcular saldos de las cuentas afectadas
       for (const accId of Array.from(accountMap.values())) {
-        await adminClient.rpc("recalculate_account_balance", {
+        await supabase.rpc("recalculate_account_balance", {
           target_account_id: accId,
         });
       }
@@ -393,29 +395,35 @@ export async function getExcelMigrationStatus(
   }>
 > {
   try {
-    const adminClient = createAdminClient();
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    const { data: usersData, error: usersError } = await adminClient.auth.admin.listUsers();
-    if (usersError) {
-      return { success: false, error: usersError.message };
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
     }
 
-    const targetUser = usersData.users.find(
-      (u) => u.email && u.email.toLowerCase() === targetEmail.toLowerCase()
-    );
-
-    if (!targetUser) {
-      return { success: false, error: `Usuario no encontrado: ${targetEmail}` };
+    if (targetEmail && user.email) {
+      const normalizedTarget = targetEmail.trim().toLowerCase();
+      const normalizedUser = user.email.trim().toLowerCase();
+      if (normalizedTarget !== normalizedUser) {
+        return {
+          success: false,
+          error: "No autorizado: No tienes permiso para operar sobre los datos de otro usuario",
+        };
+      }
     }
 
-    const userId = targetUser.id;
+    const userId = user.id;
 
-    const { data: accounts } = await adminClient
+    const { data: accounts } = await supabase
       .from("accounts")
       .select("id, name")
       .eq("user_id", userId);
 
-    const { count: txCount } = await adminClient
+    const { count: txCount } = await supabase
       .from("transactions")
       .select("*", { count: "exact", head: true })
       .eq("user_id", userId);
