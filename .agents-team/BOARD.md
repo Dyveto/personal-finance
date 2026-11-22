@@ -1355,11 +1355,37 @@ Task: Overhauled mobile usability, viewport framing, and touch ergonomics across
      - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
 Handoff status: COMPLETED
 
+### 2026-11-21 - FRONTEND & QA VERIFIER AGENT (Chart Temporal Navigation: Arrow Controls, Configurable Window Quantity & Exact Historical Analysis)
+Task: Implemented interactive temporal navigation with arrow controls and configurable window quantity across dashboard charts:
+1. Pure Financial Time Window Engine (`src/lib/finance/chart-periods.ts`):
+   - Created pure, deterministic engine for calculating time windows, buckets, labels and offset displacement based on `America/Bogota`.
+   - Updated default quantities: `weeks = 4` (reduced from 8), `months = 6`, `days = 14`, `years = 3`.
+   - Added `clampQuantity` with strict limits (months: 1-24, weeks: 1-24, days: 1-60, years: 1-5).
+   - Handled single-month isolation (`quantity = 1`) and arbitrary offset navigation (e.g. stepping back to May 2026 or any historical month).
+2. Interactive Navigation Controls in `FinancialCharts.tsx`:
+   - Added arrow navigation controls (`←` / `→`) to step windows back and forward through time.
+   - Added prominent active period badge displaying the exact civil date range and months in Spanish.
+   - Added `Ir a Actual` quick return button when `offset > 0` to return to the present with one touch.
+   - Added configurable quantity controls with quick presets (e.g., `1 m`, `3 m`, `6 m`, `12 m` for months) and manual stepper `[-] [quantity] [+]`.
+   - Synchronized both **Flujo Periódico (Ingresos vs. Gastos)** and **Gastos por Categoría (dona)** so that isolating a single month or custom multi-month window instantly recalculates both charts in unison.
+3. Contrast & Mobile Ergonomics:
+   - Preserved WCAG AA contrast in Light (warm amber `text-amber-700`, `bg-amber-600`) and Dark modes (`#D4AF37` metallic gold).
+   - Maintained semantic financial colors (`#10B981` income, `#F43F5E` expense).
+   - Responsive flex-wrap layout preventing any mobile horizontal overflow.
+4. QA Audit & Verification Gate:
+   - Created `tests/unit/chart-periods.test.ts` (9 comprehensive unit tests covering defaults, clamping, single-month isolation, multi-month windows, weekly buckets, offset shifting, and custom ranges).
+   - Executed full QA verification gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 lint warnings/errors).
+     - `npm run test:run` -> Code 0 (23 suites, 313 tests passing).
+     - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee + Mobile UX & Touch Polish)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee + Mobile UX & Touch Polish + Temporal Chart Navigation)
 
 - [x] All implementation agents are COMPLETED.
 - [x] All critical bugs are resolved.
@@ -1368,4 +1394,4 @@ Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Br
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Mobile viewport stability, lateral scroll lock, touch text selection restriction, and input anti-zoom ergonomics are fully verified, tested, built, and approved.
+Chart temporal navigation (arrow controls, configurable window quantity: weeks=4, months=6 editable to 1, etc.) is fully verified, tested, built, and approved.
