@@ -707,11 +707,11 @@ Expected deliverables:
 | BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
 | BUG-005 | CRITICAL | .next, chunks estáticos, CSS global | Error 500 generalizado al servir chunks estáticos y CSS de Next.js provocado por colisión de procesos huérfanos de dev server (PIDs 17444, 23800) y corrupción de caché persistente de Webpack. Resuelto mediante detención forzada de procesos Node/Next bloqueantes, eliminación recursiva de `.next/` y ciclo estricto de auditoría (tsc, lint, vitest, build) completado con código de salida 0. | QA VERIFIER AGENT | RESOLVED |
 | BUG-006 | LOW | src/components/ui/button.tsx, TransactionsClientView.tsx | Defecto de contraste visual en botón "Limpiar filtros" y botones con variante outline en Modo Día (fondo y texto de baja visibilidad sin hover). Resuelto definiendo clases adaptativas de alto contraste en buttonVariants (outline y secondary) y clases explícitas en TransactionsClientView, WelcomeHubManagerModal, CategoriesClientView y TransactionForm. | FRONTEND / QA | RESOLVED |
-| SEC-001 | HIGH | src/features/categories/actions/category-actions.ts, migration-actions.ts | Uso de createAdminClient() con targetEmail arbitrario en Server Actions públicas sin verificación previa de rol administrador, permitiendo potencial BOLA/IDOR sobre categorías o migraciones de otros usuarios. | BACKEND / SECURITY | IDENTIFIED |
-| SEC-002 | MEDIUM | src/app/auth/callback/route.ts | Open Redirect potencial (CWE-601) mediante parámetro `next` no sanitizado pasado a `new URL(next, origin)`, permitiendo redirecciones a dominios externos maliciosos tras confirmar correo o PKCE. | BACKEND / SECURITY | IDENTIFIED |
-| SEC-003 | MEDIUM | src/lib/validations/auth.ts | Política débil de longitud mínima de contraseña (`min(6)`) sin comprobación de entropía en SignUpSchema, subóptima para aplicaciones financieras privadas (OWASP ASVS / NIST 800-63B). | BACKEND / SECURITY | IDENTIFIED |
-| SEC-004 | MEDIUM | next.config.mjs | Ausencia de cabeceras HTTP de seguridad (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy). | FRONTEND / DEVOPS / SECURITY | IDENTIFIED |
-| SEC-005 | HIGH | package.json, node_modules/next, postcss | Vulnerabilidades conocidas en dependencias reportadas por `npm audit` (Next.js 14.2.0 y PostCSS en Image Optimizer / DoS / XSS). Requiere actualización controlada de parches en rama Next 14. | DEVOPS / SECURITY | IDENTIFIED |
+| SEC-001 | HIGH | src/features/categories/actions/category-actions.ts, migration-actions.ts | Eliminado createAdminClient() y validación estricta de sesión con supabase.auth.getUser(); se bloquea cualquier intento de operar con targetEmail ajeno garantizando aislamiento total por user.id y RLS. Probado en actions.test.ts y migration-actions.test.ts. | BACKEND / SECURITY | RESOLVED |
+| SEC-002 | MEDIUM | src/app/auth/callback/route.ts, src/lib/utils/redirect.ts | Open Redirect mitigado mediante sanitización de `next` con `getSafeRedirectPath()`, bloqueando esquemas externos, protocolo relativo (`//`) y backslashes (`/\`), con fallback seguro a `/`. Probado en auth.test.ts. | BACKEND / SECURITY | RESOLVED |
+| SEC-003 | MEDIUM | src/lib/validations/auth.ts, signup/page.tsx | Política de contraseñas reforzada en SignUpSchema (mínimo 8 caracteres, al menos una mayúscula, una minúscula y un número), con mensajes en español y placeholder actualizado. Probado en auth.test.ts. | BACKEND / SECURITY | RESOLVED |
+| SEC-004 | MEDIUM | next.config.mjs | Cabeceras HTTP de seguridad configuradas en next.config.mjs: X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy: strict-origin-when-cross-origin, Permissions-Policy, HSTS, X-XSS-Protection y Content-Security-Policy (CSP) compatible con Next 14, Recharts y Supabase. | FRONTEND / DEVOPS / SECURITY | RESOLVED |
+| SEC-005 | HIGH | package.json, node_modules/next, postcss | Vulnerabilidades conocidas en dependencias reportadas por `npm audit` (Next.js 14.2.0 y PostCSS en Image Optimizer / DoS / XSS). Catalogado como deuda técnica y pendiente de actualización mayor controlada de dependencias. | DEVOPS / SECURITY | PENDING (DEUDA TÉCNICA) |
 
 Severity:
 
@@ -1516,20 +1516,48 @@ Task: Formalized 05-security-agent skill (.agents/skills/05-security-agent/SKILL
    - ESLint: `npm run lint` -> PASS (0 errors, 0 warnings).
    - Vitest: `npm run test:run` -> PASS (344/344 tests passing).
    - Build: `npm run build` -> PASS (14 routes + Edge Middleware).
+### 2026-11-21 - QA VERIFIER AGENT & SECURITY AGENT (Remediación y Verificación de Seguridad SEC-001 a SEC-005)
+Task: Implementación, verificación de código y pruebas de las remediaciones de seguridad financiera:
+1. SEC-001 (Aislamiento BOLA/IDOR):
+   - Eliminado `createAdminClient()` en `cleanUnusedDefaultCategories` (`category-actions.ts`) y `migrateExcelTransactions`/`getExcelMigrationStatus` (`migration-actions.ts`).
+   - Validación obligatoria de sesión con `createClient()` y `await supabase.auth.getUser()`.
+   - Bloqueo preventivo de `targetEmail` si no coincide estrictamente con el email del usuario autenticado.
+   - Operaciones restringidas estrictamente a `user.id` respetando RLS en PostgreSQL.
+   - Verificado con pruebas unitarias en `actions.test.ts` y `migration-actions.test.ts`.
+2. SEC-002 (Protección contra Open Redirect):
+   - Creada función pura `getSafeRedirectPath(nextParam)` en `src/lib/utils/redirect.ts`.
+   - Sanitización estricta de rutas en `/auth/callback`: bloquea esquemas absolutos (`://`), URLs relativas de protocolo (`//`), barras invertidas (`/\`), garantizando que solo rutas internas seguras que inicien con `/` sean aceptadas (fallback a `/`).
+   - Verificado con 5 pruebas exhaustivas en `auth.test.ts`.
+3. SEC-003 (Robustez de Contraseñas):
+   - Reforzado `SignUpSchema` en `src/lib/validations/auth.ts`: mínimo 8 caracteres, al menos una mayúscula (`/[A-Z]/`), al menos una minúscula (`/[a-z]/`) y al menos un número (`/[0-9]/`).
+   - Actualizado placeholder y textos de ayuda en `src/app/(auth)/signup/page.tsx`.
+   - Verificado con 6 pruebas unitarias específicas en `auth.test.ts`.
+4. SEC-004 (Cabeceras HTTP de Seguridad):
+   - Configurado `headers()` en `next.config.mjs` aplicando: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()`, `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`, `X-XSS-Protection: 1; mode=block` y `Content-Security-Policy (CSP)` afinado para compatibilidad total con Next.js 14, Recharts y Supabase.
+   - Verificado en build de producción (14 rutas estáticas/dinámicas compiladas exitosamente).
+5. SEC-005 (Dependencias y Auditoría de Vulnerabilidades):
+   - Estado: PENDING (DEUDA TÉCNICA CONTROLADA).
+   - Documentado en ADR-011 y programado para actualización de dependencias mayores (`next` >= 15 / React 19).
+6. Quality Gate Verification:
+   - TypeScript: `npx tsc --noEmit` -> PASS (0 errores, strict: true).
+   - ESLint: `npm run lint` -> PASS (0 errores, 0 warnings).
+   - Vitest: `npm run test:run` -> PASS (25 suites, 355/355 pruebas unitarias pasando al 100%).
+   - Build: `npm run build` -> PASS (14 rutas generadas con código de salida 0).
 Handoff status: COMPLETED
 
 ---
 
 # 10. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.2 + Flexible Payments, 4x1000 GMF & Security Agent Integration)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.3 + Remediaciones de Seguridad SEC-001 a SEC-004)
 
 - [x] All implementation agents are COMPLETED.
-- [x] Security Agent skill formalized and initial financial AppSec audit completed.
-- [x] Critical bugs are resolved; security findings SEC-001 to SEC-005 documented with exact remediations.
+- [x] Security Agent skill formalized and financial AppSec audit completed.
+- [x] Security findings SEC-001, SEC-002, SEC-003, SEC-004 resolved and verified with 355 unit tests.
+- [x] SEC-005 cataloged as controlled technical debt.
 - [x] QA verification checklist is complete.
-- [x] All required commands return exit code 0.
+- [x] All required commands return exit code 0 (`tsc`, `lint`, `vitest`, `build`).
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-All mandatory checks passed with exit code 0 across TypeScript, ESLint, Vitest (344/344 tests), and Next.js production build. The Security Agent is fully integrated into the architecture rules and coordination board.
+All mandatory checks passed with exit code 0 across TypeScript, ESLint, Vitest (355/355 tests), and Next.js production build.

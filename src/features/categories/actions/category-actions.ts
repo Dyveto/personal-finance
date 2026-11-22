@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database.types";
 import type { ActionResult } from "@/types/actions";
 import {
@@ -462,51 +461,32 @@ export async function cleanUnusedDefaultCategories(
   targetEmail?: string
 ): Promise<ActionResult<CleanupCategoriesSummary>> {
   try {
-    let client: ReturnType<typeof createClient> | ReturnType<typeof createAdminClient>;
-    let targetUserId: string;
-    let effectiveEmail: string;
+    const supabase = createClient();
 
-    if (targetEmail) {
-      const admin = createAdminClient();
-      client = admin;
-      effectiveEmail = targetEmail.trim().toLowerCase();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-      const { data: usersData, error: userListError } = await admin.auth.admin.listUsers();
-      if (userListError || !usersData?.users) {
-        return {
-          success: false,
-          error: `Error al listar usuarios administrativos: ${userListError?.message || "Sin datos"}`,
-        };
-      }
-
-      const foundUser = usersData.users.find(
-        (u) => u.email?.toLowerCase().trim() === effectiveEmail
-      );
-
-      if (!foundUser) {
-        return {
-          success: false,
-          error: `Usuario no encontrado para el correo: ${targetEmail}`,
-        };
-      }
-
-      targetUserId = foundUser.id;
-    } else {
-      const supabase = createClient();
-      client = supabase;
-
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        return { success: false, error: "Unauthorized: User is not authenticated" };
-      }
-
-      targetUserId = user.id;
-      effectiveEmail = user.email || "Usuario autenticado";
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
     }
+
+    // [SEC-001]: Impedir que un usuario opere sobre datos de otro usuario
+    if (targetEmail && user.email) {
+      const normalizedTarget = targetEmail.trim().toLowerCase();
+      const normalizedUser = user.email.trim().toLowerCase();
+      if (normalizedTarget !== normalizedUser) {
+        return {
+          success: false,
+          error: "No autorizado: No tienes permiso para operar sobre los datos de otro usuario",
+        };
+      }
+    }
+
+    const targetUserId = user.id;
+    const effectiveEmail = user.email || "Usuario autenticado";
+    const client = supabase;
 
     // Obtener todas las categorías del usuario objetivo
     const { data: categories, error: catFetchError } = await client

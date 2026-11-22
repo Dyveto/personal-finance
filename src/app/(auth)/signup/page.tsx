@@ -138,7 +138,7 @@ export default function SignUpPage() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Mínimo 8 caracteres (A-Z, a-z, 0-9)"
                   className="pl-9 text-base sm:text-sm"
                   disabled={isPending}
                   {...register("password")}
