@@ -44,3 +44,6 @@ CREATE INDEX IF NOT EXISTS accounts_four_per_thousand_idx
 CREATE INDEX IF NOT EXISTS transactions_four_per_thousand_idx
   ON public.transactions(user_id, is_four_per_thousand_applied)
   WHERE is_four_per_thousand_applied = TRUE;
+
+-- 5. Recargar la caché de esquemas de PostgREST
+NOTIFY pgrst, 'reload schema';

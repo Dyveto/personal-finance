@@ -14,6 +14,16 @@ ALTER TABLE public.credit_card_statements
   ADD COLUMN IF NOT EXISTS payment_transaction_id UUID DEFAULT NULL;
 
 -- 2. Claves foráneas con integridad de usuario (owner isolation)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'transactions_unique_owner_id'
+  ) THEN
+    ALTER TABLE public.transactions
+      ADD CONSTRAINT transactions_unique_owner_id UNIQUE (user_id, id);
+  END IF;
+END $$;
+
 ALTER TABLE public.credit_card_statements
   DROP CONSTRAINT IF EXISTS statements_payment_account_owner;
 
