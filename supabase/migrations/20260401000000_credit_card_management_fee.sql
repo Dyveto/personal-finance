@@ -46,6 +46,8 @@ ALTER TABLE public.accounts
   );
 
 -- 4. Recrear vista credit_card_balance_summary con los campos de cuota de manejo
+DROP VIEW IF EXISTS public.credit_card_balance_summary CASCADE;
+
 CREATE OR REPLACE VIEW public.credit_card_balance_summary
 WITH (security_invoker = true)
 AS

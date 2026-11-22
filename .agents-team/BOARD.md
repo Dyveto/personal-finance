@@ -1545,6 +1545,24 @@ Task: Implementación, verificación de código y pruebas de las remediaciones d
    - Build: `npm run build` -> PASS (14 rutas generadas con código de salida 0).
 Handoff status: COMPLETED
 
+### 2026-11-21 - FRONTEND & SECURITY AGENT (Branded Confirm Signup Email Template)
+Task: Diseñada e implementada la plantilla HTML institucional en español para el correo de confirmación de registro:
+1. Identidad Visual & Compatibilidad con Clientes de Correo:
+   - Construida mediante tablas HTML y estilos inline para renderizado consistente en Gmail, Outlook, Apple Mail y webmail móvil.
+   - Paleta institucional de alto contraste: Fondo marino `#070A11`, tarjeta central `#0F172A`, franja superior y bordes dorados `#D4AF37`.
+   - Emblema resistente al bloqueo de imágenes externas (`PF` en caja de degradado con borde dorado).
+2. Seguridad y Contenido en Español:
+   - Redacción 100% en español orientada a finanzas personales colombianas (`COP`, `America/Bogota`).
+   - Botón de confirmación prominente (`{{ .ConfirmationURL }}`) con fallback en texto plano para clientes restrictivos.
+   - Aviso de seguridad bancaria indicando validez de un solo uso y advertencia de no compartir el enlace.
+3. Archivos y Documentación:
+   - `src/features/auth/templates/confirm-signup-email.html`
+   - `docs/email-templates/confirm-signup.html`
+4. Quality Gate:
+   - `npx tsc --noEmit` -> PASS (0 errores).
+   - `npm run lint` -> PASS (0 errores, 0 advertencias).
+Handoff status: COMPLETED
+
 ---
 
 # 10. FINAL RELEASE GATE
