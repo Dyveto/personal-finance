@@ -1333,11 +1333,33 @@ Task: Implemented complete domain support for Credit Card Management Fees (Cuota
      - `npm run build` -> Code 0 (Production build succeeded cleanly, 14 routes optimized).
 Handoff status: COMPLETED
 
+### 2026-11-21 - FRONTEND & QA VERIFIER AGENT (Mobile UX & Viewport Polish: Stable Framing, Anti-Zoom, Lateral Scroll Lock & Touch Text Selection Restriction)
+Task: Overhauled mobile usability, viewport framing, and touch ergonomics across iOS Safari and Android:
+1. Stable Viewport & Anti-Auto-Zoom Framing:
+   - Configured `src/app/layout.tsx` with `Viewport`: `initialScale: 1`, `maximumScale: 1`, `userScalable: false`, `viewportFit: "cover"`.
+   - Prevented iOS Safari auto-zoom on input focus by setting `font-size: 16px !important` under `@media screen and (max-width: 768px)` in `src/app/globals.css`.
+   - Adjusted `SmsTransactionModal.tsx` textarea and `login/page.tsx` & `signup/page.tsx` inputs to maintain 16px font-size on mobile (`text-base sm:text-sm`).
+2. Horizontal Scroll Elimination:
+   - Added `overflow-x: hidden; overscroll-behavior-x: none; max-width: 100vw;` to `html, body` in `src/app/globals.css`.
+   - Configured `src/components/layout/DashboardShell.tsx` main container with `overflow-y-auto overflow-x-hidden w-full max-w-full`.
+   - Encapsulated lateral scrolling strictly within deliberate horizontal scroll containers (tables with `overflow-x-auto`).
+3. App-Like Text Selection Control:
+   - Enforced default `user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;` on `html, body, button, a, img, svg` to prevent accidental text/icon highlighting on touch interactions.
+   - Guaranteed full selectable/copy/cut/paste behavior inside `input`, `textarea`, `[contenteditable="true"]`, `.select-text`, and `[data-selectable="true"]` via `-webkit-user-select: text !important; user-select: text !important; -webkit-touch-callout: default !important;`.
+4. QA Verification Gate:
+   - Created `tests/unit/mobile-viewport-ux.test.ts` (5 tests verifying viewport values, CSS overflow and touch rules, input font-size safeguards, and container bounds).
+   - Executed full QA verification gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 lint warnings/errors).
+     - `npm run test:run` -> Code 0 (22 suites, 304 tests passing).
+     - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee + Mobile UX & Touch Polish)
 
 - [x] All implementation agents are COMPLETED.
 - [x] All critical bugs are resolved.
@@ -1346,4 +1368,4 @@ Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Br
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Credit Card Management Fee configuration (amount in COP and charging modalities: fixed monthly, only on usage, exempt if used, exempt) is fully verified, tested, built, and approved.
+Mobile viewport stability, lateral scroll lock, touch text selection restriction, and input anti-zoom ergonomics are fully verified, tested, built, and approved.
