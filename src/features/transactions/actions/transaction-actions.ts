@@ -12,6 +12,7 @@ import {
   type UpdateTransactionInput,
 } from "@/lib/validations/finance";
 import { addMoney, subtractMoney, splitInstallments, roundMoney } from "@/lib/finance/money";
+import { calculateFourPerThousand } from "@/lib/finance/four-per-thousand";
 import type { Database } from "@/types/database.types";
 import type { ActionResult } from "@/types/actions";
 
@@ -207,7 +208,7 @@ export async function createTransaction(
     // 1. Validar que la cuenta pertenezca al usuario autenticado
     const { data: account, error: accountError } = await supabase
       .from("accounts")
-      .select("id, account_type, current_balance, is_active")
+      .select("id, account_type, current_balance, is_active, has_four_per_thousand")
       .eq("id", validated.account_id)
       .eq("user_id", user.id)
       .single();
@@ -243,21 +244,32 @@ export async function createTransaction(
 
     const resolvedCategoryId = categoryResolution.categoryId;
 
-    // 3. Calcular el nuevo balance utilizando aritmética decimal
+    // 3. Evaluar cálculo de 4x1000 si la cuenta es de tipo banco y está gravada
+    const isGmfTaxed = Boolean(
+      account.account_type === "bank" &&
+      account.has_four_per_thousand &&
+      validated.transaction_type === "expense"
+    );
+    const gmfFeeStr = calculateFourPerThousand(validated.amount, isGmfTaxed, validated.transaction_type);
+    const gmfFeeNum = parseFloat(gmfFeeStr);
+    const hasGmfApplied = isGmfTaxed && gmfFeeNum > 0;
+
+    // Calcular el monto total debitado de la cuenta (base + 4x1000)
     const currentBalanceStr = roundMoney(account.current_balance);
-    const amountStr = roundMoney(validated.amount);
+    const baseAmountStr = roundMoney(validated.amount);
+    const totalDebitStr = hasGmfApplied ? addMoney(baseAmountStr, gmfFeeStr) : baseAmountStr;
     let newBalanceStr: string;
 
     if (account.account_type === "credit_card") {
       // En tarjetas de crédito, un gasto incrementa la deuda pendiente
-      newBalanceStr = addMoney(currentBalanceStr, amountStr);
+      newBalanceStr = addMoney(currentBalanceStr, totalDebitStr);
     } else {
       // En cuentas bancarias o efectivo:
       // Ingreso incrementa el dinero disponible, gasto lo reduce
       newBalanceStr =
         validated.transaction_type === "income"
-          ? addMoney(currentBalanceStr, amountStr)
-          : subtractMoney(currentBalanceStr, amountStr);
+          ? addMoney(currentBalanceStr, totalDebitStr)
+          : subtractMoney(currentBalanceStr, totalDebitStr);
     }
 
     const newBalanceNum = parseFloat(newBalanceStr);
@@ -268,11 +280,13 @@ export async function createTransaction(
       account_id: validated.account_id,
       category_id: resolvedCategoryId,
       description: validated.description,
-      amount: parseFloat(amountStr),
+      amount: parseFloat(totalDebitStr),
       transaction_type: validated.transaction_type,
       transaction_date: validated.transaction_date,
       is_installment: validated.installment_count > 1,
       installment_count: validated.installment_count,
+      four_per_thousand_amount: hasGmfApplied ? gmfFeeNum : null,
+      is_four_per_thousand_applied: hasGmfApplied,
       notes: validated.notes ?? null,
     };
 
@@ -570,6 +584,12 @@ export async function updateTransaction(
     if (validated.installment_count !== undefined) {
       updatePayload.installment_count = validated.installment_count;
       updatePayload.is_installment = validated.installment_count > 1;
+    }
+    if (validated.four_per_thousand_amount !== undefined) {
+      updatePayload.four_per_thousand_amount = validated.four_per_thousand_amount;
+    }
+    if (validated.is_four_per_thousand_applied !== undefined) {
+      updatePayload.is_four_per_thousand_applied = validated.is_four_per_thousand_applied;
     }
 
     const { data: updatedTx, error: updateError } = await supabase

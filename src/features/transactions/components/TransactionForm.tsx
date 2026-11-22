@@ -24,7 +24,8 @@ import {
 } from "@/features/transactions/actions/transaction-actions";
 import type { ActionResult } from "@/types/actions";
 import { formatMoneyCOP, splitInstallments, roundMoney } from "@/lib/finance/money";
-import { AlertCircle, CreditCard, Loader2, Sparkles } from "lucide-react";
+import { breakdownFourPerThousand } from "@/lib/finance/four-per-thousand";
+import { AlertCircle, CreditCard, Loader2, Sparkles, Receipt } from "lucide-react";
 
 const TransactionFormSchema = z
   .object({
@@ -228,6 +229,19 @@ export function TransactionForm({
       return null;
     }
   }, [isCreditCard, isInstallment, currentAmount, currentInstallments]);
+
+  // Cálculo en vivo de 4x1000 para cuentas bancarias gravadas
+  const fourPerThousandPreview = useMemo(() => {
+    if (!selectedAccount?.has_four_per_thousand || selectedType !== "expense") return null;
+    const amt = parseFloat(currentAmount);
+    if (isNaN(amt) || amt <= 0) return null;
+
+    try {
+      return breakdownFourPerThousand(amt, true, "expense");
+    } catch {
+      return null;
+    }
+  }, [selectedAccount?.has_four_per_thousand, selectedType, currentAmount]);
 
   // Si se selecciona tarjeta de crédito, forzar tipo de transacción a "gasto"
   const handleAccountChange = (accId: string) => {
@@ -500,6 +514,41 @@ export function TransactionForm({
           )}
         </div>
       </div>
+
+      {/* Previsualización 4x1000 para Cuentas Bancarias Gravadas */}
+      {fourPerThousandPreview && (
+        <div className="p-3.5 rounded-xl bg-amber-500/[0.08] border border-amber-500/25 space-y-2 text-xs">
+          <div className="flex items-center justify-between text-amber-800 dark:text-[#D4AF37] font-semibold">
+            <span className="flex items-center gap-1.5">
+              <Receipt className="w-4 h-4 text-amber-600 dark:text-[#D4AF37]" />
+              <span>Desglose 4x1000 (GMF · 0.4%)</span>
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-[#D4AF37] border border-amber-500/30">
+              Cuenta Gravada
+            </span>
+          </div>
+          <div className="space-y-1 text-[11px] text-slate-600 dark:text-[#CBD5E1]">
+            <div className="flex justify-between">
+              <span>Monto base del gasto:</span>
+              <span className="font-semibold text-slate-900 dark:text-[#F8FAFC]">
+                {formatMoneyCOP(fourPerThousandPreview.baseAmount)}
+              </span>
+            </div>
+            <div className="flex justify-between text-amber-700 dark:text-[#D4AF37]">
+              <span>Impuesto 4x1000 (+0.4%):</span>
+              <span className="font-bold">
+                +{formatMoneyCOP(fourPerThousandPreview.fourPerThousand)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t border-amber-500/20 pt-1.5 font-semibold text-slate-900 dark:text-[#F8FAFC]">
+              <span>Total debitado del saldo:</span>
+              <span className="text-amber-600 dark:text-[#D4AF37] font-extrabold text-xs">
+                {formatMoneyCOP(fourPerThousandPreview.totalAmount)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ------------------------------------------------------------- */}
       {/* CATEGORÍA CON SOPORTE PERSONALIZADO AL VUELO                  */}

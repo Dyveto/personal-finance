@@ -6,7 +6,8 @@ import {
   MarkExtractAsPaidSchema,
   type MarkExtractAsPaidInput,
 } from "@/lib/validations/finance";
-import { addMoney, subtractMoney, roundMoney } from "@/lib/finance/money";
+import { addMoney, subtractMoney, roundMoney, compareMoney } from "@/lib/finance/money";
+import { calculateFourPerThousand } from "@/lib/finance/four-per-thousand";
 import {
   calculateStatementClosingDate,
   calculatePaymentDueDate,
@@ -182,6 +183,44 @@ export async function markExtractAsPaid(
       validated.amount !== undefined ? roundMoney(validated.amount) : calculatedPeriodTotal;
     const finalAmountNum = parseFloat(finalAmountStr);
 
+    if (finalAmountNum <= 0) {
+      return { success: false, error: "El monto a pagar debe ser mayor a 0 COP." };
+    }
+
+    // Validar que el monto no supere la deuda total de la tarjeta
+    const currentCardDebtStr = roundMoney(card.current_balance);
+    if (compareMoney(finalAmountStr, currentCardDebtStr) > 0) {
+      return {
+        success: false,
+        error: `El monto a pagar ($${finalAmountStr} COP) no puede superar la deuda total de la tarjeta ($${currentCardDebtStr} COP).`,
+      };
+    }
+
+    // Validar saldo suficiente en la cuenta de origen si fue provista (contemplando 4x1000 si aplica)
+    let fourPerThousandStr = "0.00";
+    let totalDebitedFromAccountStr = finalAmountStr;
+
+    if (paymentAccount && finalAmountNum > 0) {
+      fourPerThousandStr = calculateFourPerThousand(
+        finalAmountStr,
+        paymentAccount.has_four_per_thousand,
+        "expense"
+      );
+      totalDebitedFromAccountStr = addMoney(finalAmountStr, fourPerThousandStr);
+
+      const currentPayBalStr = roundMoney(paymentAccount.current_balance);
+      if (compareMoney(currentPayBalStr, totalDebitedFromAccountStr) < 0) {
+        const errorDetail =
+          compareMoney(fourPerThousandStr, "0.00") > 0
+            ? `Se requieren $${totalDebitedFromAccountStr} COP (abono: $${finalAmountStr} COP + 4x1000: $${fourPerThousandStr} COP)`
+            : `Monto requerido: $${finalAmountStr} COP`;
+        return {
+          success: false,
+          error: `Saldo insuficiente en ${paymentAccount.name}. ${errorDetail}. Saldo disponible: $${currentPayBalStr} COP.`,
+        };
+      }
+    }
+
     // 4. Actualizar estado de transacciones del período a is_paid = true
     if (txIdsToMarkPaid.length > 0) {
       const { error: markTxError } = await supabase
@@ -203,6 +242,7 @@ export async function markExtractAsPaid(
     const closingDay = clampDayToMonth(stmtYear, stmtMonth, cardClosingDay);
     const closingDate = formatCivilDate(stmtYear, stmtMonth, closingDay);
     const dueDate = calculatePaymentDueDate(closingDate, cardClosingDay, cardPaymentDueDay);
+    const calculatedPeriodTotalNum = parseFloat(calculatedPeriodTotal);
 
     const { data: statementRecord, error: stmtError } = await supabase
       .from("credit_card_statements")
@@ -213,13 +253,17 @@ export async function markExtractAsPaid(
           statement_month: validated.statementMonth,
           closing_date: closingDate,
           due_date: dueDate,
-          total_amount: finalAmountNum,
+          total_amount: calculatedPeriodTotalNum > 0 ? calculatedPeriodTotalNum : finalAmountNum,
+          paid_amount: finalAmountNum,
+          payment_type: validated.paymentType || "full",
+          minimum_payment: calculatedPeriodTotalNum > 0 ? calculatedPeriodTotalNum : finalAmountNum,
+          payment_account_id: paymentAccount?.id ?? null,
           is_paid: true,
           paid_at: new Date().toISOString(),
           notes:
             validated.notes ??
             (paymentAccount
-              ? `Pagado mediante cuenta ${paymentAccount.name}`
+              ? `Pagado mediante cuenta ${paymentAccount.name} (${validated.paymentType || "full"})`
               : "Extracto registrado como pagado"),
         },
         { onConflict: "user_id,account_id,statement_month" }
@@ -231,9 +275,8 @@ export async function markExtractAsPaid(
       return { success: false, error: `Failed to record credit card statement: ${stmtError.message}` };
     }
 
-    // 6. Reducir deuda acumulada de la tarjeta de crédito
-    const currentCardDebt = roundMoney(card.current_balance);
-    const newCardDebt = Math.max(0, parseFloat(subtractMoney(currentCardDebt, finalAmountStr)));
+    // 6. Reducir deuda acumulada de la tarjeta de crédito (únicamente el valor del abono)
+    const newCardDebt = Math.max(0, parseFloat(subtractMoney(currentCardDebtStr, finalAmountStr)));
 
     const { error: cardBalError } = await supabase
       .from("accounts")
@@ -245,10 +288,10 @@ export async function markExtractAsPaid(
       return { success: false, error: `Failed to update card balance: ${cardBalError.message}` };
     }
 
-    // 7. Si se proporcionó cuenta de pago y el monto es mayor a 0, debitar y registrar movimiento
+    // 7. Si se proporcionó cuenta de pago y el monto es mayor a 0, debitar (base + 4x1000) y registrar movimiento
     if (paymentAccount && finalAmountNum > 0) {
       const currentPayBal = roundMoney(paymentAccount.current_balance);
-      const newPayBal = parseFloat(subtractMoney(currentPayBal, finalAmountStr));
+      const newPayBal = parseFloat(subtractMoney(currentPayBal, totalDebitedFromAccountStr));
 
       const { error: payBalError } = await supabase
         .from("accounts")
@@ -259,7 +302,7 @@ export async function markExtractAsPaid(
       if (payBalError) {
         return {
           success: false,
-          error: `Statement marked as paid, but failed to debit payment account: ${payBalError.message}`,
+          error: `Failed to debit payment account: ${payBalError.message}`,
         };
       }
 
@@ -287,28 +330,56 @@ export async function markExtractAsPaid(
             return formatCivilDate(now.getFullYear(), now.getMonth() + 1, now.getDate());
           })();
 
-        await supabase.from("transactions").insert({
+        const gmfNum = parseFloat(fourPerThousandStr);
+        let insertedPaymentTxId: string | null = null;
+
+        const insertQuery = supabase.from("transactions").insert({
           user_id: user.id,
           account_id: paymentAccount.id,
           category_id: categoryId,
           description: `Pago extracto tarjeta ${card.name} (${validated.statementMonth})`,
-          amount: finalAmountNum,
+          amount: parseFloat(totalDebitedFromAccountStr),
+          four_per_thousand_amount: gmfNum,
+          is_four_per_thousand_applied: gmfNum > 0,
           transaction_type: "expense",
           transaction_date: todayDate,
           is_installment: false,
           installment_count: 1,
           is_paid: true,
           paid_at: new Date().toISOString(),
-          notes: `Pago registrado automáticamente para el extracto de ${card.name}`,
+          notes:
+            validated.notes ??
+            (gmfNum > 0
+              ? `Pago de extracto ${validated.statementMonth} (Abono tarjeta: $${finalAmountStr} COP · 4x1000: $${fourPerThousandStr} COP)`
+              : `Pago de extracto ${validated.statementMonth} (${validated.paymentType === "minimum" ? "Pago Mínimo" : validated.paymentType === "full" ? "Pago Total" : "Monto Personalizado"})`),
         });
+
+        if ("select" in insertQuery && typeof (insertQuery as unknown as Record<string, unknown>).select === "function") {
+          const res = await (insertQuery as unknown as { select: (cols: string) => { single: () => Promise<{ data: { id: string } | null }> } })
+            .select("id")
+            .single();
+          insertedPaymentTxId = res?.data?.id ?? null;
+        } else {
+          await insertQuery;
+        }
+
+        if (insertedPaymentTxId && statementRecord) {
+          await supabase
+            .from("credit_card_statements")
+            .update({ payment_transaction_id: insertedPaymentTxId })
+            .eq("id", statementRecord.id)
+            .eq("user_id", user.id);
+        }
       }
     }
 
-    revalidatePath("/credit-cards");
-    revalidatePath("/accounts");
-    revalidatePath("/transactions");
-    revalidatePath("/dashboard");
-    revalidatePath("/");
+    try {
+      revalidatePath("/credit-cards");
+      revalidatePath("/accounts");
+      revalidatePath("/transactions");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch {}
 
     return {
       success: true,
@@ -316,11 +387,229 @@ export async function markExtractAsPaid(
         statement: statementRecord,
         amountPaid: finalAmountNum,
         updatedTransactionsCount: txIdsToMarkPaid.length,
-        paymentAccountId: paymentAccount?.id ?? null,
+        paymentAccountId: paymentAccount ? paymentAccount.id : null,
       },
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error while marking statement as paid";
+    return { success: false, error: message };
+  }
+}
+
+export interface RevertStatementPaymentResult {
+  statement: CreditCardStatementRow;
+  revertedAmount: number;
+  restoredCardDebt: number;
+  reimbursedAccountId: string | null;
+}
+
+/**
+ * Revierte o elimina de forma segura un pago de extracto registrado por error:
+ * 1. Restaura el saldo en la cuenta de origen (reembolsando el débito y borrando la transacción de egreso asociada).
+ * 2. Restaura la deuda en la tarjeta de crédito (sumando de nuevo el monto revertido).
+ * 3. Restaura las transacciones y cuotas del período a estado pendiente (is_paid = false).
+ * 4. Actualiza el extracto a pendiente (is_paid = false, paid_at = null, paid_amount = null, payment_type = null).
+ */
+export async function revertStatementPayment(
+  rawInput: unknown
+): Promise<ActionResult<RevertStatementPaymentResult>> {
+  try {
+    const supabase = createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return { success: false, error: "Unauthorized: User is not authenticated" };
+    }
+
+    const statementId =
+      typeof rawInput === "string"
+        ? rawInput
+        : rawInput && typeof rawInput === "object" && "statementId" in rawInput
+        ? String((rawInput as { statementId: unknown }).statementId)
+        : "";
+
+    if (!statementId) {
+      return { success: false, error: "Se requiere un ID de extracto válido para revertir el pago." };
+    }
+
+    // 1. Obtener el extracto registrado
+    const { data: statement, error: stmtErr } = await supabase
+      .from("credit_card_statements")
+      .select("*")
+      .eq("id", statementId)
+      .eq("user_id", user.id)
+      .single();
+
+    if (stmtErr || !statement) {
+      return { success: false, error: "Extracto no encontrado o acceso denegado" };
+    }
+
+    if (!statement.is_paid) {
+      return { success: false, error: "Este extracto no figura como pagado; no se puede revertir." };
+    }
+
+    const amountToRevertStr = roundMoney(statement.paid_amount || statement.total_amount);
+    const amountToRevertNum = parseFloat(amountToRevertStr);
+
+    // 2. Obtener la tarjeta de crédito
+    const { data: card, error: cardErr } = await supabase
+      .from("accounts")
+      .select("*")
+      .eq("id", statement.account_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (cardErr || !card) {
+      return { success: false, error: "Tarjeta de crédito asociada no encontrada" };
+    }
+
+    // 3. Reembolsar a la cuenta de origen si existe y eliminar la transacción vinculada (contemplando 4x1000 debitado)
+    let reimbursedAccountId: string | null = null;
+    let actualReimbursedAmountStr = amountToRevertStr;
+
+    if (statement.payment_transaction_id) {
+      const { data: linkedTx } = await supabase
+        .from("transactions")
+        .select("id, amount, four_per_thousand_amount, account_id")
+        .eq("id", statement.payment_transaction_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (linkedTx && linkedTx.amount) {
+        actualReimbursedAmountStr = roundMoney(linkedTx.amount);
+      }
+
+      await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", statement.payment_transaction_id)
+        .eq("user_id", user.id);
+    }
+
+    if (statement.payment_account_id && amountToRevertNum > 0) {
+      const { data: payAcc } = await supabase
+        .from("accounts")
+        .select("*")
+        .eq("id", statement.payment_account_id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (payAcc) {
+        // Fallback: si no existía payment_transaction_id pero la cuenta es gravada con 4x1000
+        if (!statement.payment_transaction_id && payAcc.has_four_per_thousand) {
+          const gmf = calculateFourPerThousand(amountToRevertStr, true, "expense");
+          actualReimbursedAmountStr = addMoney(amountToRevertStr, gmf);
+        }
+
+        const newPayBal = parseFloat(
+          addMoney(roundMoney(payAcc.current_balance), actualReimbursedAmountStr)
+        );
+        await supabase
+          .from("accounts")
+          .update({ current_balance: newPayBal })
+          .eq("id", payAcc.id)
+          .eq("user_id", user.id);
+        reimbursedAccountId = payAcc.id;
+      }
+    }
+
+    // 4. Restaurar la deuda en la tarjeta de crédito (únicamente el monto del abono sin 4x1000)
+    const restoredCardDebt = parseFloat(
+      addMoney(roundMoney(card.current_balance), amountToRevertStr)
+    );
+    await supabase
+      .from("accounts")
+      .update({ current_balance: restoredCardDebt })
+      .eq("id", card.id)
+      .eq("user_id", user.id);
+
+    // 5. Restaurar transacciones del período a is_paid = false
+    const cardClosingDay = card.closing_day || 15;
+    const cardPaymentDueDay = card.payment_due_day || 5;
+
+    const { data: cardTxList } = await supabase
+      .from("transactions")
+      .select("*")
+      .eq("account_id", card.id)
+      .eq("user_id", user.id);
+
+    const txIdsToUnmark: string[] = [];
+    for (const tx of cardTxList || []) {
+      if (!tx.is_installment || tx.installment_count <= 1) {
+        const closingDate = calculateStatementClosingDate(tx.transaction_date, cardClosingDay);
+        const { year, month } = parseCivilDate(closingDate);
+        const txMonth = `${year}-${String(month).padStart(2, "0")}`;
+        if (txMonth === statement.statement_month) {
+          txIdsToUnmark.push(tx.id);
+        }
+      } else {
+        const projections = projectTransactionInstallments(tx, {
+          name: card.name,
+          closing_day: cardClosingDay,
+          payment_due_day: cardPaymentDueDay,
+        });
+        const inst = projections.find((p) => p.statementMonth === statement.statement_month);
+        if (inst) {
+          txIdsToUnmark.push(tx.id);
+        }
+      }
+    }
+
+    if (txIdsToUnmark.length > 0) {
+      await supabase
+        .from("transactions")
+        .update({
+          is_paid: false,
+          paid_at: null,
+        })
+        .in("id", txIdsToUnmark)
+        .eq("user_id", user.id);
+    }
+
+    // 6. Actualizar el extracto a pendiente
+    const { data: updatedStatement, error: updateStmtErr } = await supabase
+      .from("credit_card_statements")
+      .update({
+        is_paid: false,
+        paid_at: null,
+        paid_amount: null,
+        payment_type: null,
+        payment_account_id: null,
+        payment_transaction_id: null,
+        notes: "Pago revertido por el usuario",
+      })
+      .eq("id", statement.id)
+      .eq("user_id", user.id)
+      .select()
+      .single();
+
+    if (updateStmtErr) {
+      return { success: false, error: `Error al revertir el extracto: ${updateStmtErr.message}` };
+    }
+
+    try {
+      revalidatePath("/credit-cards");
+      revalidatePath("/accounts");
+      revalidatePath("/transactions");
+      revalidatePath("/dashboard");
+      revalidatePath("/");
+    } catch {}
+
+    return {
+      success: true,
+      data: {
+        statement: updatedStatement,
+        revertedAmount: amountToRevertNum,
+        restoredCardDebt,
+        reimbursedAccountId,
+      },
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Error desconocido al revertir el pago del extracto";
     return { success: false, error: message };
   }
 }

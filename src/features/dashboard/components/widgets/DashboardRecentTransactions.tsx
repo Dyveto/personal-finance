@@ -69,6 +69,7 @@ export function DashboardRecentTransactions({
                       <span className="text-[11px] text-slate-400 dark:text-[#94A3B8] block">
                         {tx.transaction_date}
                         {tx.is_installment && ` · ${tx.installment_count} cuotas`}
+                        {tx.is_four_per_thousand_applied && ` · 4x1000`}
                       </span>
                     </div>
                   </div>

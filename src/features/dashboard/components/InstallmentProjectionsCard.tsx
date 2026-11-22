@@ -1,17 +1,27 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { formatMoneyCOP } from "@/lib/finance/money";
 import type { ProjectedInstallment } from "@/lib/finance/projections";
 import type { CreditCardStatementRow } from "@/types/database.types";
 import type { AccountRow } from "@/features/accounts/actions/account-actions";
-import type { MarkExtractAsPaidResult } from "@/features/credit-cards/actions/statement-actions";
+import {
+  revertStatementPayment,
+  type MarkExtractAsPaidResult,
+} from "@/features/credit-cards/actions/statement-actions";
 import { PayStatementDialog } from "@/features/credit-cards/components/PayStatementDialog";
 import { Button } from "@/components/ui/button";
 import {
-  CreditCard,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   CalendarClock,
-  ShieldCheck,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -20,12 +30,17 @@ import {
   CalendarCheck,
   Receipt,
   Sparkles,
+  RotateCcw,
+  AlertTriangle,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
 
 interface InstallmentProjectionsCardProps {
   projections: ProjectedInstallment[];
   paymentAccounts?: AccountRow[];
   statements?: CreditCardStatementRow[];
+  creditCards?: AccountRow[];
   onStatementPaid?: (result: MarkExtractAsPaidResult) => void;
 }
 
@@ -55,14 +70,27 @@ export function InstallmentProjectionsCard({
   projections,
   paymentAccounts = [],
   statements = [],
+  creditCards = [],
   onStatementPaid,
 }: InstallmentProjectionsCardProps) {
+  const router = useRouter();
+
   // Modal de pago
   const [selectedGroupToPay, setSelectedGroupToPay] = useState<StatementGroup | null>(null);
 
   // Registro local optimista de pagos recientes
   const [optimisticPaidKeys, setOptimisticPaidKeys] = useState<Set<string>>(new Set());
   const [localPaidStatements, setLocalPaidStatements] = useState<CreditCardStatementRow[]>([]);
+
+  // Estado para revertir pago
+  const [statementToRevert, setStatementToRevert] = useState<{
+    statementId: string;
+    month: string;
+    accountName: string;
+    amount: number;
+  } | null>(null);
+  const [isReverting, setIsReverting] = useState(false);
+  const [revertError, setRevertError] = useState<string | null>(null);
 
   // Estado del acordeón/colapsable del Historial de Pagados (cerrado por defecto)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -124,11 +152,7 @@ export function InstallmentProjectionsCard({
     const paid: StatementGroup[] = [];
 
     for (const group of groupedStatements) {
-      const isPaid =
-        paidKeysSet.has(group.key) ||
-        paidKeysSet.has(group.month) ||
-        paidKeysSet.has(`${group.accountId}_${group.month}`);
-
+      const isPaid = paidKeysSet.has(group.key) || paidKeysSet.has(group.month);
       if (isPaid) {
         paid.push(group);
       } else {
@@ -139,17 +163,12 @@ export function InstallmentProjectionsCard({
     return { pendingStatements: pending, paidStatements: paid };
   }, [groupedStatements, paidKeysSet]);
 
-  const handleOpenPayDialog = (group: StatementGroup) => {
-    setSelectedGroupToPay(group);
-  };
-
   const handlePaymentSuccess = (result: MarkExtractAsPaidResult) => {
     if (selectedGroupToPay) {
       setOptimisticPaidKeys((prev) => {
         const next = new Set(prev);
         next.add(selectedGroupToPay.key);
         next.add(selectedGroupToPay.month);
-        next.add(`${selectedGroupToPay.accountId}_${selectedGroupToPay.month}`);
         return next;
       });
       setLocalPaidStatements((prev) => [result.statement, ...prev]);
@@ -160,43 +179,60 @@ export function InstallmentProjectionsCard({
     }
   };
 
+  const handleConfirmRevert = async () => {
+    if (!statementToRevert) return;
+    setIsReverting(true);
+    setRevertError(null);
+
+    try {
+      const res = await revertStatementPayment({ statementId: statementToRevert.statementId });
+      if (!res.success) {
+        setRevertError(res.error || "No se pudo revertir el pago.");
+        setIsReverting(false);
+        return;
+      }
+
+      // Eliminar de los estados optimistas locales
+      setOptimisticPaidKeys((prev) => {
+        const next = new Set(prev);
+        next.delete(statementToRevert.month);
+        return next;
+      });
+      setLocalPaidStatements((prev) => prev.filter((s) => s.id !== statementToRevert.statementId));
+      setStatementToRevert(null);
+      router.refresh();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error inesperado al revertir pago.";
+      setRevertError(msg);
+    } finally {
+      setIsReverting(false);
+    }
+  };
+
   const toggleDetail = (key: string) => {
     setExpandedPaidKey((prev) => (prev === key ? null : key));
   };
 
-  return (
-    <div className="surface-card p-6 rounded-2xl space-y-6">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex items-center gap-2">
-            <CalendarClock className="w-5 h-5 text-amber-600 dark:text-[#D4AF37]" />
-            <span>Proyección de Cuotas y Próximos Pagos</span>
-          </h3>
-          <p className="text-xs text-slate-600 dark:text-[#94A3B8] mt-0.5">
-            Calendario de cuotas diferidas en tarjetas según fechas de corte y límites de pago.
-          </p>
+  if (projections.length === 0) {
+    return (
+      <div className="p-8 border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#131B2E] rounded-2xl text-center space-y-3 shadow-sm">
+        <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-[#D4AF37] border border-amber-500/20 mx-auto flex items-center justify-center">
+          <CalendarClock className="w-6 h-6" />
         </div>
-
-        <div className="flex items-center gap-1.5 text-xs text-[#10B981] font-semibold">
-          <ShieldCheck className="w-4 h-4" />
-          <span>Invariante: Sin pérdida de centavos</span>
-        </div>
+        <h3 className="text-base font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+          No hay cuotas ni extractos proyectados
+        </h3>
+        <p className="text-xs text-slate-600 dark:text-[#94A3B8] max-w-sm mx-auto">
+          No tienes transacciones activas en cuotas pendientes en tus tarjetas de crédito registradas.
+        </p>
       </div>
+    );
+  }
 
-      {/* SECCIÓN 1: EXTRACTOS PENDIENTES */}
-      {groupedStatements.length === 0 ? (
-        <div className="p-8 border border-dashed border-slate-300 dark:border-white/[0.1] rounded-xl text-center">
-          <CreditCard className="w-8 h-8 text-slate-400 dark:text-[#94A3B8]/40 mx-auto mb-2" />
-          <p className="text-xs font-semibold text-slate-900 dark:text-[#F8FAFC]">
-            No tienes compras diferidas a cuotas activas
-          </p>
-          <p className="text-[11px] text-slate-600 dark:text-[#94A3B8] mt-1 max-w-md mx-auto">
-            Cuando registres una compra a cuotas en una tarjeta de crédito, sus extractos futuros
-            se proyectarán matemáticamente aquí sin duplicar transacciones.
-          </p>
-        </div>
-      ) : pendingStatements.length === 0 ? (
+  return (
+    <div className="space-y-4">
+      {/* Sección 1: Extractos Pendientes de Pago */}
+      {pendingStatements.length === 0 ? (
         <div className="p-6 border border-[#10B981]/20 bg-[#10B981]/5 rounded-xl text-center space-y-2">
           <div className="w-10 h-10 rounded-full bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25 mx-auto flex items-center justify-center">
             <Sparkles className="w-5 h-5" />
@@ -214,7 +250,7 @@ export function InstallmentProjectionsCard({
           <div className="flex items-center justify-between">
             <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider flex items-center gap-1.5">
               <span>Extractos Pendientes de Pago</span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                 {pendingStatements.length}
               </span>
             </span>
@@ -237,49 +273,44 @@ export function InstallmentProjectionsCard({
                         {group.accountName}
                       </span>
                     </div>
-
                     <div className="text-right">
-                      <span className="text-xs font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] block">
+                      <span className="text-sm font-heading font-extrabold text-amber-600 dark:text-[#D4AF37] block">
                         {formatMoneyCOP(group.total)}
                       </span>
-                      <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400">
-                        Pendiente
+                      <span className="text-[10px] text-slate-500 dark:text-[#94A3B8]">
+                        {group.items.length} cuota{group.items.length > 1 ? "s" : ""}
                       </span>
                     </div>
                   </div>
 
-                  {/* Listado de cuotas */}
-                  <div className="divide-y divide-slate-100 dark:divide-white/[0.06] mt-2">
+                  {/* Lista de cuotas diferidas */}
+                  <div className="py-2.5 space-y-1.5 max-h-36 overflow-y-auto">
                     {group.items.map((item, idx) => (
-                      <div key={`${item.transactionId}-${idx}`} className="py-2 text-xs">
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="font-semibold text-slate-800 dark:text-[#F8FAFC] truncate">
-                            {item.description}
-                          </span>
-                          <span className="font-heading font-bold text-slate-900 dark:text-[#F8FAFC] flex-shrink-0">
-                            {formatMoneyCOP(item.amount)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8] mt-0.5">
-                          <span>
-                            Cuota {item.installmentNumber}/{item.totalInstallments}
-                          </span>
-                          <span>Vence: {item.paymentDueDate}</span>
-                        </div>
+                      <div
+                        key={`${item.transactionId}-${idx}`}
+                        className="flex justify-between items-center text-xs py-1 border-b border-slate-200/50 dark:border-white/[0.04] last:border-0"
+                      >
+                        <span className="text-slate-700 dark:text-[#CBD5E1] truncate max-w-[160px]">
+                          {item.description} (Cuota {item.installmentNumber}/{item.totalInstallments})
+                        </span>
+                        <span className="font-heading font-semibold text-slate-900 dark:text-[#F8FAFC] text-[11px]">
+                          {formatMoneyCOP(item.amount)}
+                        </span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Botón interactivo de Pago */}
-                <div className="pt-3 mt-3 border-t border-slate-200 dark:border-white/[0.08]">
+                {/* Botón de acción para pagar extracto */}
+                <div className="pt-3 border-t border-slate-200 dark:border-white/[0.08] mt-2">
                   <Button
+                    type="button"
                     size="sm"
-                    onClick={() => handleOpenPayDialog(group)}
-                    className="w-full h-8 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(217,119,6,0.25)] dark:shadow-[0_0_15px_rgba(212,175,55,0.25)] transition-all hover:scale-[1.01] active:scale-[0.99]"
+                    onClick={() => setSelectedGroupToPay(group)}
+                    className="w-full text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold rounded-xl shadow-[0_0_15px_rgba(217,119,6,0.25)] dark:shadow-[0_0_15px_rgba(212,175,55,0.25)] transition-all flex items-center justify-center gap-1.5"
                   >
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Marcar como Pagado</span>
+                    <Wallet className="w-3.5 h-3.5" />
+                    <span>Pagar Extracto</span>
                   </Button>
                 </div>
               </div>
@@ -288,55 +319,48 @@ export function InstallmentProjectionsCard({
         </div>
       )}
 
-      {/* SECCIÓN 2: HISTORIAL DE EXTRACTOS PAGADOS (COLAPSABLE / ACORDEÓN) */}
+      {/* Sección 2: Historial de Extractos Pagados (Acordeón colapsable) */}
       {paidStatements.length > 0 && (
         <div className="pt-2 border-t border-slate-200 dark:border-white/[0.08]">
           <button
             type="button"
-            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-            className="w-full py-3 px-4 rounded-xl bg-slate-50/80 hover:bg-slate-100 dark:bg-[#0B0F19]/50 dark:hover:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08] flex items-center justify-between transition-colors text-left"
+            onClick={() => setIsHistoryOpen((prev) => !prev)}
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F19]/40 hover:bg-slate-100 dark:hover:bg-white/[0.04] border border-slate-200 dark:border-white/[0.08] transition-all text-left"
           >
             <div className="flex items-center gap-2">
-              <History className="w-4 h-4 text-[#10B981]" />
-              <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+              <History className="w-4 h-4 text-emerald-600 dark:text-[#10B981]" />
+              <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider">
                 Historial de Extractos Pagados
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#10B981]/15 text-[#10B981] border border-[#10B981]/25">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-[#10B981]/20 text-emerald-700 dark:text-[#10B981] border border-[#10B981]/30">
                 {paidStatements.length}
               </span>
             </div>
-
-            <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-[#94A3B8] font-medium">
-              <span>{isHistoryOpen ? "Contraer historial" : "Ver extractos liquidados"}</span>
-              {isHistoryOpen ? (
-                <ChevronUp className="w-4 h-4" />
-              ) : (
-                <ChevronDown className="w-4 h-4" />
-              )}
+            <div className="text-slate-500 dark:text-[#94A3B8]">
+              {isHistoryOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </div>
           </button>
 
-          {/* Contenido desplegable del historial */}
           {isHistoryOpen && (
-            <div className="mt-3 space-y-3 animate-in fade-in-50 duration-200">
+            <div className="mt-3 space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {paidStatements.map((group) => {
-                  const isExpanded = expandedPaidKey === group.key;
                   const statementRecord = allStatements.find(
                     (s) =>
                       s.is_paid &&
-                      (s.statement_month === group.month ||
-                        `${s.account_id}_${s.statement_month}` === group.key)
+                      s.statement_month === group.month &&
+                      s.account_id === group.accountId
                   );
+                  const isExpanded = expandedPaidKey === group.key;
 
                   return (
                     <div
                       key={group.key}
-                      className="p-4 rounded-xl border border-[#10B981]/20 bg-[#10B981]/5 flex flex-col justify-between transition-all"
+                      className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03] dark:bg-[#10B981]/[0.02] flex flex-col justify-between transition-all"
                     >
                       <div>
-                        {/* Cabecera del extracto liquidado */}
-                        <div className="flex items-center justify-between border-b border-[#10B981]/15 pb-2.5">
+                        {/* Encabezado del extracto pagado */}
+                        <div className="flex items-center justify-between border-b border-emerald-500/20 pb-2">
                           <div>
                             <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] uppercase tracking-wider block">
                               Extracto {group.month}
@@ -345,12 +369,11 @@ export function InstallmentProjectionsCard({
                               {group.accountName}
                             </span>
                           </div>
-
                           <div className="text-right">
                             <span className="text-xs font-heading font-extrabold text-slate-900 dark:text-[#F8FAFC] block">
-                              {formatMoneyCOP(statementRecord?.total_amount || group.total)}
+                              {formatMoneyCOP(statementRecord?.paid_amount || statementRecord?.total_amount || group.total)}
                             </span>
-                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#10B981]">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-[#10B981]">
                               <CheckCircle2 className="w-3 h-3" /> Pagado
                             </span>
                           </div>
@@ -361,7 +384,7 @@ export function InstallmentProjectionsCard({
                           <div className="mt-3 space-y-3 pt-1 border-t border-slate-200 dark:border-white/[0.08]">
                             <div className="p-3 rounded-xl bg-slate-100/90 dark:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08] space-y-2 text-xs">
                               <div className="flex items-center gap-2 text-slate-600 dark:text-[#94A3B8]">
-                                <CalendarCheck className="w-4 h-4 text-[#10B981] flex-shrink-0" />
+                                <CalendarCheck className="w-4 h-4 text-emerald-600 dark:text-[#10B981] flex-shrink-0" />
                                 <span>
                                   <strong className="text-slate-900 dark:text-[#F8FAFC]">Fecha de pago:</strong>{" "}
                                   {formatPaymentDateTime(statementRecord?.paid_at)}
@@ -380,7 +403,7 @@ export function InstallmentProjectionsCard({
                                 <Receipt className="w-4 h-4 text-slate-600 dark:text-[#94A3B8] flex-shrink-0" />
                                 <span>
                                   <strong className="text-slate-900 dark:text-[#F8FAFC]">Monto liquidado:</strong>{" "}
-                                  {formatMoneyCOP(statementRecord?.total_amount || group.total)}
+                                  {formatMoneyCOP(statementRecord?.paid_amount || statementRecord?.total_amount || group.total)}
                                 </span>
                               </div>
                             </div>
@@ -408,16 +431,40 @@ export function InstallmentProjectionsCard({
                               </div>
                             </div>
 
-                            {/* Botón para contraer detalle */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => toggleDetail(group.key)}
-                              className="w-full text-xs h-7 mt-2 border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-white/[0.05] rounded-xl"
-                            >
-                              Contraer Detalle
-                            </Button>
+                            {/* Acciones de reversión y contraer detalle */}
+                            <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-200 dark:border-white/[0.06]">
+                              {statementRecord && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    setStatementToRevert({
+                                      statementId: statementRecord.id,
+                                      month: group.month,
+                                      accountName: group.accountName,
+                                      amount:
+                                        statementRecord.paid_amount ||
+                                        statementRecord.total_amount ||
+                                        group.total,
+                                    })
+                                  }
+                                  className="text-xs text-[#F43F5E] hover:text-[#F43F5E] hover:bg-[#F43F5E]/10 border-[#F43F5E]/30 rounded-xl flex items-center gap-1.5"
+                                >
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                  <span>Revertir Pago</span>
+                                </Button>
+                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => toggleDetail(group.key)}
+                                className="text-xs h-7 border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-50 dark:hover:bg-white/[0.05] rounded-xl ml-auto"
+                              >
+                                Contraer Detalle
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <div className="mt-2.5">
@@ -430,7 +477,7 @@ export function InstallmentProjectionsCard({
                               variant="ghost"
                               size="sm"
                               onClick={() => toggleDetail(group.key)}
-                              className="w-full h-7 text-xs font-semibold text-[#10B981] hover:text-[#10B981] hover:bg-[#10B981]/10 rounded-xl flex items-center justify-center gap-1"
+                              className="w-full h-7 text-xs font-semibold text-emerald-600 dark:text-[#10B981] hover:text-emerald-700 hover:bg-[#10B981]/10 rounded-xl flex items-center justify-center gap-1"
                             >
                               <Receipt className="w-3.5 h-3.5" />
                               <span>Ver Desglose de Pago</span>
@@ -448,17 +495,97 @@ export function InstallmentProjectionsCard({
       )}
 
       {/* Diálogo emergente para liquidar el pago */}
-      {selectedGroupToPay && (
-        <PayStatementDialog
-          isOpen={!!selectedGroupToPay}
-          onClose={() => setSelectedGroupToPay(null)}
-          statementMonth={selectedGroupToPay.month}
-          creditCardId={selectedGroupToPay.accountId}
-          creditCardName={selectedGroupToPay.accountName}
-          totalAmount={selectedGroupToPay.total}
-          paymentAccounts={paymentAccounts}
-          onSuccess={handlePaymentSuccess}
-        />
+      {selectedGroupToPay && (() => {
+        const matchedCard = creditCards?.find((c) => c.id === selectedGroupToPay.accountId);
+        return (
+          <PayStatementDialog
+            isOpen={!!selectedGroupToPay}
+            onClose={() => setSelectedGroupToPay(null)}
+            statementMonth={selectedGroupToPay.month}
+            creditCardId={selectedGroupToPay.accountId}
+            creditCardName={selectedGroupToPay.accountName}
+            totalAmount={selectedGroupToPay.total}
+            totalCardDebt={matchedCard?.current_balance}
+            managementFeeAmount={matchedCard?.management_fee}
+            managementFeeType={matchedCard?.management_fee_type}
+            paymentAccounts={paymentAccounts}
+            onSuccess={handlePaymentSuccess}
+          />
+        );
+      })()}
+
+      {/* Diálogo de Confirmación para Revertir Pago */}
+      {statementToRevert && (
+        <Dialog
+          open={!!statementToRevert}
+          onOpenChange={(open) => !open && !isReverting && setStatementToRevert(null)}
+        >
+          <DialogContent className="sm:max-w-md bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-white/[0.08] shadow-[0_20px_60px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6)] rounded-2xl text-slate-900 dark:text-[#F8FAFC]">
+            <DialogHeader>
+              <div className="flex items-center gap-2 text-[#F43F5E]">
+                <RotateCcw className="w-5 h-5" />
+                <DialogTitle className="text-lg font-heading font-bold text-slate-900 dark:text-[#F8FAFC]">
+                  Revertir Pago de Extracto
+                </DialogTitle>
+              </div>
+              <DialogDescription className="text-xs text-slate-600 dark:text-[#94A3B8]">
+                ¿Deseas revertir el pago del extracto {statementToRevert.month} de {statementToRevert.accountName}?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2 text-xs text-slate-700 dark:text-[#CBD5E1]">
+              {revertError && (
+                <div className="p-3 rounded-xl border border-[#F43F5E]/30 bg-[#F43F5E]/10 text-[#F43F5E] text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{revertError}</span>
+                </div>
+              )}
+              <div className="p-3 rounded-xl bg-amber-500/[0.08] border border-amber-500/20 text-amber-800 dark:text-amber-200 space-y-1">
+                <p className="font-semibold flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-[#D4AF37] flex-shrink-0" />
+                  Efectos de la reversión:
+                </p>
+                <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-600 dark:text-[#94A3B8]">
+                  <li>El extracto volverá a quedar en estado <strong>Pendiente</strong>.</li>
+                  <li>Se restaurará la deuda en la tarjeta por <strong>{formatMoneyCOP(statementToRevert.amount)}</strong>.</li>
+                  <li>Se reembolsará el dinero a la cuenta de débito si se registró un egreso.</li>
+                </ul>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setStatementToRevert(null)}
+                disabled={isReverting}
+                className="text-xs border-slate-300 dark:border-white/[0.08] bg-slate-50 dark:bg-[#0B0F19] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.05] rounded-xl"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleConfirmRevert}
+                disabled={isReverting}
+                className="text-xs bg-[#F43F5E] hover:bg-[#E11D48] text-white font-semibold rounded-xl flex items-center gap-1.5 shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all"
+              >
+                {isReverting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Revirtiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Confirmar Reversión</span>
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );

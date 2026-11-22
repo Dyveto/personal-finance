@@ -175,6 +175,7 @@ export const StandardAccountSchema = z.object({
   currency: z.string().trim().length(3).default("COP"),
   initial_balance: NonNegativeMoneySchema,
   color: z.string().trim().max(30).nullable().optional(),
+  has_four_per_thousand: z.boolean().default(false),
   credit_limit: z.null().optional(),
   closing_day: z.null().optional(),
   payment_due_day: z.null().optional(),
@@ -231,6 +232,7 @@ export const UpdateStandardAccountSchema = z.object({
   current_balance: NonNegativeMoneySchema.optional(),
   balance: NonNegativeMoneySchema.optional(),
   color: z.string().trim().max(30).nullable().optional(),
+  has_four_per_thousand: z.boolean().optional(),
   is_active: z.boolean().optional(),
   credit_limit: z.null().optional(),
   closing_day: z.null().optional(),
@@ -255,6 +257,7 @@ export const UpdateCreditCardAccountSchema = z.object({
   current_balance: NonNegativeMoneySchema.optional(),
   balance: NonNegativeMoneySchema.optional(),
   color: z.string().trim().max(30).nullable().optional(),
+  has_four_per_thousand: z.boolean().optional(),
   is_active: z.boolean().optional(),
   credit_limit: PositiveMoneySchema.optional(),
   closing_day: DayOfMonthSchema.optional(),
@@ -341,6 +344,8 @@ export const CreateTransactionSchema = z
     transaction_date: CivilDateSchema,
     is_installment: z.boolean().default(false),
     installment_count: InstallmentCountSchema.default(1),
+    four_per_thousand_amount: PositiveMoneySchema.optional().nullable(),
+    is_four_per_thousand_applied: z.boolean().optional().default(false),
     notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
   })
   .superRefine((data, ctx) => {
@@ -440,6 +445,8 @@ export const UpdateTransactionSchema = z
       .optional(),
     account_id: z.string().uuid("Invalid account UUID").optional(),
     installment_count: InstallmentCountSchema.optional(),
+    four_per_thousand_amount: PositiveMoneySchema.optional().nullable(),
+    is_four_per_thousand_applied: z.boolean().optional(),
     notes: z.string().trim().max(1000, "Notes cannot exceed 1000 characters").nullable().optional(),
     is_paid: z.boolean().optional(),
   })
@@ -456,6 +463,15 @@ export const UpdateTransactionSchema = z
 export type UpdateTransactionInput = z.infer<typeof UpdateTransactionSchema>;
 
 /**
+ * Modalidades de pago de extracto de tarjeta de crédito.
+ */
+export const StatementPaymentTypeSchema = z.enum(["minimum", "full", "custom"], {
+  message: "La modalidad de pago debe ser 'minimum', 'full' o 'custom'",
+});
+
+export type StatementPaymentType = z.infer<typeof StatementPaymentTypeSchema>;
+
+/**
  * Esquema de validación para registrar el pago de un extracto de tarjeta de crédito.
  */
 export const MarkExtractAsPaidSchema = z.object({
@@ -464,6 +480,7 @@ export const MarkExtractAsPaidSchema = z.object({
     .regex(/^\d{4}-\d{2}$/, "El mes del extracto debe tener el formato YYYY-MM (ej. 2026-04)"),
   creditCardAccountId: z.string().uuid("ID de tarjeta de crédito inválido"),
   paymentAccountId: z.string().uuid("ID de cuenta de pago inválido").optional().nullable(),
+  paymentType: StatementPaymentTypeSchema.default("full").optional(),
   amount: PositiveMoneySchema.optional(),
   categoryId: z.string().uuid("ID de categoría inválido").optional().nullable(),
   paymentDate: CivilDateSchema.optional(),
@@ -471,6 +488,15 @@ export const MarkExtractAsPaidSchema = z.object({
 });
 
 export type MarkExtractAsPaidInput = z.infer<typeof MarkExtractAsPaidSchema>;
+
+/**
+ * Esquema para reversión de pago de extracto.
+ */
+export const RevertStatementPaymentSchema = z.object({
+  statementId: z.string().uuid("ID de extracto inválido"),
+});
+
+export type RevertStatementPaymentInput = z.infer<typeof RevertStatementPaymentSchema>;
 
 /**
  * Identificadores y orden predeterminado de los widgets del Dashboard.

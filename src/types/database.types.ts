@@ -12,6 +12,8 @@ export type ManagementFeeType =
   | 'exempt_if_used'
   | 'exempt'
 
+export type StatementPaymentType = 'minimum' | 'full' | 'custom'
+
 export interface Database {
   public: {
     Tables: {
@@ -30,6 +32,7 @@ export interface Database {
           payment_due_day: number | null
           management_fee: number | null
           management_fee_type: ManagementFeeType | null
+          has_four_per_thousand: boolean
           color: string | null
           is_active: boolean
           created_at: string
@@ -49,6 +52,7 @@ export interface Database {
           payment_due_day?: number | null
           management_fee?: number | null
           management_fee_type?: ManagementFeeType | null
+          has_four_per_thousand?: boolean
           color?: string | null
           is_active?: boolean
           created_at?: string
@@ -68,6 +72,7 @@ export interface Database {
           payment_due_day?: number | null
           management_fee?: number | null
           management_fee_type?: ManagementFeeType | null
+          has_four_per_thousand?: boolean
           color?: string | null
           is_active?: boolean
           created_at?: string
@@ -142,6 +147,8 @@ export interface Database {
           installment_count: number
           is_paid: boolean
           paid_at: string | null
+          four_per_thousand_amount: number | null
+          is_four_per_thousand_applied: boolean
           notes: string | null
           created_at: string
           updated_at: string
@@ -159,6 +166,8 @@ export interface Database {
           installment_count?: number
           is_paid?: boolean
           paid_at?: string | null
+          four_per_thousand_amount?: number | null
+          is_four_per_thousand_applied?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -176,6 +185,8 @@ export interface Database {
           installment_count?: number
           is_paid?: boolean
           paid_at?: string | null
+          four_per_thousand_amount?: number | null
+          is_four_per_thousand_applied?: boolean
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -208,6 +219,11 @@ export interface Database {
           total_amount: number
           is_paid: boolean
           paid_at: string | null
+          paid_amount: number | null
+          payment_type: StatementPaymentType | null
+          minimum_payment: number | null
+          payment_account_id: string | null
+          payment_transaction_id: string | null
           notes: string | null
           created_at: string
           updated_at: string
@@ -222,6 +238,11 @@ export interface Database {
           total_amount?: number
           is_paid?: boolean
           paid_at?: string | null
+          paid_amount?: number | null
+          payment_type?: StatementPaymentType | null
+          minimum_payment?: number | null
+          payment_account_id?: string | null
+          payment_transaction_id?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string
@@ -236,6 +257,11 @@ export interface Database {
           total_amount?: number
           is_paid?: boolean
           paid_at?: string | null
+          paid_amount?: number | null
+          payment_type?: StatementPaymentType | null
+          minimum_payment?: number | null
+          payment_account_id?: string | null
+          payment_transaction_id?: string | null
           notes?: string | null
           created_at?: string
           updated_at?: string

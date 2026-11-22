@@ -39,6 +39,7 @@ const AccountFormValidationSchema = z
       .trim()
       .min(1, "Ingresa un saldo inicial (ej. 0)")
       .regex(/^\d+(\.\d{1,2})?$/, "Ingresa un monto válido (ej. 150000 o 0)"),
+    has_four_per_thousand: z.boolean(),
     credit_limit: z.string().optional().or(z.literal("")),
     closing_day: z.string().optional().or(z.literal("")),
     payment_due_day: z.string().optional().or(z.literal("")),
@@ -128,6 +129,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
           ? String(account.management_fee)
           : "0",
       management_fee_type: account?.management_fee_type || "exempt",
+      has_four_per_thousand: account?.has_four_per_thousand ?? false,
       color: account?.color || "",
     },
   });
@@ -147,6 +149,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
             ? String(account.management_fee)
             : "0",
         management_fee_type: account.management_fee_type || "exempt",
+        has_four_per_thousand: account.has_four_per_thousand ?? false,
         color: account.color || "",
       });
     }
@@ -186,6 +189,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 payment_due_day: null,
                 management_fee: null,
                 management_fee_type: null,
+                has_four_per_thousand: values.account_type === "bank" ? Boolean(values.has_four_per_thousand) : false,
                 color: values.color || null,
               };
 
@@ -240,6 +244,7 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 payment_due_day: null,
                 management_fee: null,
                 management_fee_type: null,
+                has_four_per_thousand: values.account_type === "bank" ? Boolean(values.has_four_per_thousand) : false,
                 color: values.color || null,
               };
 
@@ -368,6 +373,29 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
           <p className="text-xs text-rose-500">{errors.initial_balance.message}</p>
         ) : null}
       </div>
+
+      {/* Opción 4x1000 para Cuentas Bancarias */}
+      {selectedType === "bank" && (
+        <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-slate-50/70 dark:bg-[#0B0F19]/50 space-y-2">
+          <label htmlFor="has_four_per_thousand" className="flex items-start gap-2.5 cursor-pointer">
+            <input
+              type="checkbox"
+              id="has_four_per_thousand"
+              className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-white/20 text-amber-600 focus:ring-amber-500 bg-white dark:bg-[#0B0F19]"
+              {...register("has_four_per_thousand")}
+            />
+            <div className="space-y-0.5">
+              <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] block">
+                Cuenta gravada con 4x1000 (GMF)
+              </span>
+              <p className="text-[11px] text-slate-500 dark:text-[#94A3B8]">
+                Márcala si esta entidad descuenta el 4x1000 (0.4%) en transferencias y retiros (ej. Nu Ahorros).
+                Déjala desmarcada si la cuenta está exenta (ej. Bancolombia o Nequi).
+              </p>
+            </div>
+          </label>
+        </div>
+      )}
 
       {/* Campos condicionales para Tarjeta de Crédito */}
       {selectedType === "credit_card" && (

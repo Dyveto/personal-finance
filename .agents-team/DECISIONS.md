@@ -91,6 +91,90 @@ Consequences:
 
 Affected agents: DB, BACKEND, FRONTEND, QA.
 
+## ADR-009: Flexible Credit Card Statement Payments and Payment Reversal
+
+Date: 2026-11-21
+Status: ACCEPTED
+
+Problem: Credit card statements could previously only be marked as paid in full or overwrite `total_amount`. Users need to execute flexible payments (minimum payment including management fee, full balance, or custom partial amount capped at card debt), select an origin savings/checking/cash account with sufficient balance, and securely revert accidental payments restoring debts and account balances.
+
+Decision:
+1. Database Schema (`public.credit_card_statements`):
+   - Added `paid_amount NUMERIC(12,2)` (actual amount paid in COP).
+   - Added `payment_type TEXT` with CHECK constraint `payment_type IN ('minimum', 'full', 'custom')`.
+   - Added `minimum_payment NUMERIC(12,2)` (suggested minimum payment for audit).
+   - Added `payment_account_id UUID REFERENCES public.accounts(user_id, id) ON DELETE SET NULL`.
+   - Added `payment_transaction_id UUID REFERENCES public.transactions(user_id, id) ON DELETE SET NULL`.
+   - CHECK constraint `statements_payment_rules`: enforces valid payment details when `is_paid = true` and cleans them when `is_paid = false`.
+2. Balance Recalculation & Views:
+   - Updated `public.recalculate_account_balance(UUID)` and `public.credit_card_balance_summary` to deduct `COALESCE(paid_amount, total_amount)`.
+   - Updated trigger `trg_sync_account_balance_on_statement` to track `paid_amount`.
+3. Financial Engine & Server Actions:
+   - Pure engine in `src/lib/finance/statement-payments.ts` calculating minimum (period total + management fee if applicable), full (card debt), and custom (capped at total card debt).
+   - Server Action `markExtractAsPaid` validates sufficient balance on the origin account, records payment, and links the debit transaction.
+   - Server Action `revertStatementPayment` safely reimburses the origin account, restores card debt, unmarks statement transactions, and marks statement as unpaid.
+
+Consequences:
+- Exact decimal precision in COP.
+- Safe payment reversal with zero orphaned transactions or balance corruption.
+- Complete audit trail of payment origin and modalities.
+
+Affected agents: DB, BACKEND, FRONTEND, QA.
+
+## ADR-010: 4x1000 (GMF) Tax Support by Account and Transaction Traceability
+
+Date: 2026-11-21
+Status: ACCEPTED
+
+Problem: In Colombia, certain bank savings accounts (e.g. Nu savings accounts) are subject to the 4x1000 (GMF - Gravamen a los Movimientos Financieros) tax of 0.4% on debits/expenses, while other accounts (like a designated exempt account in Bancolombia, Nequi up to legal monthly limits, or credit cards) are exempt. Users need to configure this per bank account and have debits and outgoing transfers automatically calculate and account for the 4x1000 tax without losing cents, while recording a clear visual and financial audit breakdown.
+
+Decision:
+1. Database Schema (`public.accounts` & `public.transactions`):
+   - Added `has_four_per_thousand BOOLEAN NOT NULL DEFAULT FALSE` to `public.accounts` with CHECK constraint `accounts_four_per_thousand_rules` (strictly restricted to `account_type = 'bank'`).
+   - Added `four_per_thousand_amount NUMERIC(12,2)` and `is_four_per_thousand_applied BOOLEAN NOT NULL DEFAULT FALSE` to `public.transactions` with CHECK constraint `transactions_four_per_thousand_rules`.
+   - Partial composite indexes for fast audit and aggregation.
+2. Domain Logic & Financial Calculations:
+   - Pure decimal module `src/lib/finance/four-per-thousand.ts` using Decimal.js with standard `ROUND_HALF_UP` rounding.
+   - `FOUR_PER_THOUSAND_RATE = 0.004` (0.4% or 4 per 1,000 COP).
+   - Invariant: `transactions.amount = baseAmount + fourPerThousandAmount` so that the account balance and database balance recalculation function `recalculate_account_balance(UUID)` seamlessly reflect the real debited bank balance down to the exact cent.
+3. User Interface:
+   - Checkbox toggle in `AccountForm.tsx` for bank accounts to mark as taxed or exempt.
+   - Live breakdown preview card in `TransactionForm.tsx` displaying Base, 4x1000 and Total debited.
+   - Distinctive `4X1000` badge beside transaction titles in `TransactionsClientView.tsx` with secondary breakdown `Base: $X · 4x1000: $Y`.
+   - Subtle ` · 4x1000` tag in `DashboardRecentTransactions.tsx`.
+
+Consequences:
+- 100% exact reconciliation between bank statements and registered movements in COP.
+- Zero floating-point drift or cent distortion.
+- Fully backward-compatible: all existing accounts default to `has_four_per_thousand = false`.
+
+Affected agents: DB, BACKEND, FRONTEND, QA.
+
+## ADR-011: Incorporación del Security Agent (05-security-agent) para Auditoría Continua y AppSec Financiera
+
+Date: 2026-11-21
+Status: ACCEPTED
+
+Problem: Como sistema de gestión financiera personal que administra balances bancarios reales, tarjetas de crédito, deudas, transacciones y credenciales de usuario, el proyecto requiere una auditoría técnica especializada e independiente de los agentes de implementación (DB, Backend, Frontend) y complementaria al QA Verifier. Se requiere vigilar continuamente el cumplimiento de OWASP Top 10, políticas de contraseñas, RLS en Supabase, cabeceras de seguridad HTTP, cadena de suministro (`npm audit`) y resiliencia ante manipulación de datos o prompt injection.
+
+Decision:
+1. Crear formalmente el agente `05-security-agent` con su especificación en `.agents/skills/05-security-agent/SKILL.md`.
+2. Actualizar las reglas de arquitectura global (`.agents/rules/global-architecture.md`) y el tablero de coordinación (`.agents-team/BOARD.md`) integrando el rol `SECURITY`.
+3. Establecer los 5 dominios obligatorios de auditoría:
+   - Dominio 1: OWASP Top 10, Aislamiento RLS e IDOR/BOLA.
+   - Dominio 2: Autenticación, Fuerza Bruta y Políticas de Contraseñas (OWASP ASVS).
+   - Dominio 3: Dependencias y Cadena de Suministro (`npm audit`).
+   - Dominio 4: Cabeceras de Seguridad HTTP (CSP, HSTS, X-Frame-Options, etc.) y Superficie de Red.
+   - Dominio 5: Resiliencia ante Inyección de Entradas Externas (SMS bancarios).
+4. Establecer una matriz de severidad estandarizada (Crítico, Alto, Medio, Bajo) con reporte estructurado y remediación concreta.
+
+Consequences:
+- Auditoría continua de seguridad antes de cada entrega o promoción a producción.
+- Protección reforzada de la privacidad y los activos financieros de los usuarios.
+- Identificación proactiva de vectores de ataque como Open Redirects, escalamiento de privilegios o cabeceras faltantes.
+
+Affected agents: DB, BACKEND, FRONTEND, QA, SECURITY.
+
 ## CHANGE LOG
 
 New architectural decisions must include:
