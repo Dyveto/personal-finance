@@ -118,7 +118,7 @@ export default function SignUpPage() {
                   id="email"
                   type="email"
                   placeholder="tu@correo.com"
-                  className="pl-9 text-xs sm:text-sm"
+                  className="pl-9 text-base sm:text-sm"
                   disabled={isPending}
                   {...register("email")}
                 />
@@ -139,7 +139,7 @@ export default function SignUpPage() {
                   id="password"
                   type="password"
                   placeholder="Mínimo 6 caracteres"
-                  className="pl-9 text-xs sm:text-sm"
+                  className="pl-9 text-base sm:text-sm"
                   disabled={isPending}
                   {...register("password")}
                 />
@@ -165,7 +165,7 @@ export default function SignUpPage() {
                   id="confirmPassword"
                   type="password"
                   placeholder="Repite tu contraseña"
-                  className="pl-9 text-xs sm:text-sm"
+                  className="pl-9 text-base sm:text-sm"
                   disabled={isPending}
                   {...register("confirmPassword")}
                 />

@@ -30,6 +30,27 @@ Antes de fusionar o promover cualquier cambio desde la rama `develop` a `main`, 
 
 ---
 
+## [v1.5.2] - 2026-11-21
+### Añadido y Mejorado
+- **Navegación Temporal con Flechas en Gráficos del Dashboard (`FinancialCharts`)**:
+  - Controles de desplazamiento temporal (`←` y `→`) para mover la ventana hacia el pasado o hacia el presente paso a paso.
+  - Indicador dinámico de rango de fechas civiles en español con badge de `Histórico` cuando la vista está en el pasado.
+  - Botón de acceso rápido `Ir a Actual` para regresar con un solo toque al período presente cuando `offset > 0`.
+- **Cantidad de Ventana Configurable**:
+  - Valores predeterminados actualizados: `Semanas = 4` (reducido de 8), `Meses = 6` (configurable de `1` a `24`).
+  - Capacidad de aislar `1 mes` histórico para analizar cualquier mes individual (ej. Mayo 2026) tanto en barras como en la dona de categorías.
+  - Presets rápidos y stepper `[-] [cantidad] [+]` con validación de límites.
+- **Cuota de Manejo y Modalidades de Cobro en Tarjetas de Crédito**:
+  - Configuración decimal en COP (`management_fee NUMERIC(12,2)`) y modalidades (`fixed_monthly` e.g. Nu $12,000 COP, `only_on_use`, `exempt_if_used`, `exempt`).
+  - Motor puro de evaluación `evaluateManagementFee()` y campos descriptivos en `AccountForm`, `CreditCardsClientView` y `AccountsClientView`.
+- **Pulido de Ergonomía Móvil y UX Táctil**:
+  - Viewport estable con `initialScale: 1`, `maximumScale: 1`, `userScalable: false`, `viewportFit: "cover"`.
+  - Bloqueo de auto-zoom agresivo de iOS Safari mediante tamaño de fuente mínimo de 16px en inputs móviles.
+  - Eliminación de desplazamiento lateral indeseado (`overflow-x: hidden; overscroll-behavior-x: none`).
+  - Restricción de selección de texto en la interfaz visual (`user-select: none`) permitiendo copiar, pegar y editar libremente en `input`, `textarea` y elementos editables.
+
+---
+
 ## [v1.5.1] - 2026-11-21
 ### Correcciones (Hotfix de Estabilidad en Safari / iOS)
 - **Blindaje Defensivo contra `undefined is not an object (evaluating 's.success')`**:

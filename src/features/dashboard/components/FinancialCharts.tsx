@@ -21,11 +21,24 @@ import {
   CalendarRange,
   Calendar,
   Layers,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { TransactionRow } from "@/features/transactions/actions/transaction-actions";
 import type { CategoryRow } from "@/features/categories/actions/category-actions";
+import {
+  computeTimeWindow,
+  clampQuantity,
+  DEFAULT_QUANTITIES,
+  QUANTITY_LIMITS,
+  formatCivilDateISO,
+  type ChartGranularity,
+} from "@/lib/finance/chart-periods";
 
 export interface MonthlyFlowItem {
   month: string;
@@ -40,7 +53,7 @@ export interface CategoryExpenseItem {
   percentage?: number;
 }
 
-export type TimeFilterType = "days" | "weeks" | "months" | "years" | "custom";
+export type TimeFilterType = ChartGranularity;
 
 interface FinancialChartsProps {
   monthlyData?: MonthlyFlowItem[];
@@ -60,17 +73,13 @@ const CATEGORY_PALETTE = [
   "#64748B", // Slate
 ];
 
-const MONTH_NAMES_ES = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
-];
-
-function formatCivilDateISO(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+// Presets de cantidad rápida por granularidad
+const PRESETS_BY_GRANULARITY: Record<Exclude<ChartGranularity, "custom">, number[]> = {
+  days: [7, 14, 30],
+  weeks: [1, 2, 4, 8],
+  months: [1, 3, 6, 12],
+  years: [1, 2, 3, 5],
+};
 
 // ----------------------------------------------------------------------
 // Tooltip personalizado para el Gráfico de Barras (Flujo Periódico)
@@ -262,8 +271,14 @@ export function FinancialCharts({
   transactions,
   categories = [],
 }: FinancialChartsProps) {
-  // Estado del selector temporal
-  const [timeFilter, setTimeFilter] = useState<TimeFilterType>("months");
+  // Estado del selector temporal: Granularidad (por defecto "months")
+  const [timeFilter, setTimeFilter] = useState<ChartGranularity>("months");
+
+  // Cantidad configurable por granularidad: por defecto semanas=4, meses=6
+  const [quantity, setQuantity] = useState<number>(() => DEFAULT_QUANTITIES.months);
+
+  // Desplazamiento temporal (offset hacia el pasado, 0 = actual)
+  const [offset, setOffset] = useState<number>(0);
 
   // Rango personalizado (por defecto últimos 30 días)
   const [customStartDate, setCustomStartDate] = useState<string>(() => {
@@ -275,13 +290,39 @@ export function FinancialCharts({
     return formatCivilDateISO(new Date());
   });
 
+  // Cambio de granularidad: sincroniza cantidad predeterminada y reinicia offset al presente
+  const handleSelectGranularity = (nextGranularity: ChartGranularity) => {
+    setTimeFilter(nextGranularity);
+    setQuantity(DEFAULT_QUANTITIES[nextGranularity]);
+    setOffset(0);
+  };
+
+  // Cambio de cantidad: restringe a los límites y reinicia offset para consistencia
+  const handleSelectQuantity = (newQty: number) => {
+    const clamped = clampQuantity(timeFilter, newQty);
+    setQuantity(clamped);
+  };
+
   // Mapa de nombres de categorías
   const categoriesMap = useMemo(() => {
     return new Map(categories.map((c) => [c.id, c.name]));
   }, [categories]);
 
   // --------------------------------------------------------------------
-  // Procesamiento Reactivo de Datos según Filtro Temporal
+  // Ventana Temporal Determinista
+  // --------------------------------------------------------------------
+  const timeWindow = useMemo(() => {
+    return computeTimeWindow({
+      granularity: timeFilter,
+      quantity,
+      offset,
+      customStartDate,
+      customEndDate,
+    });
+  }, [timeFilter, quantity, offset, customStartDate, customEndDate]);
+
+  // --------------------------------------------------------------------
+  // Procesamiento Reactivo de Datos según Filtro Temporal y Ventana
   // --------------------------------------------------------------------
   const { filteredFlowData, filteredCategoryData, periodSummary } = useMemo(() => {
     // Si no se proporcionaron transacciones crudas, usar datos fallback (compatibilidad)
@@ -303,144 +344,78 @@ export function FinancialCharts({
         periodSummary: {
           totalIncome: monthlyData.reduce((acc, d) => acc + d.income, 0),
           totalExpense: totalCat,
-          label: "Últimos 6 meses",
+          label: timeWindow.summaryLabel,
         },
       };
     }
 
-    const now = new Date();
-    let startDateLimit: string;
-    let endDateLimit: string = formatCivilDateISO(now);
-    let summaryLabel = "Período Seleccionado";
-
-    if (timeFilter === "days") {
-      const start = new Date();
-      start.setDate(start.getDate() - 13); // Últimos 14 días
-      startDateLimit = formatCivilDateISO(start);
-      summaryLabel = "Últimos 14 días";
-    } else if (timeFilter === "weeks") {
-      const start = new Date();
-      start.setDate(start.getDate() - 55); // Últimas 8 semanas
-      startDateLimit = formatCivilDateISO(start);
-      summaryLabel = "Últimas 8 semanas";
-    } else if (timeFilter === "months") {
-      const start = new Date();
-      start.setMonth(start.getMonth() - 5); // Últimos 6 meses
-      start.setDate(1);
-      startDateLimit = formatCivilDateISO(start);
-      summaryLabel = "Últimos 6 meses";
-    } else if (timeFilter === "years") {
-      const start = new Date();
-      start.setFullYear(start.getFullYear() - 2); // Últimos 3 años
-      start.setMonth(0);
-      start.setDate(1);
-      startDateLimit = formatCivilDateISO(start);
-      summaryLabel = "Histórico Anual";
-    } else {
-      // Personalizado
-      startDateLimit = customStartDate || "2000-01-01";
-      endDateLimit = customEndDate || formatCivilDateISO(now);
-      summaryLabel = `Rango: ${startDateLimit} al ${endDateLimit}`;
-    }
-
-    // 1. Filtrar transacciones dentro de la ventana de tiempo
+    // 1. Filtrar transacciones dentro de la ventana de tiempo activa
     const inRangeTransactions = transactions.filter((tx) => {
       return (
-        tx.transaction_date >= startDateLimit &&
-        tx.transaction_date <= endDateLimit
+        tx.transaction_date >= timeWindow.startDateLimit &&
+        tx.transaction_date <= timeWindow.endDateLimit
       );
     });
 
-    // 2. Agrupación para Gráfico de Flujo (Ingresos vs. Gastos)
-    const flowMap = new Map<string, { income: number; expense: number; label: string }>();
+    // 2. Agrupación para Gráfico de Flujo (Ingresos vs. Gastos) basada en cubetas
+    const bucketsMap = new Map<string, { income: number; expense: number; label: string }>();
 
-    if (timeFilter === "days") {
-      // Generar 14 días contiguos
-      for (let i = 13; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const iso = formatCivilDateISO(d);
-        const dayLabel = `${d.getDate()} ${MONTH_NAMES_ES[d.getMonth()]}`;
-        flowMap.set(iso, { income: 0, expense: 0, label: dayLabel });
-      }
+    for (const b of timeWindow.buckets) {
+      bucketsMap.set(b.key, { income: 0, expense: 0, label: b.label });
+    }
 
+    if (timeFilter === "months") {
       for (const tx of inRangeTransactions) {
-        const entry = flowMap.get(tx.transaction_date);
+        const mKey = tx.transaction_date.slice(0, 7);
+        const entry = bucketsMap.get(mKey);
         if (entry) {
           if (tx.transaction_type === "income") entry.income += tx.amount;
           else entry.expense += tx.amount;
         }
       }
     } else if (timeFilter === "weeks") {
-      // Generar 8 cubetas de 7 días
-      for (let w = 7; w >= 0; w--) {
-        const dEnd = new Date();
-        dEnd.setDate(dEnd.getDate() - w * 7);
-        const dStart = new Date(dEnd);
-        dStart.setDate(dStart.getDate() - 6);
-        const weekKey = `w-${w}`;
-        const weekLabel = `${dStart.getDate()} ${MONTH_NAMES_ES[dStart.getMonth()]} - ${dEnd.getDate()} ${MONTH_NAMES_ES[dEnd.getMonth()]}`;
-        flowMap.set(weekKey, { income: 0, expense: 0, label: weekLabel });
-      }
-
-      // Asignar transacciones a semanas
       for (const tx of inRangeTransactions) {
-        const txDate = new Date(`${tx.transaction_date}T00:00:00`);
-        const diffDays = Math.floor((now.getTime() - txDate.getTime()) / (1000 * 3600 * 24));
-        const weekIndex = Math.floor(diffDays / 7);
-        if (weekIndex >= 0 && weekIndex <= 7) {
-          const entry = flowMap.get(`w-${weekIndex}`);
+        // Encontrar la cubeta de semana a la que pertenece la transacción
+        const matchingBucket = timeWindow.buckets.find(
+          (b) => tx.transaction_date >= b.startDate && tx.transaction_date <= b.endDate
+        );
+        if (matchingBucket) {
+          const entry = bucketsMap.get(matchingBucket.key);
           if (entry) {
             if (tx.transaction_type === "income") entry.income += tx.amount;
             else entry.expense += tx.amount;
           }
         }
       }
-    } else if (timeFilter === "months") {
-      // Generar 6 meses
-      for (let m = 5; m >= 0; m--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - m, 1);
-        const monthIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        const monthLabel = `${MONTH_NAMES_ES[d.getMonth()]} ${d.getFullYear()}`;
-        flowMap.set(monthIso, { income: 0, expense: 0, label: monthLabel });
-      }
-
+    } else if (timeFilter === "days") {
       for (const tx of inRangeTransactions) {
-        const mKey = tx.transaction_date.slice(0, 7);
-        const entry = flowMap.get(mKey);
+        const entry = bucketsMap.get(tx.transaction_date);
         if (entry) {
           if (tx.transaction_type === "income") entry.income += tx.amount;
           else entry.expense += tx.amount;
         }
       }
     } else if (timeFilter === "years") {
-      // Generar últimos 3 años
-      const currentYear = now.getFullYear();
-      for (let y = currentYear - 2; y <= currentYear; y++) {
-        const yKey = String(y);
-        flowMap.set(yKey, { income: 0, expense: 0, label: yKey });
-      }
-
       for (const tx of inRangeTransactions) {
         const yKey = tx.transaction_date.slice(0, 4);
-        const entry = flowMap.get(yKey);
+        const entry = bucketsMap.get(yKey);
         if (entry) {
           if (tx.transaction_type === "income") entry.income += tx.amount;
           else entry.expense += tx.amount;
         }
       }
     } else {
-      // Personalizado: agrupamiento adaptativo
+      // Personalizado: agrupar por fecha de transacción
       for (const tx of inRangeTransactions) {
         const key = tx.transaction_date;
-        const current = flowMap.get(key) || { income: 0, expense: 0, label: key };
+        const current = bucketsMap.get(key) || { income: 0, expense: 0, label: key };
         if (tx.transaction_type === "income") current.income += tx.amount;
         else current.expense += tx.amount;
-        flowMap.set(key, current);
+        bucketsMap.set(key, current);
       }
     }
 
-    const flowList = Array.from(flowMap.entries()).map(([, val]) => ({
+    const flowList = Array.from(bucketsMap.entries()).map(([, val]) => ({
       period: val.label,
       income: parseFloat(val.income.toFixed(2)),
       expense: parseFloat(val.expense.toFixed(2)),
@@ -480,18 +455,16 @@ export function FinancialCharts({
       periodSummary: {
         totalIncome: totalIncomeSum,
         totalExpense: totalExpenseSum,
-        label: summaryLabel,
+        label: timeWindow.summaryLabel,
       },
     };
   }, [
     transactions,
-    categories,
     categoryData,
     monthlyData,
-    timeFilter,
-    customStartDate,
-    customEndDate,
     categoriesMap,
+    timeFilter,
+    timeWindow,
   ]);
 
   const hasFlowData = useMemo(() => {
@@ -502,99 +475,227 @@ export function FinancialCharts({
     return filteredCategoryData.some((c) => c.value > 0);
   }, [filteredCategoryData]);
 
+  const limits = QUANTITY_LIMITS[timeFilter];
+  const presets = timeFilter !== "custom" ? PRESETS_BY_GRANULARITY[timeFilter] : [];
+
   return (
     <div className="space-y-4">
       {/* ---------------------------------------------------------------- */}
-      {/* BARRA DE FILTROS TEMPORALES REUTILIZABLE                         */}
+      {/* BARRA DE FILTROS TEMPORALES Y NAVEGACIÓN                         */}
       {/* ---------------------------------------------------------------- */}
-      <div className="surface-card p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37]">
-            <CalendarRange className="w-4 h-4" />
+      <div className="surface-card p-4 rounded-2xl flex flex-col gap-3.5">
+        {/* Fila Superior: Título del Filtro y Selector de Granularidad */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-600 dark:text-[#D4AF37] flex-shrink-0">
+              <CalendarRange className="w-4 h-4" />
+            </div>
+            <div>
+              <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] block">
+                Filtro Temporal de Gráficos
+              </span>
+              <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">
+                {timeWindow.periodDescription} · {timeWindow.summaryLabel}
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="text-xs font-heading font-bold text-slate-900 dark:text-[#F8FAFC] block">
-              Filtro Temporal de Gráficos
-            </span>
-            <span className="text-[11px] text-slate-500 dark:text-[#94A3B8]">
-              {periodSummary.label}
-            </span>
+
+          {/* Pestañas de Selección de Granularidad */}
+          <div className="flex flex-wrap items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08]">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSelectGranularity("days")}
+              className={`h-7 px-2.5 text-xs rounded-lg transition-all ${
+                timeFilter === "days"
+                  ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+              }`}
+            >
+              Días
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSelectGranularity("weeks")}
+              className={`h-7 px-2.5 text-xs rounded-lg transition-all ${
+                timeFilter === "weeks"
+                  ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+              }`}
+            >
+              Semanas
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSelectGranularity("months")}
+              className={`h-7 px-2.5 text-xs rounded-lg transition-all ${
+                timeFilter === "months"
+                  ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+              }`}
+            >
+              Meses
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSelectGranularity("years")}
+              className={`h-7 px-2.5 text-xs rounded-lg transition-all ${
+                timeFilter === "years"
+                  ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+              }`}
+            >
+              Años
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSelectGranularity("custom")}
+              className={`h-7 px-2.5 text-xs rounded-lg flex items-center gap-1 transition-all ${
+                timeFilter === "custom"
+                  ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
+                  : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              <span>Personalizado</span>
+            </Button>
           </div>
         </div>
 
-        {/* Pestañas de Selección Temporal */}
-        <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-[#0B0F19]/80 border border-slate-200 dark:border-white/[0.08]">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setTimeFilter("days")}
-            className={`h-7 px-3 text-xs rounded-lg transition-all ${
-              timeFilter === "days"
-                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
-                : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-            }`}
-          >
-            Días
-          </Button>
+        {/* Fila Intermedia: Selector de Cantidad Configurable (Oculto en Personalizado) */}
+        {timeFilter !== "custom" && (
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+            {/* Presets Rápidos */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold text-slate-500 dark:text-[#94A3B8]">
+                Cantidad:
+              </span>
+              <div className="flex items-center gap-1">
+                {presets.map((presetVal) => (
+                  <button
+                    key={presetVal}
+                    type="button"
+                    onClick={() => handleSelectQuantity(presetVal)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all ${
+                      quantity === presetVal
+                        ? "bg-amber-500/20 text-amber-700 dark:text-[#D4AF37] border border-amber-500/40"
+                        : "bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-[#94A3B8] hover:bg-slate-200 dark:hover:bg-white/[0.08]"
+                    }`}
+                  >
+                    {presetVal} {timeFilter === "months" ? (presetVal === 1 ? "mes" : "meses") : timeFilter === "weeks" ? (presetVal === 1 ? "sem" : "sems") : timeFilter === "days" ? "días" : (presetVal === 1 ? "año" : "años")}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setTimeFilter("weeks")}
-            className={`h-7 px-3 text-xs rounded-lg transition-all ${
-              timeFilter === "weeks"
-                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
-                : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-            }`}
-          >
-            Semanas
-          </Button>
+            {/* Stepper Manual de Cantidad */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#0B0F19]/80 px-2 py-1 rounded-xl border border-slate-200 dark:border-white/[0.08]">
+              <span className="text-[10px] text-slate-400 dark:text-[#94A3B8] uppercase tracking-wider font-semibold">
+                Ajustar
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleSelectQuantity(quantity - 1)}
+                disabled={quantity <= limits.min}
+                className="h-6 w-6 rounded-lg text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] disabled:opacity-30"
+                aria-label="Disminuir cantidad"
+              >
+                <Minus className="w-3 h-3" />
+              </Button>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setTimeFilter("months")}
-            className={`h-7 px-3 text-xs rounded-lg transition-all ${
-              timeFilter === "months"
-                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
-                : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-            }`}
-          >
-            Meses
-          </Button>
+              <span className="text-xs font-bold px-1 min-w-[2rem] text-center text-slate-800 dark:text-[#F8FAFC] select-text">
+                {quantity}
+              </span>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setTimeFilter("years")}
-            className={`h-7 px-3 text-xs rounded-lg transition-all ${
-              timeFilter === "years"
-                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
-                : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-            }`}
-          >
-            Años
-          </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => handleSelectQuantity(quantity + 1)}
+                disabled={quantity >= limits.max}
+                className="h-6 w-6 rounded-lg text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC] disabled:opacity-30"
+                aria-label="Aumentar cantidad"
+              >
+                <Plus className="w-3 h-3" />
+              </Button>
+            </div>
+          </div>
+        )}
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setTimeFilter("custom")}
-            className={`h-7 px-3 text-xs rounded-lg flex items-center gap-1 transition-all ${
-              timeFilter === "custom"
-                ? "bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.3)] dark:bg-[#D4AF37] dark:text-slate-950 font-bold"
-                : "text-slate-600 dark:text-[#94A3B8] hover:text-slate-900 dark:hover:text-[#F8FAFC]"
-            }`}
-          >
-            <Calendar className="w-3 h-3" />
-            <span>Personalizado</span>
-          </Button>
-        </div>
+        {/* Fila Inferior: Navegación Temporal con Flechas (← / →) y Retorno al Actual */}
+        {timeFilter !== "custom" && (
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-white/[0.06]">
+            {/* Controles de Desplazamiento Anterior / Siguiente */}
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setOffset((prev) => prev + 1)}
+                className="h-8 px-2.5 rounded-xl border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.06] flex items-center gap-1 text-xs"
+                aria-label="Período anterior"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Anterior</span>
+              </Button>
+
+              {/* Etiqueta Destacada del Período Activo */}
+              <div className="px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs font-bold text-amber-800 dark:text-[#D4AF37] flex items-center gap-1.5 shadow-sm">
+                <Calendar className="w-3.5 h-3.5 text-amber-600 dark:text-[#D4AF37]" />
+                <span className="truncate max-w-[220px] sm:max-w-none">
+                  {timeWindow.summaryLabel}
+                </span>
+                {!timeWindow.isCurrentPeriod && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-600 text-white dark:bg-[#D4AF37] dark:text-slate-950">
+                    Histórico
+                  </span>
+                )}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setOffset((prev) => Math.max(0, prev - 1))}
+                disabled={offset === 0}
+                className="h-8 px-2.5 rounded-xl border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#131B2E] text-slate-700 dark:text-[#F8FAFC] hover:bg-slate-100 dark:hover:bg-white/[0.06] disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1 text-xs"
+                aria-label="Período siguiente"
+              >
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Botón Rápido para regresar al presente si hay offset */}
+            {offset > 0 && (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setOffset(0)}
+                className="h-8 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white dark:bg-[#D4AF37] dark:hover:bg-[#C5A059] dark:text-slate-950 dark:font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all animate-in fade-in-50 duration-150"
+                aria-label="Regresar al período actual"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Ir a Actual</span>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Rango de Fechas Personalizado (Se despliega solo cuando timeFilter === "custom") */}
@@ -654,7 +755,7 @@ export function FinancialCharts({
                 Sin movimientos en este período
               </p>
               <p className="text-[11px] text-slate-400 dark:text-[#94A3B8] mt-0.5">
-                No hay ingresos ni gastos registrados en el rango de tiempo seleccionado.
+                No hay ingresos ni gastos registrados en el rango de tiempo seleccionado ({periodSummary.label}).
               </p>
             </div>
           ) : (
@@ -730,7 +831,7 @@ export function FinancialCharts({
                 Sin gastos categorizados en este período
               </p>
               <p className="text-[11px] text-slate-400 dark:text-[#94A3B8] mt-0.5">
-                Registra transacciones de egreso para visualizar la distribución porcentual.
+                Registra transacciones de egreso para visualizar la distribución porcentual en este período ({periodSummary.label}).
               </p>
             </div>
           ) : (

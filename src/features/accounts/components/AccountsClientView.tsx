@@ -409,6 +409,22 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                           Día {acc.payment_due_day}
                         </span>
                       </div>
+                      <div className="flex items-center justify-between text-slate-600 dark:text-[#94A3B8]">
+                        <span className="flex items-center gap-1">
+                          <span>Cuota Manejo:</span>
+                        </span>
+                        <span className="font-bold text-slate-900 dark:text-[#F8FAFC]">
+                          {acc.management_fee_type === "exempt" || !acc.management_fee || acc.management_fee <= 0
+                            ? "Exenta ($0)"
+                            : `${formatMoneyCOP(acc.management_fee)} (${
+                                acc.management_fee_type === "fixed_monthly"
+                                  ? "Fija"
+                                  : acc.management_fee_type === "only_on_use"
+                                  ? "Solo si se usa"
+                                  : "Exenta por uso"
+                              })`}
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>

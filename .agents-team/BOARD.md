@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.5.1
+Version: 1.5.2
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
@@ -1301,11 +1301,91 @@ Task: Overhauled brand presence and UI coherence across light and dark modes:
      - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
 Handoff status: COMPLETED
 
+### 2026-11-21 - MULTI-AGENT HANDOFF: CREDIT CARD MANAGEMENT FEE & CHARGING MODALITIES (DB, Backend, Frontend, QA)
+Task: Implemented complete domain support for Credit Card Management Fees (Cuota de Manejo) in COP and distinct charging modalities:
+1. Database Layer (DB Agent):
+   - Created migrations `supabase/migrations/20260401000000_credit_card_management_fee.sql` and `database/migrations/20260401000000_credit_card_management_fee.sql`.
+   - Added `management_fee NUMERIC(12,2)` and `management_fee_type TEXT` with CHECK constraint `accounts_management_fee_rules` (`fixed_monthly`, `only_on_use`, `exempt_if_used`, `exempt`).
+   - Backfilled existing credit cards with `0.00` and `'exempt'`; enforced `NULL` for `cash` and `bank` accounts.
+   - Recreated `credit_card_balance_summary` view with `WITH (security_invoker = true)` exposing fee fields.
+   - Updated `src/types/database.types.ts` with `ManagementFeeType` and extended table & view types.
+   - Documented in `.agents-team/DECISIONS.md` under `ADR-008: Credit Card Management Fee Modalities and Precision`.
+2. Backend & Finance Engine (Backend Agent):
+   - Created pure domain engine `src/lib/finance/management-fee.ts` with `evaluateManagementFee()` covering:
+     - `fixed_monthly`: Fixed fee charged every month regardless of usage (e.g. Nu $12,000 COP).
+     - `only_on_use`: Charged only when there is balance/usage in the period; $0.00 if unused.
+     - `exempt_if_used`: $0.00 when used; charges configured fee when inactive.
+     - `exempt`: Always $0.00.
+   - Updated Zod validation schemas in `src/lib/validations/account.ts` and `src/lib/validations/finance.ts` with `ManagementFeeTypeSchema`.
+   - Updated Server Actions `createAccount` and `updateAccount` in `src/features/accounts/actions/account-actions.ts` with error mapping for `accounts_management_fee_rules`.
+3. Frontend UI & UX (Frontend Agent):
+   - `src/features/accounts/components/AccountForm.tsx`: Input field for fee amount in COP with instant currency preview, and accessible `<select>` with Spanish modality descriptions and dynamic contextual explanation hints.
+   - `src/features/credit-cards/components/CreditCardsClientView.tsx`: Added cuota de manejo row and modality badges (`Todos los meses`, `Solo si se usa`, `Exenta por uso`, `Sin cuota`).
+   - `src/features/accounts/components/AccountsClientView.tsx`: Displayed cuota de manejo and modality indicator on credit card cards.
+   - Maintained full WCAG AA contrast in Light and Dark modes.
+4. QA Audit & Verification Gate (QA Verifier Agent):
+   - Created `tests/unit/management-fee.test.ts` (15 comprehensive unit tests covering all modalities, Nu $12,000 COP scenario, cent preservation, and Zod validation).
+   - Fixed Zod schema error messaging and removed `as any` casts to preserve strict TypeScript typing (`strict: true`).
+   - Executed mandatory quality gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 errors, 0 warnings).
+     - `npm run test:run` -> Code 0 (21 suites, 299 tests passing).
+     - `npm run build` -> Code 0 (Production build succeeded cleanly, 14 routes optimized).
+Handoff status: COMPLETED
+
+### 2026-11-21 - FRONTEND & QA VERIFIER AGENT (Mobile UX & Viewport Polish: Stable Framing, Anti-Zoom, Lateral Scroll Lock & Touch Text Selection Restriction)
+Task: Overhauled mobile usability, viewport framing, and touch ergonomics across iOS Safari and Android:
+1. Stable Viewport & Anti-Auto-Zoom Framing:
+   - Configured `src/app/layout.tsx` with `Viewport`: `initialScale: 1`, `maximumScale: 1`, `userScalable: false`, `viewportFit: "cover"`.
+   - Prevented iOS Safari auto-zoom on input focus by setting `font-size: 16px !important` under `@media screen and (max-width: 768px)` in `src/app/globals.css`.
+   - Adjusted `SmsTransactionModal.tsx` textarea and `login/page.tsx` & `signup/page.tsx` inputs to maintain 16px font-size on mobile (`text-base sm:text-sm`).
+2. Horizontal Scroll Elimination:
+   - Added `overflow-x: hidden; overscroll-behavior-x: none; max-width: 100vw;` to `html, body` in `src/app/globals.css`.
+   - Configured `src/components/layout/DashboardShell.tsx` main container with `overflow-y-auto overflow-x-hidden w-full max-w-full`.
+   - Encapsulated lateral scrolling strictly within deliberate horizontal scroll containers (tables with `overflow-x-auto`).
+3. App-Like Text Selection Control:
+   - Enforced default `user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;` on `html, body, button, a, img, svg` to prevent accidental text/icon highlighting on touch interactions.
+   - Guaranteed full selectable/copy/cut/paste behavior inside `input`, `textarea`, `[contenteditable="true"]`, `.select-text`, and `[data-selectable="true"]` via `-webkit-user-select: text !important; user-select: text !important; -webkit-touch-callout: default !important;`.
+4. QA Verification Gate:
+   - Created `tests/unit/mobile-viewport-ux.test.ts` (5 tests verifying viewport values, CSS overflow and touch rules, input font-size safeguards, and container bounds).
+   - Executed full QA verification gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 lint warnings/errors).
+     - `npm run test:run` -> Code 0 (22 suites, 304 tests passing).
+     - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
+Handoff status: COMPLETED
+
+### 2026-11-21 - FRONTEND & QA VERIFIER AGENT (Chart Temporal Navigation: Arrow Controls, Configurable Window Quantity & Exact Historical Analysis)
+Task: Implemented interactive temporal navigation with arrow controls and configurable window quantity across dashboard charts:
+1. Pure Financial Time Window Engine (`src/lib/finance/chart-periods.ts`):
+   - Created pure, deterministic engine for calculating time windows, buckets, labels and offset displacement based on `America/Bogota`.
+   - Updated default quantities: `weeks = 4` (reduced from 8), `months = 6`, `days = 14`, `years = 3`.
+   - Added `clampQuantity` with strict limits (months: 1-24, weeks: 1-24, days: 1-60, years: 1-5).
+   - Handled single-month isolation (`quantity = 1`) and arbitrary offset navigation (e.g. stepping back to May 2026 or any historical month).
+2. Interactive Navigation Controls in `FinancialCharts.tsx`:
+   - Added arrow navigation controls (`←` / `→`) to step windows back and forward through time.
+   - Added prominent active period badge displaying the exact civil date range and months in Spanish.
+   - Added `Ir a Actual` quick return button when `offset > 0` to return to the present with one touch.
+   - Added configurable quantity controls with quick presets (e.g., `1 m`, `3 m`, `6 m`, `12 m` for months) and manual stepper `[-] [quantity] [+]`.
+   - Synchronized both **Flujo Periódico (Ingresos vs. Gastos)** and **Gastos por Categoría (dona)** so that isolating a single month or custom multi-month window instantly recalculates both charts in unison.
+3. Contrast & Mobile Ergonomics:
+   - Preserved WCAG AA contrast in Light (warm amber `text-amber-700`, `bg-amber-600`) and Dark modes (`#D4AF37` metallic gold).
+   - Maintained semantic financial colors (`#10B981` income, `#F43F5E` expense).
+   - Responsive flex-wrap layout preventing any mobile horizontal overflow.
+4. QA Audit & Verification Gate:
+   - Created `tests/unit/chart-periods.test.ts` (9 comprehensive unit tests covering defaults, clamping, single-month isolation, multi-month windows, weekly buckets, offset shifting, and custom ranges).
+   - Executed full QA verification gate:
+     - `npx tsc --noEmit` -> Code 0 (0 type errors).
+     - `npm run lint` -> Code 0 (0 lint warnings/errors).
+     - `npm run test:run` -> Code 0 (23 suites, 313 tests passing).
+     - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
+Handoff status: COMPLETED
+
 ---
 
 # 9. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity & Gold Theme)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee + Mobile UX & Touch Polish + Temporal Chart Navigation)
 
 - [x] All implementation agents are COMPLETED.
 - [x] All critical bugs are resolved.
@@ -1314,4 +1394,4 @@ Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Br
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Sprint 3 Milestone and Full System (v1.5.1 Hotfix & Official Brand Identity with Enriched Gold Theme) are officially verified, released, and approved.
+Chart temporal navigation (arrow controls, configurable window quantity: weeks=4, months=6 editable to 1, etc.) is fully verified, tested, built, and approved.

@@ -112,7 +112,7 @@ function LoginForm() {
                 id="email"
                 type="email"
                 placeholder="tu@correo.com"
-                className="pl-9 text-xs sm:text-sm"
+                className="pl-9 text-base sm:text-sm"
                 disabled={isPending}
                 {...register("email")}
               />
@@ -138,7 +138,7 @@ function LoginForm() {
                 id="password"
                 type="password"
                 placeholder="••••••••"
-                className="pl-9 text-xs sm:text-sm"
+                className="pl-9 text-base sm:text-sm"
                 disabled={isPending}
                 {...register("password")}
               />

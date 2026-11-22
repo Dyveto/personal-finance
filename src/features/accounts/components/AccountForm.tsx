@@ -20,6 +20,7 @@ import {
   type AccountRow,
 } from "@/features/accounts/actions/account-actions";
 import type { ActionResult } from "@/types/actions";
+import type { ManagementFeeType } from "@/lib/validations/account";
 import { AlertCircle, Loader2 } from "lucide-react";
 
 const AccountFormValidationSchema = z
@@ -41,6 +42,11 @@ const AccountFormValidationSchema = z
     credit_limit: z.string().optional().or(z.literal("")),
     closing_day: z.string().optional().or(z.literal("")),
     payment_due_day: z.string().optional().or(z.literal("")),
+    management_fee: z.string().optional().or(z.literal("")),
+    management_fee_type: z
+      .enum(["fixed_monthly", "only_on_use", "exempt_if_used", "exempt"])
+      .optional()
+      .or(z.literal("")),
     color: z.string().optional().or(z.literal("")),
   })
   .superRefine((data, ctx) => {
@@ -71,6 +77,18 @@ const AccountFormValidationSchema = z
           code: z.ZodIssueCode.custom,
           path: ["payment_due_day"],
           message: "El día límite de pago debe ser un número entre 1 y 31",
+        });
+      }
+
+      // Validar cuota de manejo si se ingresa
+      if (
+        data.management_fee &&
+        (!/^\d+(\.\d{1,2})?$/.test(data.management_fee) || parseFloat(data.management_fee) < 0)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["management_fee"],
+          message: "La cuota de manejo debe ser un valor numérico mayor o igual a 0",
         });
       }
     }
@@ -105,6 +123,11 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
       credit_limit: account?.credit_limit ? String(account.credit_limit) : "",
       closing_day: account?.closing_day ? String(account.closing_day) : "15",
       payment_due_day: account?.payment_due_day ? String(account.payment_due_day) : "5",
+      management_fee:
+        account?.management_fee !== null && account?.management_fee !== undefined
+          ? String(account.management_fee)
+          : "0",
+      management_fee_type: account?.management_fee_type || "exempt",
       color: account?.color || "",
     },
   });
@@ -119,6 +142,11 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
         credit_limit: account.credit_limit ? String(account.credit_limit) : "",
         closing_day: account.closing_day ? String(account.closing_day) : "15",
         payment_due_day: account.payment_due_day ? String(account.payment_due_day) : "5",
+        management_fee:
+          account.management_fee !== null && account.management_fee !== undefined
+            ? String(account.management_fee)
+            : "0",
+        management_fee_type: account.management_fee_type || "exempt",
         color: account.color || "",
       });
     }
@@ -143,6 +171,8 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 credit_limit: parseFloat(values.credit_limit || "0"),
                 closing_day: parseInt(values.closing_day || "15", 10),
                 payment_due_day: parseInt(values.payment_due_day || "5", 10),
+                management_fee: parseFloat(values.management_fee || "0"),
+                management_fee_type: (values.management_fee_type as ManagementFeeType) || "exempt",
                 color: values.color || null,
               }
             : {
@@ -154,6 +184,8 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 credit_limit: null,
                 closing_day: null,
                 payment_due_day: null,
+                management_fee: null,
+                management_fee_type: null,
                 color: values.color || null,
               };
 
@@ -193,6 +225,8 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 credit_limit: parseFloat(values.credit_limit || "0"),
                 closing_day: parseInt(values.closing_day || "15", 10),
                 payment_due_day: parseInt(values.payment_due_day || "5", 10),
+                management_fee: parseFloat(values.management_fee || "0"),
+                management_fee_type: (values.management_fee_type as ManagementFeeType) || "exempt",
                 color: values.color || null,
               }
             : {
@@ -204,6 +238,8 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 credit_limit: null,
                 closing_day: null,
                 payment_due_day: null,
+                management_fee: null,
+                management_fee_type: null,
                 color: values.color || null,
               };
 
@@ -388,6 +424,59 @@ export function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) 
                 <p className="text-xs text-[#F43F5E]">{errors.payment_due_day.message}</p>
               )}
             </div>
+          </div>
+
+          {/* Cuota de Manejo y Modalidad de Cobro */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="space-y-1.5">
+              <Label htmlFor="management_fee">Cuota de Manejo (COP)</Label>
+              <Input
+                id="management_fee"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ej. 12000 o 0"
+                {...register("management_fee")}
+              />
+              {errors.management_fee && (
+                <p className="text-xs text-[#F43F5E]">{errors.management_fee.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="management_fee_type">Forma de Cobro</Label>
+              <select
+                id="management_fee_type"
+                {...register("management_fee_type")}
+                className="w-full h-10 px-3 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-[#0B0F19] text-xs font-medium text-slate-900 dark:text-[#F8FAFC] focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-[#D4AF37]"
+              >
+                <option value="exempt">Exenta / Sin cuota ($0)</option>
+                <option value="fixed_monthly">Todos los meses (fija, se use o no)</option>
+                <option value="only_on_use">Solo si se usa en el período (compras o saldo)</option>
+                <option value="exempt_if_used">Exenta si se usa (sin cobro si hay consumo)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Micro-texto explicativo dinámico según la modalidad */}
+          <div className="text-[11px] text-slate-500 dark:text-[#94A3B8] bg-slate-50 dark:bg-[#0B0F19]/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-white/[0.06] leading-relaxed">
+            {watch("management_fee_type") === "fixed_monthly" ? (
+              <p>
+                ℹ️ <strong>Cobro mensual fijo:</strong> Se liquidará mensualmente la cuota configurada (ej. Nu con $12.000 COP) se use o no la tarjeta.
+              </p>
+            ) : watch("management_fee_type") === "only_on_use" ? (
+              <p>
+                ℹ️ <strong>Solo si se usa:</strong> Únicamente se cobrará la cuota de manejo en aquellos ciclos donde se registren compras o saldo adeudado.
+              </p>
+            ) : watch("management_fee_type") === "exempt_if_used" ? (
+              <p>
+                ℹ️ <strong>Exenta si se usa:</strong> Si registras al menos un consumo en el mes, la cuota será de $0; si no se usa, aplicará la cuota establecida.
+              </p>
+            ) : (
+              <p>
+                ℹ️ <strong>Exenta permanente:</strong> Tarjeta 100% libre de cuota de manejo en cualquier circunstancia.
+              </p>
+            )}
           </div>
         </div>
       )}

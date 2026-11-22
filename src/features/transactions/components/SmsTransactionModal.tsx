@@ -136,7 +136,7 @@ export function SmsTransactionModal({
                   if (errorMsg) setErrorMsg(null);
                 }}
                 placeholder="Ej: Bancolombia le informa compra por $45.000,00 en RESTAURANTE EL SOL con tarjeta *1234 el 20/11/2026..."
-                className="w-full rounded-xl p-3 text-xs md:text-sm bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:focus:ring-[#D4AF37]/50 resize-y"
+                className="w-full rounded-xl p-3 text-base md:text-sm bg-slate-50 dark:bg-[#0B0F19] border border-slate-200 dark:border-white/[0.1] text-slate-900 dark:text-[#F8FAFC] placeholder:text-slate-400 dark:placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-amber-500/50 dark:focus:ring-[#D4AF37]/50 resize-y"
               />
               <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-[#94A3B8]">
                 <span>Pega el mensaje recibido de Bancolombia, Nequi, Davivienda, etc.</span>

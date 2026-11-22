@@ -133,6 +133,10 @@ export async function createAccount(
         validatedData.account_type === "credit_card" ? validatedData.closing_day : null,
       payment_due_day:
         validatedData.account_type === "credit_card" ? validatedData.payment_due_day : null,
+      management_fee:
+        validatedData.account_type === "credit_card" ? (validatedData.management_fee ?? 0) : null,
+      management_fee_type:
+        validatedData.account_type === "credit_card" ? (validatedData.management_fee_type ?? "exempt") : null,
       color: validatedData.color ?? null,
       is_active: true,
     };
@@ -144,6 +148,12 @@ export async function createAccount(
       .single();
 
     if (insertError) {
+      if (insertError.message.includes("accounts_management_fee_rules")) {
+        return {
+          success: false,
+          error: "Los datos de la cuota de manejo no cumplen con las reglas financieras (valor >= 0 y modalidad válida).",
+        };
+      }
       return { success: false, error: `Failed to create account: ${insertError.message}` };
     }
 
@@ -230,6 +240,12 @@ export async function updateAccount(
       if (validatedData.payment_due_day !== undefined) {
         updatePayload.payment_due_day = validatedData.payment_due_day;
       }
+      if (validatedData.management_fee !== undefined) {
+        updatePayload.management_fee = validatedData.management_fee;
+      }
+      if (validatedData.management_fee_type !== undefined) {
+        updatePayload.management_fee_type = validatedData.management_fee_type;
+      }
     } else {
       // Para cuentas estándar (efectivo y bancos), se permite ajustar el saldo disponible
       const balance =
@@ -240,6 +256,8 @@ export async function updateAccount(
       updatePayload.credit_limit = null;
       updatePayload.closing_day = null;
       updatePayload.payment_due_day = null;
+      updatePayload.management_fee = null;
+      updatePayload.management_fee_type = null;
     }
 
     const { data: updatedAccount, error: updateError } = await supabase
@@ -255,6 +273,12 @@ export async function updateAccount(
         return {
           success: false,
           error: "Los datos de la tarjeta no cumplen con las reglas financieras (cupo > 0 y días entre 1 y 31).",
+        };
+      }
+      if (updateError.message.includes("accounts_management_fee_rules")) {
+        return {
+          success: false,
+          error: "Los datos de la cuota de manejo no cumplen con las reglas financieras (valor >= 0 y modalidad válida).",
         };
       }
       return { success: false, error: `Failed to update account: ${updateError.message}` };

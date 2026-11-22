@@ -84,7 +84,7 @@ export function DashboardShell({
         <InteractiveDotField />
         <Header onMenuToggle={() => setMobileMenuOpen(true)} />
 
-        <main className="relative z-10 flex-1 overflow-y-auto px-4 py-6 md:px-8 md:py-8 focus:outline-none">
+        <main className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden w-full max-w-full px-4 py-6 md:px-8 md:py-8 focus:outline-none">
           <div className="w-full max-w-7xl mx-auto h-auto">{children}</div>
         </main>
       </div>
