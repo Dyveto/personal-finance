@@ -350,6 +350,11 @@ export function AccountsClientView({ initialAccounts }: AccountsClientViewProps)
                           {acc.institution}
                         </span>
                       )}
+                      {acc.has_four_per_thousand && (
+                        <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wide uppercase bg-amber-500/15 border border-amber-500/25 text-amber-700 dark:text-[#D4AF37]">
+                          4x1000
+                        </span>
+                      )}
                     </div>
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center ${

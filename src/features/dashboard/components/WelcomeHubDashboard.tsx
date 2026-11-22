@@ -106,6 +106,9 @@ export function WelcomeHubDashboard({
   const paymentAccounts = accounts.filter(
     (a) => a.account_type === "cash" || a.account_type === "bank"
   );
+  const creditCards = accounts.filter(
+    (a) => a.account_type === "credit_card"
+  );
 
   // Reordenar mediante flechas
   const handleMoveWidget = (id: string, direction: "up" | "down") => {
@@ -259,6 +262,7 @@ export function WelcomeHubDashboard({
             projections={allProjections}
             paymentAccounts={paymentAccounts}
             statements={statements}
+            creditCards={creditCards}
           />
         );
       case "active_accounts":

@@ -1429,6 +1429,11 @@ export function TransactionsClientView({
                             {tx.installment_count} cuotas
                           </span>
                         )}
+                        {tx.is_four_per_thousand_applied && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-700 dark:text-[#D4AF37] text-[10px] font-bold tracking-wide uppercase flex-shrink-0">
+                            4X1000
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-[#94A3B8] mt-0.5">
@@ -1458,11 +1463,15 @@ export function TransactionsClientView({
                         {isIncome ? "+" : "-"}
                         {formatMoneyCOP(tx.amount)}
                       </div>
-                      {tx.is_installment && tx.installment_count > 1 && (
+                      {tx.is_four_per_thousand_applied && tx.four_per_thousand_amount ? (
+                        <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] block">
+                          Base: {formatMoneyCOP(Math.max(0, tx.amount - tx.four_per_thousand_amount))} · 4x1000: {formatMoneyCOP(tx.four_per_thousand_amount)}
+                        </span>
+                      ) : tx.is_installment && tx.installment_count > 1 ? (
                         <span className="text-[11px] text-slate-500 dark:text-[#94A3B8] block">
                           Diferido mensual
                         </span>
-                      )}
+                      ) : null}
                     </div>
 
                     <div className="flex items-center gap-1 border-l border-slate-200 dark:border-white/[0.08] pl-2 sm:pl-3">

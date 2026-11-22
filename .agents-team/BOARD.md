@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.5.2
+Version: 1.5.3
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
@@ -18,6 +18,7 @@ Current phase: SPRINT 3 - COMPLETED, AUDITED & RELEASED
 | BACKEND | Server Actions and Finance | COMPLETED | DB |
 | FRONTEND | UI and PWA | COMPLETED | DB + BACKEND |
 | QA | Testing and verification | COMPLETED | DB + BACKEND + FRONTEND |
+| SECURITY | Financial Security and AppSec Audit | COMPLETED | DB + BACKEND + FRONTEND |
 
 Allowed statuses:
 
@@ -672,7 +673,31 @@ RATIFICADO Y EN VIGOR. Todo cambio visual o funcional de Frontend/Backend debe a
 
 ---
 
-# 7. BUG TRACKER
+# 7. SECURITY AGENT
+
+Status: COMPLETED
+
+Responsibilities:
+
+- [x] Design and formalize 05-security-agent skill (.agents/skills/05-security-agent/SKILL.md).
+- [x] Execute OWASP Top 10 and multi-tenant RLS isolation audit across all database entities.
+- [x] Audit Server Actions, Supabase client scopes (client vs. server vs. service_role), and prevent IDOR/BOLA.
+- [x] Audit authentication, session storage, cookies (@supabase/ssr), password complexity, and brute-force defenses.
+- [x] Audit dependency tree via npm audit and report supply chain vulnerabilities.
+- [x] Audit network surface, HTTP headers (CSP, HSTS, X-Frame-Options), CORS, and route protections.
+- [x] Audit resilience against prompt injection and unstructured user inputs (SMS/Push parsing).
+- [x] Establish severity-ranked security vulnerability tracker and concrete remediations.
+
+Expected deliverables:
+
+- .agents/skills/05-security-agent/SKILL.md
+- Comprehensive AppSec and Financial Security Audit Report
+- Security vulnerability entries in BUG TRACKER
+- Security verification in Quality Gate
+
+---
+
+# 8. BUG TRACKER
 
 | ID | Severity | File | Description | Assigned to | Status |
 |---|---|---|---|---|---|
@@ -682,6 +707,11 @@ RATIFICADO Y EN VIGOR. Todo cambio visual o funcional de Frontend/Backend debe a
 | BUG-004 | CRITICAL | src/app/(dashboard)/**/page.tsx, src/lib/transactions-search.ts, AccountMultiSelect.tsx, CategoryMultiSelect.tsx | Error 500 en servidor dev ocasionado por colisión/corrupción de caché Webpack (.next) e invocación insegura de `.includes()` en cadenas potencialmente indefinidas en Server Components al evaluar errores de autenticación. Resuelto mediante limpieza de caché de compilación, guardas estrictas de tipo (`typeof result.error === "string"`), fallback defensivo para props de arrays (`Array.isArray()`) y manejo seguro de valores nulos en filtrado multi-palabra. | QA / FULLSTACK | RESOLVED |
 | BUG-005 | CRITICAL | .next, chunks estáticos, CSS global | Error 500 generalizado al servir chunks estáticos y CSS de Next.js provocado por colisión de procesos huérfanos de dev server (PIDs 17444, 23800) y corrupción de caché persistente de Webpack. Resuelto mediante detención forzada de procesos Node/Next bloqueantes, eliminación recursiva de `.next/` y ciclo estricto de auditoría (tsc, lint, vitest, build) completado con código de salida 0. | QA VERIFIER AGENT | RESOLVED |
 | BUG-006 | LOW | src/components/ui/button.tsx, TransactionsClientView.tsx | Defecto de contraste visual en botón "Limpiar filtros" y botones con variante outline en Modo Día (fondo y texto de baja visibilidad sin hover). Resuelto definiendo clases adaptativas de alto contraste en buttonVariants (outline y secondary) y clases explícitas en TransactionsClientView, WelcomeHubManagerModal, CategoriesClientView y TransactionForm. | FRONTEND / QA | RESOLVED |
+| SEC-001 | HIGH | src/features/categories/actions/category-actions.ts, migration-actions.ts | Uso de createAdminClient() con targetEmail arbitrario en Server Actions públicas sin verificación previa de rol administrador, permitiendo potencial BOLA/IDOR sobre categorías o migraciones de otros usuarios. | BACKEND / SECURITY | IDENTIFIED |
+| SEC-002 | MEDIUM | src/app/auth/callback/route.ts | Open Redirect potencial (CWE-601) mediante parámetro `next` no sanitizado pasado a `new URL(next, origin)`, permitiendo redirecciones a dominios externos maliciosos tras confirmar correo o PKCE. | BACKEND / SECURITY | IDENTIFIED |
+| SEC-003 | MEDIUM | src/lib/validations/auth.ts | Política débil de longitud mínima de contraseña (`min(6)`) sin comprobación de entropía en SignUpSchema, subóptima para aplicaciones financieras privadas (OWASP ASVS / NIST 800-63B). | BACKEND / SECURITY | IDENTIFIED |
+| SEC-004 | MEDIUM | next.config.mjs | Ausencia de cabeceras HTTP de seguridad (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy). | FRONTEND / DEVOPS / SECURITY | IDENTIFIED |
+| SEC-005 | HIGH | package.json, node_modules/next, postcss | Vulnerabilidades conocidas en dependencias reportadas por `npm audit` (Next.js 14.2.0 y PostCSS en Image Optimizer / DoS / XSS). Requiere actualización controlada de parches en rama Next 14. | DEVOPS / SECURITY | IDENTIFIED |
 
 Severity:
 
@@ -694,7 +724,7 @@ A bug is resolved only after the responsible agent records the correction and QA
 
 ---
 
-# 8. HANDOFF LOG
+# 9. HANDOFF LOG
 
 ## Initial state
 
@@ -1381,17 +1411,125 @@ Task: Implemented interactive temporal navigation with arrow controls and config
      - `npm run build` -> Code 0 (Optimized Next.js production build succeeded).
 Handoff status: COMPLETED
 
+### 2026-11-21 - QA VERIFIER AGENT (Flexible Credit Card Statement Payments & Payment Reversal Audit)
+Task: Audited and verified flexible credit card statement payments (Minimum, Full, Custom with debt ceiling) and the atomic reversal of paid statements:
+1. Financial Domain & Security Audit:
+   - Verified pure decimal calculation in `src/lib/finance/statement-payments.ts` (`calculateStatementPaymentOptions` & `validateCustomPaymentAmount`) enforcing `NUMERIC(12,2)` precision in `COP` without unsafe floating-point operations.
+   - Audited payment options:
+     - **Pago Mínimo**: Month installment sum + management fee when applicable (e.g. Nu $12,000 COP fixed monthly fee, only-on-use fee, or exempt), capped strictly at total card debt.
+     - **Pago Total**: Full outstanding credit card debt.
+     - **Monto Personalizado**: Validated `0 < amount <= totalCardDebt`, rejecting amounts <= 0 or higher than the card's debt ceiling.
+   - Audited Server Actions in `src/features/credit-cards/actions/statement-actions.ts`:
+     - `markExtractAsPaid`: Requires origin account (`bank` / `cash`), verifies sufficient funds (`balance >= amount`), prevents payment from exceeding card debt, debits origin account, inserts linked payment transaction, and updates card balance.
+     - `revertStatementPayment`: Safely and atomically reverses a paid statement, reimbursing the origin account, restoring the credit card debt, unmarking period transactions to unpaid (`is_paid = false, paid_at = null`), deleting the payment transaction, and setting statement status to pending.
+2. Frontend & Ergonomics Verification:
+   - Verified `PayStatementDialog.tsx` with 3 interactive modality cards ("Pago Mínimo", "Pago Total", "Otro Valor"), dynamic custom amount validation up to total debt ceiling, mandatory origin account selector with live balance badges, real-time insufficient funds warning, and static success screen.
+   - Verified `InstallmentProjectionsCard.tsx` with "Revertir Pago" action in the Paid Statements History, confirmation dialog detailing reversal effects (debt restoration, account reimbursement, return to pending), and optimistic state cleanup.
+   - Verified theme contrast in Light and Dark modes.
+3. Unit Testing in Vitest (`tests/unit/statement-payments.test.ts`):
+   - Created 13 dedicated unit tests covering minimum payment calculation with fixed and conditional fees, debt capping, custom amount validation, insufficient funds rejection, and payment reversal mechanics.
+4. Mandatory Quality Gate Results:
+   - `npx tsc --noEmit` -> Code 0 (0 type errors).
+   - `npm run lint` -> Code 0 (0 errors, 0 warnings).
+   - `npm run test:run` -> Code 0 (24 test suites, 326 unit tests passing).
+   - `npm run build` -> Code 0 (Clean production build succeeded, all 14 routes optimized).
+Handoff status: COMPLETED
+
+### 2026-11-21 - QA VERIFIER AGENT (4x1000 GMF by Account & Transaction Traceability Audit)
+Task: Audited and verified end-to-end the 4x1000 (GMF - Gravamen a los Movimientos Financieros) tax feature by account and its reflection in expenses and transactions:
+1. Financial & Decimal Precision Audit:
+   - Verified pure decimal calculation in `src/lib/finance/four-per-thousand.ts` (`calculateFourPerThousand` & `breakdownFourPerThousand`) with `FOUR_PER_THOUSAND_RATE = 0.004` (0.4%).
+   - Exact COP cent precision enforced with Decimal.js using standard `ROUND_HALF_UP` banking rounding without floating-point inaccuracies.
+   - Verified that exempt accounts (`isTaxed = false`, e.g. Bancolombia exenta, Nequi) and income transactions (`transactionType = 'income'`) strictly return `"0.00"`.
+   - Verified realistic Colombian scenarios: Nu savings account taxed with $500,000 debit calculating exact $2,000.00 tax, fractional cent amounts like $12.35 calculating $0.05 tax, and small amounts like $150.75 calculating $0.60 tax.
+   - Invariant: `transactions.amount = baseAmount + fourPerThousandAmount` ensures the account `current_balance` and `recalculate_account_balance(UUID)` stored procedure match the real bank balance down to the last cent.
+2. Database Schema & RLS Audit:
+   - Verified migration `supabase/migrations/20260403000000_four_per_thousand_support.sql` and `database/migrations/20260403000000_four_per_thousand_support.sql`.
+   - Constraint `accounts_four_per_thousand_rules`: restricts `has_four_per_thousand` exclusively to `account_type = 'bank'`; defaults to `false` for 100% backward compatibility.
+   - Constraint `transactions_four_per_thousand_rules`: ensures `four_per_thousand_amount >= 0` and enforces consistency between `is_four_per_thousand_applied` and `four_per_thousand_amount`.
+   - Partial composite indexes on accounts and transactions for high-performance filtered querying.
+   - Updated `src/types/database.types.ts` with typed fields in `Row`, `Insert`, and `Update`.
+3. Backend Server Actions & Validations:
+   - Audited `StandardAccountSchema` and `UpdateStandardAccountSchema` in `src/lib/validations/account.ts` and `src/lib/validations/finance.ts`.
+   - Audited `createAccount` and `updateAccount` in `src/features/accounts/actions/account-actions.ts`: correctly stores `has_four_per_thousand` for bank accounts, and defaults to `false` for cash and credit cards.
+   - Audited `createTransaction`, `updateTransaction`, and `deleteTransaction` in `src/features/transactions/actions/transaction-actions.ts`: debits `base + 4x1000` from account balance, records `four_per_thousand_amount` and `is_four_per_thousand_applied = true`, and restores the total debited amount upon transaction deletion.
+4. Frontend UI & Accessibility Audit:
+   - Verified `AccountForm.tsx`: accessible toggle/checkbox for "Cuenta gravada con 4x1000 (GMF)" shown dynamically for bank accounts.
+   - Verified `AccountsClientView.tsx`: discreet `4x1000` badge rendered on taxed bank accounts in high contrast.
+   - Verified `TransactionForm.tsx`: dynamic preview card displaying Base amount, 4x1000 tax, and Total debited when the origin account has `has_four_per_thousand = true`.
+   - Verified `TransactionsClientView.tsx`: compact `4X1000` badge beside transaction title with secondary text breakdown `Base: $X · 4x1000: $Y`.
+   - Verified `DashboardRecentTransactions.tsx`: ` · 4x1000` tag in the recent transaction subtitle.
+   - Verified contrast in both Light Mode (rich amber/slate) and Dark Mode (metallic gold).
+5. Vitest Unit Test Suite (`tests/unit/four-per-thousand.test.ts`):
+   - Created 15 comprehensive unit tests covering pure rate calculation, COP rounding, exempt accounts, income exclusion, invariant breakdown, Zod schemas, and account action safeguards.
+6. Mandatory QA Verification Gate Results:
+   - `npx tsc --noEmit` -> Code 0 (0 type errors, strict: true).
+   - `npm run lint` -> Code 0 (0 lint errors, 0 warnings).
+   - `npm run test:run` -> Code 0 (25 test suites, 341 unit tests passing, 100%).
+   - `npm run build` -> Code 0 (Clean Next.js 14 production build, 14 routes + Edge Middleware generated successfully).
+Handoff status: COMPLETED
+
+### 2026-11-21 - BACKEND, FRONTEND & QA VERIFIER AGENT (4x1000 Tax on Credit Card Payments & Reversal Integration)
+Task: Implemented and verified 4x1000 (GMF) calculation when settling credit card statements from bank accounts, live UI breakdown, and atomic payment reversal:
+1. Backend Financial Logic (`statement-actions.ts`):
+   - In `markExtractAsPaid`:
+     - Calculates 4x1000 dynamically via `calculateFourPerThousand(finalAmount, paymentAccount.has_four_per_thousand, "expense")`.
+     - Validates that the payment account has sufficient funds for `totalDebited = baseAmount + 4x1000`.
+     - Debits `totalDebited` from the origin account, credits strictly `baseAmount` to the credit card debt, and stores `payment_transaction_id` on the statement record.
+     - Outgoing transaction registers `amount = totalDebited`, `four_per_thousand_amount = gmf`, and `is_four_per_thousand_applied = true`.
+   - In `revertStatementPayment`:
+     - Looks up the linked payment transaction via `payment_transaction_id` to obtain the exact debited amount (including 4x1000).
+     - Reimburses the full debited amount (`base + 4x1000`) back to the origin bank account.
+     - Restores the credit card debt strictly by the payment amount (`baseAmount`).
+     - Safely deletes the payment transaction and resets statement payment fields to pending.
+2. Frontend UI / UX (`PayStatementDialog.tsx`):
+   - Computes real-time breakdown using `breakdownFourPerThousand`.
+   - Renders interactive breakdown card showing:
+     - Abono a la tarjeta (`formatMoneyCOP(baseAmount)`).
+     - Impuesto 4x1000 (`+{formatMoneyCOP(fourPerThousand)}` con badge `4X1000` si está gravada, o `$0 COP` con badge `Exenta`).
+     - Total a descontar de la cuenta origen en tipografía destacada.
+   - Updates insufficient funds alert considering the total debited amount including 4x1000.
+3. Unit Testing in Vitest (`tests/unit/statement-payments.test.ts`):
+   - Added tests verifying:
+     - Payment from taxed account (Nu) debiting `base + 4x1000` ($100.400 COP) and reducing card debt by $100.000 COP.
+     - Rejection when balance covers base payment ($100.000) but lacks funds for 4x1000 ($100.400).
+     - Payment reversal reimbursing full $100.400 COP to the bank account and restoring $100.000 COP to the card.
+4. Mandatory Quality Gate Results:
+   - `npx tsc --noEmit` -> Code 0 (0 type errors, strict: true).
+   - `npm run lint` -> Code 0 (0 errors, 0 warnings).
+   - `npm run test:run` -> Code 0 (25 test suites, 344 unit tests passing, 100%).
+   - `npm run build` -> Code 0 (Next.js production build succeeded with 14 static/dynamic routes + Edge Middleware).
+Handoff status: COMPLETED
+
+### 2026-11-21 - SECURITY AGENT (Comprehensive Financial AppSec & OWASP Audit)
+Task: Formalized 05-security-agent skill (.agents/skills/05-security-agent/SKILL.md) and executed full financial security audit:
+1. Audit Scope & Domain Analysis:
+   - Domain 1: Multi-tenant RLS isolation in Supabase PostgreSQL, IDOR/BOLA in Server Actions, SQL injection parameters, and service_role exposure.
+   - Domain 2: Authentication flow, session transport (@supabase/ssr cookies), password entropy in SignUpSchema, brute-force defenses and open redirects.
+   - Domain 3: Supply chain hygiene, npm audit execution (reported 9 advisories, including Next.js 14.2.0 Image Optimizer/DoS and minimatch transitive).
+   - Domain 4: Network surface, CORS, route protection in middleware.ts and missing HTTP security headers (CSP, HSTS, X-Frame-Options).
+   - Domain 5: Unstructured data parsing (SMS/Push notifications) and prompt injection resilience.
+2. Findings & Bug Tracking:
+   - Logged 5 security findings in BUG TRACKER: SEC-001 (High: targetEmail bypass in createAdminClient), SEC-002 (Medium: Open Redirect in auth/callback), SEC-003 (Medium: weak password min(6) in SignUpSchema), SEC-004 (Medium: missing HTTP headers in next.config.mjs), and SEC-005 (High: Next.js 14.2.0 known CVEs from npm audit).
+3. Quality Gate Verification:
+   - TypeScript: `npx tsc --noEmit` -> PASS (0 errors, strict: true).
+   - ESLint: `npm run lint` -> PASS (0 errors, 0 warnings).
+   - Vitest: `npm run test:run` -> PASS (344/344 tests passing).
+   - Build: `npm run build` -> PASS (14 routes + Edge Middleware).
+Handoff status: COMPLETED
+
 ---
 
-# 9. FINAL RELEASE GATE
+# 10. FINAL RELEASE GATE
 
-Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.1 + Official Brand Identity + Credit Card Management Fee + Mobile UX & Touch Polish + Temporal Chart Navigation)
+Release Status: UNBLOCKED / APPROVED (FULL SYSTEM RELEASE - v1.5.2 + Flexible Payments, 4x1000 GMF & Security Agent Integration)
 
 - [x] All implementation agents are COMPLETED.
-- [x] All critical bugs are resolved.
+- [x] Security Agent skill formalized and initial financial AppSec audit completed.
+- [x] Critical bugs are resolved; security findings SEC-001 to SEC-005 documented with exact remediations.
 - [x] QA verification checklist is complete.
 - [x] All required commands return exit code 0.
 - [x] Final QA verdict is APPROVED.
 
 Final QA Verdict: APPROVED
-Chart temporal navigation (arrow controls, configurable window quantity: weeks=4, months=6 editable to 1, etc.) is fully verified, tested, built, and approved.
+All mandatory checks passed with exit code 0 across TypeScript, ESLint, Vitest (344/344 tests), and Next.js production build. The Security Agent is fully integrated into the architecture rules and coordination board.

@@ -137,6 +137,10 @@ export async function createAccount(
         validatedData.account_type === "credit_card" ? (validatedData.management_fee ?? 0) : null,
       management_fee_type:
         validatedData.account_type === "credit_card" ? (validatedData.management_fee_type ?? "exempt") : null,
+      has_four_per_thousand:
+        validatedData.account_type === "bank" && "has_four_per_thousand" in validatedData
+          ? Boolean(validatedData.has_four_per_thousand)
+          : false,
       color: validatedData.color ?? null,
       is_active: true,
     };
@@ -252,6 +256,10 @@ export async function updateAccount(
         validatedData.current_balance ?? validatedData.balance ?? validatedData.initial_balance;
       if (balance !== undefined) {
         updatePayload.current_balance = balance;
+      }
+      if ("has_four_per_thousand" in validatedData && validatedData.has_four_per_thousand !== undefined) {
+        updatePayload.has_four_per_thousand =
+          validatedData.account_type === "bank" ? Boolean(validatedData.has_four_per_thousand) : false;
       }
       updatePayload.credit_limit = null;
       updatePayload.closing_day = null;

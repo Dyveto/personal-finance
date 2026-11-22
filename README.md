@@ -8,12 +8,16 @@ El sistema está diseñado específicamente bajo las reglas fiscales y financier
 
 ## 🚀 Características Principales
 
-- **Gestión Integral de Cuentas**:
+- **Gestión Integral de Cuentas y Gravamen 4x1000 (GMF)**:
   - Billeteras de efectivo (`cash`), cuentas de ahorro/corriente (`bank`) y tarjetas de crédito (`credit_card`).
   - Monitoreo en tiempo real de saldo disponible vs. deuda acumulada.
+  - Soporte de Gravamen a los Movimientos Financieros (4x1000) por cuenta (ej. gravado en cuenta Nu vs. exento en Bancolombia/Nequi).
+  - Cálculo automático y transparente de 4x1000 en gastos, transferencias salientes y abonos/pagos de extracto de tarjetas de crédito.
 - **Control de Tarjetas de Crédito**:
   - Configuración de cupo total aprobado, día de corte y día límite de pago.
   - Proyección de cuotas futuras agrupadas por mes de corte (`YYYY-MM`) y fecha límite de pago.
+  - Cuota de manejo configurable con modalidades de cobro (`fixed_monthly`, `only_on_use`, `exempt_if_used`, `exempt`).
+  - Abono flexible y pagos de extracto con cálculo en vivo de 4x1000, validación de saldo disponible y reversión contable atómica.
   - **Invariante de Base de Datos**: Las compras diferidas se almacenan como una única transacción y se proyectan dinámicamente sin duplicar registros ficticios.
 - **Motor Financiero y Precisión Decimal**:
   - Cálculos con `decimal.js` (28 dígitos de precisión y redondeo `ROUND_HALF_UP`).
@@ -53,7 +57,7 @@ El sistema está diseñado específicamente bajo las reglas fiscales y financier
 ```text
 ├── .agents/                 # Reglas de arquitectura y manuales de habilidades
 │   ├── rules/               # global-architecture.md (reglas inmutables del proyecto)
-│   └── skills/              # Roles de agentes especializados (DB, Backend, Frontend, QA)
+│   └── skills/              # Roles de agentes especializados (DB, Backend, Frontend, QA, Security)
 ├── .agents-team/            # Coordinación multi-agente
 │   ├── CONTEXT.md           # Contexto global y objetivos
 │   ├── BOARD.md             # Tablero de tareas, entregables y registro de auditorías
@@ -107,6 +111,10 @@ El desarrollo y mantenimiento del proyecto sigue un flujo estructurado de roles 
 4. **`04-qa-verifier-agent` (QA & Release Gate Authority)**:
    - Audita de manera independiente que cada entrega compile con código de salida `0`.
    - Verifica que las pruebas unitarias pasen al 100% y que las políticas de seguridad RLS se cumplan.
+5. **`05-security-agent` (Security & AppSec Engineer)**:
+   - Audita la postura de seguridad financiera, vulnerabilidades OWASP Top 10 y aislamiento estricto por RLS.
+   - Aplica hardening en autenticación, contraseñas, cabeceras HTTP y sanitización de entradas/SMS.
+   - Supervisa la cadena de suministro y dependencias (`npm audit`).
 
 La trazabilidad completa de handoffs y acuerdos se documenta en [.agents-team/BOARD.md](.agents-team/BOARD.md).
 
@@ -186,7 +194,7 @@ El pipeline se dispara automáticamente en cada `push` o `pull_request` dirigido
 3. **Control de Calidad (QA Gates)**:
    - `npx tsc --noEmit`: Validación estricta de tipos en TypeScript (`strict: true`).
    - `npm run lint`: Análisis estático de código con ESLint.
-   - `npm run test:run`: Ejecución de la suite completa de 59 pruebas unitarias con Vitest.
+   - `npm run test:run`: Ejecución de la suite completa de más de 340 pruebas unitarias con Vitest.
    - `npm run build`: Compilación y optimización de producción para Next.js 14 App Router.
    > [!IMPORTANT]
    > Si **cualquiera** de estos pasos falla o genera un error, el pipeline se detiene inmediatamente con código de salida diferente de `0`, bloqueando el despliegue a Netlify y protegiendo el entorno de producción.
@@ -236,7 +244,7 @@ El proyecto cuenta con un conjunto de comandos estrictos de calidad integrados:
 | `npm run dev` | Inicia el servidor de desarrollo en `http://localhost:3000` con hot-reloading |
 | `npm run build` | Genera la compilación optimizada para producción |
 | `npm run start` | Inicia el servidor optimizado de producción |
-| `npm run test:run` | Ejecuta la suite completa de 59 pruebas unitarias con Vitest (modo CI) |
+| `npm run test:run` | Ejecuta la suite completa de más de 340 pruebas unitarias con Vitest (modo CI) |
 | `npm run test` | Ejecuta Vitest en modo interactivo con recarga en caliente |
 | `npm run lint` | Ejecuta el análisis estático de código con ESLint |
 | `npx tsc --noEmit` | Verifica la integridad de tipos en TypeScript (`strict: true`) |

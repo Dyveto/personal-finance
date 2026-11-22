@@ -30,6 +30,28 @@ Antes de fusionar o promover cualquier cambio desde la rama `develop` a `main`, 
 
 ---
 
+## [v1.5.3] - 2026-11-21
+### Añadido y Mejorado
+- **Gravamen a los Movimientos Financieros (4x1000 - GMF) por Cuenta**:
+  - Configuración explícita `has_four_per_thousand` (booleano con valor predeterminado `false`) en cuentas bancarias y billeteras, permitiendo distinguir cuentas gravadas (ej. cuenta de ahorros Nu) de cuentas exentas (ej. Bancolombia o Nequi).
+  - Persistencia de campos decimales de alta precisión (`four_per_thousand_amount NUMERIC(12,2)` y `base_amount NUMERIC(12,2)`) en transacciones, garantizando compatibilidad retrospectiva con movimientos históricos.
+  - Motor financiero puro `src/lib/finance/four-per-thousand.ts` (`calculateFourPerThousand`, `calculateExpenseWithFourPerThousand`, `breakdownFourPerThousand`) basado en `Decimal.js` con redondeo estándar en pesos colombianos (`ROUND_HALF_UP` en COP).
+  - Suma automática del impuesto al gasto/transferencia saliente al operar desde cuentas gravadas, debitando `monto base + 4x1000` del saldo contable.
+  - Interfaz de usuario reactiva en `TransactionForm` con vista previa dinámica en tiempo real del desglose monetario (`Valor base`, `4x1000 (0.4%)` y `Total a debitar`).
+  - Badge visual compacto `4X1000` con tooltip informativo en listados de transacciones y en el widget de movimientos recientes del Dashboard.
+- **4x1000 en Pagos de Extractos y Abonos a Tarjetas de Crédito**:
+  - Evaluación dinámica de la cuenta origen en `PayStatementDialog`: al elegir una cuenta gravada, calcula en tiempo real el 4x1000 del abono (pago total, mínimo o personalizado).
+  - Tarjeta de desglose interactivo y alerta preventiva de saldo insuficiente calculando el débito total (`abono + 4x1000`).
+  - Backend atómico en `markExtractAsPaid`: debita `abono + 4x1000` de la cuenta bancaria origen, amortiza estrictamente el `abono base` al saldo adeudado de la tarjeta de crédito y vincula la transacción contable mediante `payment_transaction_id`.
+  - Reversión atómica de pago (`revertStatementPayment`): reemborsa el total debitado íntegro (incluyendo el 4x1000) a la cuenta bancaria origen y restablece la deuda base a la tarjeta de crédito.
+- **Formalización del 5.º Agente Especializado: Security Agent (`05-security-agent`)**:
+  - Incorporación del manual de habilidades `.agents/skills/05-security-agent/SKILL.md` dedicado a AppSec, OWASP Top 10, auditoría de RLS en Supabase, políticas de contraseñas, auditoría de dependencias (`npm audit`) y prevención de inyección en SMS/prompts.
+  - Actualización de `.agents/rules/global-architecture.md` incorporando al equipo de 5 agentes y estableciendo el gate de aprobación conjunto de QA y Seguridad.
+  - Publicación del **ADR-011** en `.agents-team/DECISIONS.md`.
+  - Registro de hallazgos de seguridad `SEC-001` a `SEC-005` y estado de trazabilidad en `.agents-team/BOARD.md`.
+
+---
+
 ## [v1.5.2] - 2026-11-21
 ### Añadido y Mejorado
 - **Navegación Temporal con Flechas en Gráficos del Dashboard (`FinancialCharts`)**:

@@ -163,6 +163,13 @@ tests/
 
 ## 11. COORDINACIÓN MULTIAGENTE
 
+El equipo está compuesto por 5 agentes especializados:
+1. `01-db-agent`: PostgreSQL, RLS, esquemas, tipos y migraciones.
+2. `02-backend-agent`: Server Actions, lógica financiera, Zod y Supabase SSR.
+3. `03-frontend-agent`: Interfaz de usuario, App Router, Shadcn/UI, Tailwind y PWA.
+4. `04-qa-verifier-agent`: Compilación, pruebas unitarias Vitest, linter y gate final de aprobación.
+5. `05-security-agent`: AppSec, OWASP Top 10, auditoría de RLS, autenticación, cabeceras y seguridad financiera.
+
 Antes de modificar archivos:
 
 1. Leer .agents-team/CONTEXT.md.
@@ -189,8 +196,8 @@ Una tarea se considera terminada cuando:
 - Pasa las validaciones de tipos aplicables.
 - Tiene pruebas cuando corresponde.
 - Respeta los contratos.
-- Respeta RLS y seguridad.
+- Respeta RLS y seguridad auditada.
 - Está documentada en BOARD.md.
 
-El agente QA tiene la responsabilidad final de verificar
-el resultado completo.
+El agente QA y el Security Agent tienen la responsabilidad conjunta de auditar y verificar
+el resultado completo antes de su liberación.

@@ -414,6 +414,7 @@ export function CreditCardsClientView({
         projections={projections}
         paymentAccounts={paymentAccounts}
         statements={statements}
+        creditCards={creditCards}
         onStatementPaid={handleStatementPaid}
       />
 
