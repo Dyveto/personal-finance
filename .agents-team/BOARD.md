@@ -2,7 +2,7 @@
 # MULTI-AGENT HANDOFF BOARD
 
 Project: Personal Finance System
-Version: 1.5.1
+Version: 1.5.2
 Coordinator: Main Agent / Human Owner
 Final Authority: QA Agent
 
